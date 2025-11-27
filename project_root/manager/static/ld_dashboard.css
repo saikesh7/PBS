@@ -1,0 +1,1109 @@
+:root {
+    --primary-color: #3498db;
+    --secondary-color: #2c3e50;
+    --accent-color: #e74c3c;
+    --light-color: #ecf0f1;
+    --success-color: #27ae60;
+    --warning-color: #f39c12;
+    --danger-color: #e74c3c;
+    --info-color: #3498db;
+    --sidebar-width: 250px;
+    --sidebar-collapsed-width: 0px;
+    --topbar-height: 100px;
+    --purple-color: #6f42c1;
+}
+
+/* General Styles */
+body {
+    background-color: #f5f7fa;
+    color: var(--secondary-color);
+    font-family: 'Lexend', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+    margin: 0;
+    padding: 0;
+}
+
+/* Sidebar styles */
+.sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    width: var(--sidebar-width);
+    background-color: #002060;
+    color: white;
+    z-index: 1040;
+    transition: all 0.3s ease;
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+    overflow-y: auto;
+}
+
+.sidebar-header {
+    padding: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    background-color: #002060;
+    height: 100px;
+}
+
+.sidebar-header .text-success {
+    color: #ffffff !important;
+}
+
+.dashboard-badge {
+    background-color: #3498db;
+    color: white;
+    padding: 4px 10px;
+    border-radius: 4px;
+    margin-left: 10px;
+    font-size: 0.8rem;
+    font-weight: normal;
+}
+
+.sidebar-nav {
+    padding: 0.5rem 0;
+}
+
+.sidebar-nav-item {
+    padding: 0.75rem 1.5rem;
+    display: flex;
+    align-items: center;
+    color: rgba(255, 255, 255, 0.8);
+    text-decoration: none;
+    transition: all 0.2s ease;
+    border-left: 3px solid transparent;
+}
+
+.sidebar-nav-item:hover, 
+.sidebar-nav-item.active {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: white;
+    border-left: 3px solid var(--primary-color);
+}
+
+.sidebar-nav-item i {
+    margin-right: 0.75rem;
+    width: 20px;
+    text-align: center;
+}
+
+.sidebar-divider {
+    height: 1px;
+    background-color: rgba(255, 255, 255, 0.1);
+    margin: 0.5rem 0;
+}
+
+/* Badge styles */
+.sidebar-nav-item .badge {
+    border-radius: 12px;
+    font-weight: 500;
+    font-size: 0.8rem;
+    padding: 0.25rem 0.5rem;
+}
+
+.badge.bg-warning {
+    background-color: #f1c40f !important;
+    color: #000 !important;
+}
+
+.badge.bg-info {
+    background-color: #3498db !important;
+    color: #fff !important;
+}
+
+.badge.bg-success {
+    background-color: #2ecc71 !important;
+    color: #fff !important;
+}
+
+.badge.bg-purple {
+    background-color: var(--purple-color) !important;
+    color: #fff !important;
+}
+
+/* Topbar */
+.topbar {
+    position: fixed;
+    top: 0;
+    right: 0;
+    left: var(--sidebar-width);
+    height: var(--topbar-height);
+    background-color: #002060;
+    color: white;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    z-index: 1030;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 1.5rem;
+}
+
+.topbar-left {
+    display: flex;
+    align-items: center;
+}
+
+.topbar-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.topbar-center {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 0.25rem 1rem;
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 0 0 8px 8px;
+}
+
+.topbar-heading {
+    display: flex;
+    align-items: center;
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin: 0;
+    white-space: nowrap;
+}
+
+.topbar-heading i {
+    margin-right: 8px;
+    color: gold;
+}
+
+.topbar-title {
+    font-weight: 600;
+    margin: 0;
+    color: white;
+}
+
+.topbar-subtitle {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    margin-top: 0.25rem;
+}
+
+.topbar-badge {
+    display: inline-block;
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 500;
+}
+
+.topbar-badge.bg-primary {
+    background-color: var(--primary-color) !important;
+}
+
+.topbar-badge.bg-secondary {
+    background-color: #6c757d !important;
+}
+
+.topbar-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 15px;
+    color: white;
+}
+
+.sidebar-toggle {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    cursor: pointer;
+    margin-right: 1rem;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    transition: all 0.2s ease;
+}
+
+.sidebar-toggle:hover {
+    background-color: var(--secondary-color);
+}
+
+.sidebar-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1039;
+    display: none;
+}
+
+/* Content Wrapper */
+.content-wrapper {
+    margin-left: var(--sidebar-width);
+    margin-top: calc(var(--topbar-height) + 10px);
+    padding: 0 1.5rem 0.5rem;
+    transition: all 0.3s ease;
+    min-height: calc(100vh - var(--topbar-height));
+}
+
+/* Cards */
+.card {
+    margin-bottom: 1.5rem;
+    border: none;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    background-color: white;
+}
+
+.card-body {
+    padding: 1.5rem;
+}
+
+/* History Tab */
+.history-header {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #002060;
+    display: flex;
+    align-items: center;
+}
+
+.history-header i {
+    background-color: rgba(0, 32, 96, 0.1);
+    padding: 8px;
+    border-radius: 50%;
+    margin-right: 10px;
+    font-size: 1rem;
+    color: #002060;
+}
+
+.history-filter-group {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+#historyQuarterFilter,
+#historyCategoryFilter,
+#historyGradeFilter,    /* Added for ld_dashboard.html */
+#historyYearFilter,     /* Added for ld_dashboard.html */
+#historyNameSearch,     /* Added for ld_dashboard.html */
+#ldHistoryNameSearch,   /* Added for ld_validator.html */
+#ldHistoryQuarterFilter,
+#ldHistoryCategoryFilter,
+#ldHistoryGradeFilter,
+#ldHistoryYearFilter {
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    padding: 0.35rem 0.5rem; /* Ensures consistent vertical padding */
+    font-size: 0.8125rem;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    height: 32px;           /* Explicit height for all filter fields */
+    width: 100%;            /* Make fields take full width of their container column */
+    box-sizing: border-box; /* Ensures padding and border are included in height/width */
+}
+
+#historyQuarterFilter:focus,
+#historyCategoryFilter:focus,
+#ldHistoryQuarterFilter:focus,
+#ldHistoryCategoryFilter:focus,
+#ldHistoryGradeFilter:focus,
+#ldHistoryYearFilter:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.15);
+}
+
+.input-group-text {
+    background-color: #f8f9fa;
+    border: 1px solid #e0e0e0;
+    border-right: none;
+    padding: 0.35rem 0.5rem;
+    font-size: 0.75rem;
+    height: 32px;
+    display: flex;
+    align-items: center;
+}
+
+.input-group-text i {
+    color: #6c757d;
+}
+
+#exportHistoryBtn,
+#exportLdHistoryBtn {
+    background: linear-gradient(to right, var(--success-color), #2ecc71);
+    border: none;
+    padding: 0.35rem 0.75rem;
+    font-weight: 500;
+    font-size: 0.8125rem;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(39, 174, 96, 0.2);
+    transition: all 0.3s ease;
+    color: white;
+    height: 32px;
+    display: flex;
+    align-items: center;
+}
+
+#exportHistoryBtn:hover,
+#exportLdHistoryBtn:hover {
+    background: linear-gradient(to right, #219a52, var(--success-color));
+    box-shadow: 0 4px 8px rgba(39, 174, 96, 0.25);
+    transform: translateY(-2px);
+}
+
+#exportHistoryBtn i,
+#exportLdHistoryBtn i {
+    margin-right: 6px;
+    font-size: 0.75rem;
+}
+
+/* Specific style for the "Show Entries" dropdown in ld_dashboard.html history */
+#historyEntriesPerPage {
+    width: auto;      /* Allow width to be determined by content */
+    min-width: 75px;  /* Ensure enough space for "100" and dropdown arrow */
+    height: 32px;     /* Match height of other filter inputs for vertical alignment */
+    padding-top: 0.35rem; /* Match padding of other filter inputs */
+    padding-bottom: 0.35rem; /* Match padding of other filter inputs */
+    vertical-align: middle; /* Align with adjacent label and text */
+    /* It's already form-select-sm d-inline-block, so this complements it */
+}
+
+/* Forms */
+.assign-points-card,
+.certification-header,
+.bulk-upload-card {
+    background-color: white;
+    border-radius: 8px;
+}
+
+.assign-points-header,
+.certification-header {
+    background: linear-gradient(120deg, #002060, #0060c0);
+    color: white;
+    border-radius: 8px 8px 0 0;
+    padding: 0.9rem 1.25rem;
+    font-size: 1.2rem;
+    font-weight: 600;
+}
+
+.assign-points-header i,
+.certification-header i {
+    background-color: rgba(255, 255, 255, 0.2);
+    padding: 8px;
+    border-radius: 50%;
+    margin-right: 10px;
+    font-size: 1rem;
+}
+
+.assign-points-form,
+#certificationForm {
+    background-color: #f9fafc;
+    border-radius: 0 0 8px 8px;
+    padding: 1.5rem;
+}
+
+#bulkUploadForm {
+    background-color: #ffffff;
+    border-radius: 8px;
+    padding: 1rem;
+}
+
+.form-label {
+    font-weight: 500;
+    color: #444;
+    margin-bottom: 6px;
+    font-size: 0.9rem;
+}
+
+.form-label.required-field::after {
+    content: '*';
+    color: var(--danger-color);
+    margin-left: 5px;
+}
+
+.form-select,
+.form-control {
+    border: 1px solid #e0e0e0;
+    border-radius: 5px;
+    padding: -0.5rem 1.75rem;
+    font-size: 0.9rem;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    transition: all 0.2s ease;
+    height: 38px;
+}
+
+textarea.form-control {
+    height: auto;
+    resize: vertical;
+}
+
+.form-select:focus,
+.form-control:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.15);
+}
+
+.form-select:disabled {
+    background-color: #f5f5f5;
+}
+
+.invalid-feedback {
+    font-size: 0.8rem;
+    color: var(--danger-color);
+}
+
+/* Employee Info */
+#techSelectedEmployeeInfo,
+#certSelectedEmployeeInfo {
+    background-color: #f9fafc;
+    border: 1px solid #e0e0e0;
+}
+
+.progress-bar.bg-primary {
+    background-color: var(--primary-color) !important;
+}
+
+.progress-bar.bg-purple {
+    background-color: var(--purple-color) !important;
+}
+
+.progress {
+    height: 8px;
+    border-radius: 4px;
+}
+
+/* Tables */
+.table {
+    border-collapse: separate;
+    border-spacing: 0;
+    width: 100%;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.table thead th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+    color: #495057;
+    border-bottom: 2px solid #dee2e6;
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
+}
+
+.table tbody tr {
+    transition: all 0.2s ease;
+}
+
+.table tbody tr:hover {
+    background-color: rgba(52, 152, 219, 0.05);
+}
+
+.table tbody td {
+    padding: 0.75rem 1rem;
+    vertical-align: middle;
+    border-bottom: 1px solid #f0f0f0;
+    color: #333;
+    font-size: 0.875rem;
+}
+
+.table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.table tbody td:empty::after {
+    content: "No records found";
+    display: block;
+    text-align: center;
+    color: #6c757d;
+    font-style: italic;
+    background-color: #f9fafc;
+    padding: 1rem;
+    width: 100%;
+    font-size: 0.875rem;
+}
+
+.table .badge {
+    font-weight: 500;
+    padding: 0.35rem 0.6rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+}
+
+.table .badge.bg-success {
+    background-color: var(--success-color) !important;
+}
+
+/* Buttons */
+.btn-success {
+    background: linear-gradient(to right, var(--success-color), #2ecc71);
+    border: none;
+    padding: 0.5rem 1.25rem;
+    font-weight: 500;
+    font-size: 0.9rem;
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(39, 174, 96, 0.2);
+    transition: all 0.3s ease;
+    color: white;
+}
+
+.btn-success:hover {
+    background: linear-gradient(to right, #219a52, var(--success-color));
+    box-shadow: 0 4px 8px rgba(39, 174, 96, 0.25);
+    transform: translateY(-2px);
+}
+
+.btn-primary {
+    background: linear-gradient(to right, #2980b9, var(--primary-color));
+    border: none;
+    padding: 0.5rem 1.25rem;
+    font-weight: 500;
+    font-size: 0.9rem;
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(52, 152, 219, 0.2);
+    transition: all 0.3s ease;
+    color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+    background: linear-gradient(to right, #1c6ca9, #2980b9);
+    box-shadow: 0 4px 8px rgba(52, 152, 219, 0.25);
+    transform: translateY(-2px);
+}
+
+.btn-outline-primary {
+    color: var(--primary-color);
+    border-color: var(--primary-color);
+    padding: 0.5rem 1.25rem;
+    font-weight: 500;
+    font-size: 0.9rem;
+    border-radius: 5px;
+    transition: all 0.3s ease;
+}
+
+.btn-outline-primary:hover {
+    background-color: var(--primary-color);
+    color: white;
+    box-shadow: 0 2px 5px rgba(52, 152, 219, 0.2);
+}
+
+.btn i {
+    margin-right: 6px;
+}
+
+/* Bulk Upload */
+#bulkUploadForm .alert-info {
+    background-color: #ebf7fd;
+    color: #0c5460;
+    border-left: 3px solid var(--primary-color);
+    border-radius: 6px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    padding: 0.75rem;
+}
+
+#bulkUploadForm .form-control[type="file"] {
+    padding: 0.5rem;
+    line-height: 1.5;
+}
+
+#bulkUploadForm .form-control[type="file"]::file-selector-button {
+    border: 1px solid #ddd;
+    padding: 0.375rem 0.75rem;
+    border-radius: 0.25rem;
+    background-color: #f8f9fa;
+    transition: all 0.3s ease;
+    margin-right: 1rem;
+}
+
+#bulkUploadForm .form-control[type="file"]::file-selector-button:hover {
+    background-color: #e9ecef;
+}
+
+#csvSummaryContent .badge {
+    margin-right: 5px;
+    margin-bottom: 5px;
+}
+
+.info-header {
+    background-color: var(--info-color);
+    color: white;
+    border-radius: 8px 8px 0 0;
+}
+
+.danger-header {
+    background-color: var(--danger-color);
+    color: white;
+    border-radius: 8px 8px 0 0;
+}
+
+.success-header {
+    background-color: var(--success-color);
+    color: white;
+    border-radius: 8px 8px 0 0;
+}
+
+/* Modals */
+.modal-content {
+    border-radius: 0.5rem;
+}
+
+.modal-header {
+    border-bottom: none;
+    background-color: #002060;
+    color: white;
+}
+
+.modal-footer {
+    border-top: none;
+}
+
+.alert-confirm {
+    background-color: #ebf7fd;
+    color: #0c5460;
+    border-left: 3px solid var(--primary-color);
+    border-radius: 6px;
+    padding: 0.75rem;
+}
+
+.modal .progress {
+    height: 8px;
+}
+
+.modal .badge {
+    font-size: 0.8rem;
+}
+
+/* Employee Details Modal */
+#employeeDetailsModal .modal-body {
+    padding: 1.5rem;
+}
+
+#employeeDetailsModal .badge {
+    font-size: 0.8rem;
+}
+
+/* Bulk Upload Review Modal */
+#bulkUploadReviewModal .card {
+    border-radius: 12px;
+}
+
+#bulkUploadReviewModal .list-group-item {
+    border: none;
+    padding-left: 0;
+    padding-right: 0;
+    background: transparent;
+}
+
+#bulkUploadReviewModal .fw-bold.text-purple {
+    color: #7c3aed !important;
+}
+
+#bulkUploadReviewModal .table th, 
+#bulkUploadReviewModal .table td {
+    vertical-align: middle;
+}
+
+/* DataTables Specific Styling */
+.dataTables_wrapper .dataTables_length,
+.dataTables_wrapper .dataTables_filter {
+    margin-bottom: 0.5rem;
+}
+
+.dataTables_wrapper .dataTables_length select,
+.dataTables_wrapper .dataTables_filter input {
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    padding: 0.35rem 0.5rem;
+    font-size: 0.8125rem;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    height: 32px;
+    width: 150px;
+}
+
+.dataTables_wrapper .dataTables_length select:focus,
+.dataTables_wrapper .dataTables_filter input:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.15);
+}
+
+.dataTables_wrapper .dataTables_filter input {
+    padding-left: 0.75rem;
+}
+
+.dataTables_wrapper .dataTables_length label,
+.dataTables_wrapper .dataTables_filter label {
+    font-size: 0.8125rem;
+    color: #444;
+    margin-bottom: 0;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 991.98px) {
+    .sidebar {
+
+        transform: translateX(-100%);
+        width: 85%;
+        max-width: 280px;
+    }
+
+    .sidebar.show {
+        transform: translateX(0);
+    }
+
+    .content-wrapper {
+        margin-left: 0;
+    }
+
+    .topbar {
+        left: 0;
+        padding: 0 1rem;
+    }
+
+    .sidebar-toggle {
+        display: flex;
+    }
+
+    .sidebar-overlay.show {
+        display: block;
+    }
+
+    .topbar-center {
+        position: static;
+        transform: none;
+        background: none;
+        padding: 0;
+        flex-grow: 1;
+        display: flex;
+        justify-content: center;
+    }
+
+    .topbar-heading {
+        font-size: 0.9rem;
+    }
+
+    .d-flex.justify-content-between {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .history-filter-group {
+        width: 100%;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+
+    #historyQuarterFilter,
+    #historyCategoryFilter,
+    #historyNameSearch, /* Ensure this is also full width on mobile for ld_dashboard.html */
+    #ldHistoryQuarterFilter,
+    #ldHistoryCategoryFilter,
+    #ldHistoryGradeFilter,
+    #ldHistoryYearFilter {
+        width: 100%;
+        max-width: none;
+    }
+
+    #exportHistoryBtn,
+    #exportLdHistoryBtn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    /* DataTables Responsive Styling */
+    .dataTables_wrapper .dataTables_length,
+    .dataTables_wrapper .dataTables_filter {
+        width: 100%;
+        text-align: left;
+    }
+
+    .dataTables_wrapper .dataTables_length select,
+    .dataTables_wrapper .dataTables_filter input {
+        width: 100%;
+        max-width: none;
+    }
+
+    .dataTables_wrapper .dataTables_length label,
+    .dataTables_wrapper .dataTables_filter label {
+        width: 100%;
+        display: block;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .topbar {
+        height: auto;
+        min-height: var(--topbar-height);
+        flex-wrap: wrap;
+        padding: 0.5rem 1rem;
+    }
+
+    .topbar-left {
+        width: 100%;
+        margin-bottom: 0.5rem;
+    }
+
+    .topbar-center {
+        width: 100%;
+        margin-top: 0.25rem;
+    }
+
+    .topbar-heading {
+        justify-content: center;
+        text-align: center;
+        width: 100%;
+    }
+
+    .topbar-subtitle {
+        justify-content: center;
+    }
+
+    .table-responsive {
+        font-size: 0.8rem;
+    }
+
+    .table th,
+    .table td {
+        padding: 0.5rem;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .topbar-title {
+        font-size: 0.9rem;
+    }
+
+    .topbar-badge {
+        font-size: 0.65rem;
+        padding: 0.15rem 0.4rem;
+    }
+
+    .topbar-icon {
+        width: 32px;
+        height: 32px;
+        margin-right: 10px;
+    }
+
+    .topbar-heading span {
+        font-size: 0.8rem;
+    }
+
+    .assign-points-header,
+    .certification-header {
+        font-size: 1rem;
+    }
+
+    .form-select,
+    .form-control {
+        font-size: 0.8rem;
+        padding: 0.4rem 0.6rem;
+        height: 34px;
+    }
+
+    .btn-primary,
+    .btn-success,
+    .btn-outline-primary {
+        font-size: 0.8rem;
+        padding: 0.4rem 1rem;
+    }
+
+    .history-header {
+        font-size: 1.2rem;
+    }
+
+    #exportHistoryBtn,
+    #exportLdHistoryBtn {
+        font-size: 0.75rem;
+        padding: 0.3rem 0.6rem;
+    }
+
+    #historyQuarterFilter,
+    #historyCategoryFilter,
+    #ldHistoryQuarterFilter,
+    #ldHistoryCategoryFilter,
+    #ldHistoryGradeFilter,
+    #ldHistoryYearFilter {
+        font-size: 0.75rem;
+        padding: 0.3rem 0.4rem;
+        height: 30px;
+    }
+
+    .input-group-text {
+        padding: 0.3rem 0.4rem;
+        font-size: 0.7rem;
+        height: 30px;
+    }
+
+    .dataTables_wrapper .dataTables_length select,
+    .dataTables_wrapper .dataTables_filter input {
+        font-size: 0.75rem;
+        padding: 0.3rem 0.4rem;
+        height: 30px;
+    }
+}
+
+.form-select.is-valid:not([multiple]):not([size]),
+.form-select.is-valid:not([multiple])[size="1"],
+.was-validated .form-select:valid:not([multiple]):not([size]),
+.was-validated .form-select:valid:not([multiple])[size="1"] {
+    --bs-form-select-bg-icon: none;
+    padding-right: 1rem;
+    background-position: right .75rem center, center right 2.25rem;
+    background-size: 16px 12px, calc(.75em + .375rem) calc(.75em + .375rem);
+    background-color: none !important;
+}
+
+.form-control.is-valid,
+.was-validated .form-control:valid {
+    border-color: var(--bs-form-valid-border-color);
+    padding-right: calc(1.5em + .75rem);
+    background-image: none;
+    background-repeat: no-repeat;
+    background-position: right calc(.375em + .1875rem) center;
+    background-size: calc(.75em + .375rem) calc(.75em + .375rem);
+}
+
+.form-select.is-valid,
+.was-validated .form-select:valid {
+    border: var(--bs-border-width) solid var(--bs-border-color);
+}
+
+/* History Table Column Specific Styling */
+#historyTable .history-title-col {
+    padding-right: 6px;
+}
+
+#historyTable .history-points-col {
+    padding-left: 6px;
+    padding-right: 6px;
+    width: 80px;
+    text-align: right;
+}
+
+#ldHistoryTable .history-title-col {
+    padding-right: 6px;
+}
+
+#ldHistoryTable .history-points-col {
+    padding-left: 6px;
+    padding-right: 6px;
+    width: 80px;
+    text-align: right;
+}
+
+/* Reduce bottom margin for the main card holding all tab content */
+.main-page-card {
+    margin-bottom: 0.5rem;
+}
+
+.modal-header {
+    border-bottom: none;
+    background-color: #002060;
+    color: white;
+}
+
+.table-light {
+    background-color: #002060;
+}
+
+.btn-close.white-close {
+    filter: invert(1) brightness(400%);
+}
+
+.card-header {
+    background-color: #002060;
+    color: white;
+    padding: 0.9rem 1.25rem;
+}
+.dataTables_wrapper .dataTables_length select, .dataTables_wrapper .dataTables_filter input {
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    padding: 0.35rem 1.8rem;
+    font-size: 0.8125rem;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    height: 32px;
+    width: 150px;
+}
+#resetHistoryFiltersBtn,
+#resetLdHistoryFiltersBtn {
+    /* Override default .btn-outline-secondary padding/font-size */
+    padding: 0.35rem 0.75rem; /* Match export button padding */
+    font-size: 0.8125rem; /* Match export button and filter select font size */
+    /* Override default .btn-outline-secondary border-radius */
+    border-radius: 4px; /* Match export button border-radius */
+    /* Explicitly set height to match */
+    height: 32px;
+    /* Keep other styles like color, border-color, font-weight, transition */
+    font-weight: 500;
+    /* Ensure icon and text are vertically centered within the fixed height */
+    line-height: 1; /* Set line-height to match font-size for cleaner flex alignment */
+}
+
+/* Mobile Responsiveness for ld_validator.html history filters */
+@media (max-width: 767.98px) { /* Targets screens smaller than md (Bootstrap 5) */
+
+    /* Ensure filter selects in ld_validator.html history are full width.
+       The general rule for #ldHistoryQuarterFilter etc. already sets width: 100%,
+       so they will correctly fill their Bootstrap columns when stacked.
+       This is more of a confirmation or can be used for overrides if needed. */
+    #history-ld #ldHistoryQuarterFilter,
+    #history-ld #ldHistoryCategoryFilter,
+    #history-ld #ldHistoryGradeFilter,
+    #history-ld #ldHistoryYearFilter {
+        width: 100%; /* Explicitly ensure full width on mobile */
+    }
+
+    /* Make the reset button in ld_validator.html history full width on mobile */
+    #history-ld #resetLdHistoryFiltersBtn {
+        width: 100%;
+        margin-top: 0.75rem; /* Add some space when it stacks below other filters */
+    }
+
+    /* Adjust spacing for filter items in ld_validator.html history when stacked */
+    #history-ld .card-body > .row.mb-3 > div[class*="col-md-"] {
+        margin-bottom: 1rem; /* Consistent spacing between stacked filter items */
+    }
+    #history-ld .card-body > .row.mb-3 > div[class*="col-md-"]:last-child {
+        margin-bottom: 0; /* No extra margin for the last item (reset button container) */
+    }
+
+    /* Ensure pagination is clearly separated and centered */
+    #history-ld #ldHistoryPaginationNav { /* Assuming you might wrap pagination in a div with this ID if needed */
+        margin-top: 1.5rem; /* Ensure enough space above pagination */
+    }
+    #history-ld #ldHistoryPagination { /* Directly target the ul if not wrapped */
+        margin-top: 1.5rem;
+    }
+}
+/* Styles for consistent icon buttons in tables */
+.action-icon-btn {
+    width: 29px;  /* Adjust to your preferred square size */
+    height: 32px; /* Adjust to your preferred square size */
+    padding: 0;   /* Reset padding, use flex to center icon */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1; /* Helps with consistent icon vertical alignment */
+}
+
+/* Optional: Adjust icon size within these specific buttons if needed */
+.action-icon-btn i.fas {
+    font-size: 0.9em; /* Example: slightly smaller icon if needed for balance */
+    margin: 0; /* Ensure icon itself doesn't add extra space */
+}
+.table-responsive {
+    padding-bottom: 1rem;
+}
+#pendingLdRequestsTable_info{
+    margin-bottom: 30px;
+}

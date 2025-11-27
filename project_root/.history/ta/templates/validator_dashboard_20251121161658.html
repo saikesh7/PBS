@@ -1,0 +1,1243 @@
+{% extends "ta_base.html" %}
+
+{% block title %}TA Validator Dashboard{% endblock %}
+{% block dashboard_title %}TA Validator Dashboard{% endblock %}
+
+{% block extra_css %}
+<!-- Preserve tab state on page reload -->
+<!-- Prevent flash of wrong tab on page load -->
+<script>
+    // Flag to prevent base template's tab initialization from interfering
+    // This MUST be set before any other scripts run
+    window.TA_VALIDATOR_PAGE = true;
+    
+    // This runs IMMEDIATELY before page renders to prevent flash
+    (function() {
+        // ✅ Check URL parameter FIRST (primary source of truth)
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlTab = urlParams.get('tab');
+        
+        // Use URL tab if present, otherwise fall back to localStorage
+        const activeTab = urlTab || localStorage.getItem('ta_validator_current_tab') || 'overview';
+        
+        if (activeTab && activeTab !== 'overview') {
+            // Add CSS to hide overview tab and show active tab
+            document.write('<style id="tab-preload-style">');
+            document.write('#overview-tab { display: none !important; }');
+            document.write('#' + activeTab + '-tab { display: block !important; }');
+            document.write('</style>');
+        }
+    })();
+</script>
+{% endblock %}
+
+{% block sidebar_nav %}
+<!-- Validator Navigation Items -->
+<a href="javascript:void(0);" class="sidebar-nav-item tab-link active" data-tab="overview">
+    <div>
+        <i class="fas fa-tachometer-alt"></i>
+        <span>Dashboard</span>
+    </div>
+</a>
+
+<a href="javascript:void(0);" class="sidebar-nav-item tab-link" data-tab="review">
+    <div>
+        <i class="fas fa-check-square"></i>
+        <span>Review Requests</span>
+        <span class="badge bg-warning" style="display: {{ 'inline-block' if pending_count > 0 else 'none' }};">{{ pending_count if pending_count > 0 else '0' }}</span>
+    </div>
+</a>
+
+<a href="javascript:void(0);" class="sidebar-nav-item tab-link" data-tab="history">
+    <div>
+        <i class="fas fa-history"></i>
+        <span>History</span>
+    </div>
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Overview Tab (Dashboard Summary) -->
+    <div class="tab-content-section active" id="overview-tab">
+        <!-- Stats Cards Row -->
+        <div class="row mb-4">
+            <div class="col-xl-4 col-md-6 mb-3">
+                <div class="card border-left-warning shadow h-100">
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col">
+                                <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Pending Requests</div>
+                                <div class="h5 mb-0 font-weight-bold" data-pending-count>{{ pending_count }}</div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-clock fa-2x text-warning" style="opacity: 0.3;"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-xl-4 col-md-6 mb-3">
+                <div class="card border-left-success shadow h-100">
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col">
+                                <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Approved</div>
+                                <div class="h5 mb-0 font-weight-bold">{{ history_data|selectattr('status', 'equalto', 'Approved')|list|length if history_data else 0 }}</div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-check-circle fa-2x text-success" style="opacity: 0.3;"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-xl-4 col-md-6 mb-3">
+                <div class="card border-left-danger shadow h-100">
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col">
+                                <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">Rejected</div>
+                                <div class="h5 mb-0 font-weight-bold">{{ history_data|selectattr('status', 'equalto', 'Rejected')|list|length if history_data else 0 }}</div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-times-circle fa-2x text-danger" style="opacity: 0.3;"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Action Button -->
+        {% if pending_count > 0 %}
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card shadow-lg border-0 pending-review-card" style="background: linear-gradient(135deg, #E3F2FD 0%, #BBDEFB 100%); border-radius: 15px; overflow: hidden;">
+                    <div class="card-body text-center py-5 position-relative">
+                        <div class="position-absolute top-0 start-0 w-100 h-100" style="background: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 1440 320%22><path fill=%22%23ffffff%22 fill-opacity=%220.1%22 d=%22M0,96L48,112C96,128,192,160,288,160C384,160,480,128,576,122.7C672,117,768,139,864,154.7C960,171,1056,181,1152,165.3C1248,149,1344,107,1392,85.3L1440,64L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z%22></path></svg>'); background-size: cover; background-position: bottom; opacity: 0.3;"></div>
+                        <div class="position-relative">
+                            <div class="mb-3">
+                                <i class="fas fa-bell fa-3x" style="color: #1976D2; animation: bellRing 2s ease-in-out infinite;"></i>
+                            </div>
+                            <h3 class="mb-3 fw-bold" style="color: #0D47A1; font-size: 1.75rem;">
+                                {{ pending_count }} Request{{ 's' if pending_count != 1 else '' }} Awaiting Your Review
+                            </h3>
+                        
+                            <button class="btn btn-lg px-5 py-3 shadow-sm" onclick="switchValidatorTab('review')" 
+                                    style="border-radius: 50px; font-weight: 600; background-color: #1976D2; color: white; border: none; transition: all 0.3s ease; font-size: 1.1rem;"
+                                    onmouseover="this.style.backgroundColor='#1565C0'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(25,118,210,0.4)';"
+                                    onmouseout="this.style.backgroundColor='#1976D2'; this.style.transform='translateY(0)'; this.style.boxShadow='';">
+                                <i class="fas fa-check-square me-2"></i>Review Requests Now
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Recent Activity -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0"><i class="fas fa-clock me-2"></i>Recent Activity</h5>
+                    </div>
+                    <div class="card-body">
+                        {% if history_data %}
+                        <div class="timeline">
+                            {% for item in history_data[:5] %}
+                            <div class="timeline-item mb-3 pb-3 border-bottom">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div class="flex-grow-1">
+                                        <div class="d-flex align-items-center mb-1">
+                                            <span class="badge bg-{{ 'success' if item.status == 'Approved' else 'danger' if item.status == 'Rejected' else 'warning' }} me-2">
+                                                {{ item.status }}
+                                            </span>
+                                            <strong>{{ item.employee }}</strong>
+                                        </div>
+                                        <div class="text-muted small">
+                                            <i class="fas fa-tag me-1"></i>{{ item.category }}
+                                            <span class="mx-2">•</span>
+                                            <i class="fas fa-coins me-1"></i>{{ item.points }} points
+                                        </div>
+                                    </div>
+                                    <div class="text-end text-muted small">
+                                        {{ item.event_date if item.event_date else 'N/A' }}
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="text-center text-muted py-4">
+                            <i class="fas fa-inbox fa-3x mb-3 d-block opacity-25"></i>
+                            <p>No activity yet.</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Review Requests Tab -->
+    <div class="tab-content-section" id="review-tab">
+        <div class="card shadow-sm border-0">
+            <div class="card-header" style="background-color: #2c5aa0; padding: 15px 20px;">
+                <h5 class="mb-0 text-white" style="font-weight: 600;">
+                    <i class="fas fa-check-square"></i> Review Pending Requests
+                </h5>
+            </div>
+            <div class="card-body p-4" style="background-color: #ffffff;">
+                {% if validator_requests %}
+                <form method="POST" action="{{ url_for('ta.validator_dashboard') }}" id="reviewForm">
+                    <input type="hidden" name="action_type" id="action_type">
+                    <input type="hidden" name="current_tab" id="current_tab_field" value="review">
+                    
+                    <!-- Pagination Controls Top -->
+                    <div class="row mb-3 align-items-center">
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center">
+                                <span class="me-2 small">Show</span>
+                                <select class="form-select form-select-sm" style="width: 80px;" id="reviewPageSize" onchange="changeReviewPageSize()">
+                                    <option value="10" selected>10</option>
+                                    <option value="25">25</option>
+                                    <option value="50">50</option>
+                                </select>
+                                <span class="ms-2 small">entries</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-flex gap-2 align-items-center justify-content-end">
+                                <span class="small">Search:</span>
+                                <input type="text" class="form-control form-control-sm" placeholder="Search..." id="reviewSearchInput" onkeyup="searchReviewTable()" onkeydown="if(event.key === 'Enter') event.preventDefault();" style="max-width: 200px;">
+                            </div>
+                        </div>
+                    </div>
+
+                    
+                    <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
+                        <table class="table table-hover mb-0" style="font-size: 0.9rem;" id="reviewRequestsTable">
+                            <thead style="position: sticky; top: 0; z-index: 10; background-color: #f8f9fa;">
+                                <tr style="border-bottom: 2px solid #dee2e6;">
+                                    <th style="width: 50px; padding: 12px 8px; white-space: nowrap;"><input type="checkbox" id="selectAll"></th>
+                                    <th style="width: 120px; padding: 12px 8px; font-weight: 600; color: #495057; white-space: nowrap; text-transform: uppercase; font-size: 0.75rem;">EVENT DATE</th>
+                                    <th style="width: 180px; padding: 12px 8px; font-weight: 600; color: #495057; white-space: nowrap; text-transform: uppercase; font-size: 0.75rem;">EMPLOYEE</th>
+                                    <th style="width: 130px; padding: 12px 8px; font-weight: 600; color: #495057; white-space: nowrap; text-transform: uppercase; font-size: 0.75rem; text-align: center;">SUBMITTED BY</th>
+                                    <th style="width: 160px; padding: 12px 8px; font-weight: 600; color: #495057; white-space: nowrap; text-transform: uppercase; font-size: 0.75rem;">CATEGORY</th>
+                                    <th style="width: 100px; padding: 12px 8px; font-weight: 600; color: #495057; white-space: nowrap; text-transform: uppercase; font-size: 0.75rem; text-align: center;">POINTS</th>
+                                    <th style="width: 150px; padding: 12px 8px; font-weight: 600; color: #495057; white-space: nowrap; text-transform: uppercase; font-size: 0.75rem; text-align: center;">REQUEST NOTES</th>
+                                    <th style="width: 130px; padding: 12px 8px; font-weight: 600; color: #495057; white-space: nowrap; text-transform: uppercase; font-size: 0.75rem; text-align: center;">ACTIONS</th>
+                                </tr>
+                            </thead>
+                            <tbody id="reviewRequestsBody">
+                                {% for req in validator_requests %}
+                                <tr class="review-row">
+                                    <td style="padding: 10px 8px;"><input type="checkbox" name="selected_requests" value="{{ req.request_id }}"></td>
+                                    <td style="padding: 10px 8px;">{{ req.event_date }}</td>
+                                    <td style="padding: 10px 8px;">{{ req.employee_name }} ({{ req.employee_id }})</td>
+                                    <td style="padding: 10px 8px; text-align: center;">{{ req.updater_name }}</td>
+                                    <td style="padding: 10px 8px;">{{ req.category_name }}</td>
+                                    <td style="padding: 10px 8px; text-align: center;">{{ req.points }} pts</td>
+                                    <td style="padding: 10px 8px; text-align: center;">
+                                        <button type="button" class="btn btn-sm btn-info view-notes-btn" style="padding: 4px 12px; white-space: nowrap;" 
+                                                data-notes="{{ (req.notes if req.notes else 'No notes provided') | replace('"', '&quot;') | replace("'", '&#39;') }}" 
+                                                title="View Notes">
+                                            View
+                                        </button>
+                                    </td>
+                                    <td style="padding: 10px 8px; text-align: center;">
+                                        <button type="button" class="btn btn-sm btn-success me-1" 
+                                                onclick="singleAction('{{ req.request_id }}', 'approve')" style="padding: 4px 8px;">
+                                            <i class="fas fa-check"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-danger" 
+                                                onclick="singleAction('{{ req.request_id }}', 'reject')" style="padding: 4px 8px;">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Pagination Bottom -->
+                    <div class="d-flex justify-content-between align-items-center mt-3">
+                        <div class="small text-muted" id="reviewInfoBottom">Showing 1 to 10 of {{ validator_requests|length }} entries</div>
+                        <nav>
+                            <ul class="pagination pagination-sm mb-0" id="reviewPagination">
+                                <li class="page-item disabled"><a class="page-link" href="#" onclick="changeReviewPage('prev'); return false;">Previous</a></li>
+                                <li class="page-item active"><a class="page-link" href="#" onclick="changeReviewPage(1); return false;">1</a></li>
+                                <li class="page-item"><a class="page-link" href="#" onclick="changeReviewPage('next'); return false;">Next</a></li>
+                            </ul>
+                        </nav>
+                    </div>
+                    
+                    <!-- Bulk Action Buttons -->
+                    <div class="d-flex justify-content-end gap-2 mt-3">
+                        <button type="button" class="btn btn-success" onclick="bulkAction('bulk_approve')">
+                            <i class="fas fa-check me-2"></i>Approve Selected
+                        </button>
+                        <button type="button" class="btn btn-danger" onclick="bulkAction('bulk_reject')">
+                            <i class="fas fa-times me-2"></i>Reject Selected
+                        </button>
+                    </div>
+                </form>
+                {% else %}
+                <div class="alert alert-info text-center">
+                    <i class="fas fa-info-circle fa-3x mb-3"></i>
+                    <h5>No Pending Requests</h5>
+                    <p class="mb-0">All requests have been reviewed</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- History Tab -->
+    <div class="tab-content-section" id="history-tab">
+        <div class="card shadow-sm border-0">
+            <div class="card-header" style="background-color: #2c5aa0; padding: 15px 20px;">
+                <h5 class="mb-0 text-white" style="font-weight: 600;">
+                    <i class="fas fa-history"></i> Action History
+                </h5>
+            </div>
+            <div class="card-body p-4">
+                <!-- Filters Row -->
+                <div class="row mb-3 g-2">
+                    <div class="col-md-2">
+                        <label class="form-label small text-muted mb-1">Year</label>
+                        <select class="form-select form-select-sm" id="historyYearFilter">
+                            <option value="">All</option>
+                            {% for year in year_options %}
+                            <option value="{{ year }}">{{ year }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label small text-muted mb-1">Quarter</label>
+                        <select class="form-select form-select-sm" id="historyQuarterFilter">
+                            <option value="">All</option>
+                            {% for q in quarter_options %}
+                            <option value="{{ q }}">{{ q }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label small text-muted mb-1">Grade</label>
+                        <select class="form-select form-select-sm" id="historyGradeFilter">
+                            <option value="">All</option>
+                            {% for grade in grades %}
+                            <option value="{{ grade }}">{{ grade }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label small text-muted mb-1">Status</label>
+                        <select class="form-select form-select-sm" id="historyStatusFilter">
+                            <option value="">All</option>
+                            {% if history_data %}
+                                {% set statuses = [] %}
+                                {% for record in history_data %}
+                                    {% if record.status not in statuses %}
+                                        {% set _ = statuses.append(record.status) %}
+                                    {% endif %}
+                                {% endfor %}
+                                {% if 'Approved' in statuses %}
+                                <option value="Approved">Approved</option>
+                                {% endif %}
+                                {% if 'Rejected' in statuses %}
+                                <option value="Rejected">Rejected</option>
+                                {% endif %}
+                                {% if 'Pending' in statuses %}
+                                <option value="Pending">Pending</option>
+                                {% endif %}
+                            {% endif %}
+                        </select>
+                    </div>
+                    <div class="col-md-4 d-flex align-items-end gap-1">
+                        <button class="btn btn-sm btn-primary" onclick="filterHistoryTable()" style="flex: 1;">
+                            <i class="fas fa-filter"></i> Apply
+                        </button>
+                        <button class="btn btn-sm btn-outline-secondary" onclick="resetHistoryFilters()" style="flex: 1;">
+                            <i class="fas fa-redo"></i> Reset
+                        </button>
+                    </div>
+                </div>
+
+                <div class="row mb-3 align-items-center">
+                    <div class="col-md-3">
+                        <div class="d-flex align-items-center">
+                            <span class="me-2 small">Show</span>
+                            <select class="form-select form-select-sm" style="width: 80px;" id="historyPageSize" onchange="changeHistoryPageSize()">
+                                <option value="10" selected>10</option>
+                                <option value="25">25</option>
+                                <option value="50">50</option>
+                            </select>
+                            <span class="ms-2 small">entries</span>
+                        </div>
+                    </div>
+                    <div class="col-md-6"></div>
+                    <div class="col-md-3">
+                        <div class="d-flex gap-2 align-items-center justify-content-end">
+                            <span class="small">Search:</span>
+                            <input type="text" class="form-control form-control-sm" placeholder="Search..." id="historySearchInput" onkeyup="filterHistoryTable()" style="max-width: 200px;">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Table -->
+                <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                    <table class="table table-hover mb-0" style="font-size: 0.9rem;">
+                        <thead style="position: sticky; top: 0; z-index: 10; background-color: #f8f9fa;">
+                            <tr style="border-bottom: 2px solid #dee2e6;">
+                                <th style="padding: 12px 8px; font-weight: 600; color: #495057; white-space: nowrap; text-transform: uppercase; font-size: 0.75rem;">EVENT DATE</th>
+                                <th style="padding: 12px 8px; font-weight: 600; color: #495057; white-space: nowrap; text-transform: uppercase; font-size: 0.75rem;">EMPLOYEE</th>
+                                <th style="padding: 12px 8px; font-weight: 600; color: #495057; white-space: nowrap; text-transform: uppercase; font-size: 0.75rem;">GRADE</th>
+                                <th style="padding: 12px 8px; font-weight: 600; color: #495057; white-space: nowrap; text-transform: uppercase; font-size: 0.75rem;">CATEGORY</th>
+                                <th style="padding: 12px 8px; font-weight: 600; color: #495057; white-space: nowrap; text-transform: uppercase; font-size: 0.75rem; text-align: center;">POINTS</th>
+                                <th style="padding: 12px 8px; font-weight: 600; color: #495057; white-space: nowrap; text-transform: uppercase; font-size: 0.75rem; text-align: center;">STATUS</th>
+                                <th style="padding: 12px 8px; font-weight: 600; color: #495057; white-space: nowrap; text-transform: uppercase; font-size: 0.75rem; text-align: center;">NOTES</th>
+                            </tr>
+                        </thead>
+                        <tbody id="historyTableBody">
+                            {% if history_data %}
+                            {% for h in history_data %}
+                            {% set month = h.date.split('-')[1]|int %}
+                            {% set year = h.date.split('-')[2] %}
+                            {% set quarter = 'Q1' if month in [4,5,6] else 'Q2' if month in [7,8,9] else 'Q3' if month in [10,11,12] else 'Q4' if month in [1,2,3] else '' %}
+                            <tr class="history-row"
+                                data-year="{{ year }}"
+                                data-quarter="{{ quarter }}"
+                                data-grade="{{ h.grade }}"
+                                data-status="{{ h.status }}">
+                                <td style="padding: 10px 8px; white-space: nowrap;">{{ h.event_date }}</td>
+                                <td style="padding: 10px 8px; white-space: nowrap;">{{ h.employee }}</td>
+                                <td style="padding: 10px 8px;"><span class="badge bg-secondary">{{ h.grade }}</span></td>
+                                <td style="padding: 10px 8px;">{{ h.category }}</td>
+                                <td style="padding: 10px 8px; text-align: center;">{{ h.points }}</td>
+                                <td style="padding: 10px 8px; text-align: center;">
+                                    <span class="badge" style="background-color: {{ '#28a745' if h.status == 'Approved' else '#dc3545' }}; color: #fff; font-weight: 600; padding: 4px 12px;">
+                                        {{ h.status }}
+                                    </span>
+                                </td>
+                                <td style="padding: 10px 8px; text-align: center;">
+                                    <button type="button" class="btn btn-sm btn-info view-history-notes-btn" style="padding: 4px 12px;" 
+                                            data-notes="{{ (h.notes if h.notes else 'No notes') | replace('"', '&quot;') | replace("'", '&#39;') }}"
+                                            title="View Notes">
+                                        View
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                            {% else %}
+                            <tr>
+                                <td colspan="7" class="text-center text-muted py-4">No entries found</td>
+                            </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                <div class="d-flex justify-content-between align-items-center mt-3">
+                    <div class="small text-muted" id="historyInfo">Showing 1 to 10 of entries</div>
+                    <nav>
+                        <ul class="pagination pagination-sm mb-0" id="historyPagination">
+                            <li class="page-item disabled"><a class="page-link" href="#">Previous</a></li>
+                            <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                            <li class="page-item"><a class="page-link" href="#">Next</a></li>
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notes Modal -->
+    <div class="modal fade" id="notesModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header" style="background-color: #2c5aa0; color: white;">
+                    <h5 class="modal-title"><i class="fas fa-sticky-note me-2"></i>Request Notes</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
+                    <div id="modalNotes" class="p-3" style="background-color: #f8f9fa; border-radius: 4px; min-height: 100px; white-space: pre-wrap; word-wrap: break-word;"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><i class="fas fa-times me-1"></i>Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Action Confirmation Modal -->
+    <div class="modal fade" id="actionConfirmModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header" id="actionModalHeader">
+                    <h5 class="modal-title" id="actionModalTitle"></h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="actionConfirmForm">
+                    <div class="modal-body">
+                        <input type="hidden" id="action_request_id">
+                        <input type="hidden" id="action_type_value">
+                        
+                        <div class="mb-3">
+                            <p id="actionConfirmMessage" class="mb-3"></p>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="action_notes" class="form-label fw-bold">
+                                Notes <span class="text-danger">*</span>
+                            </label>
+                            <textarea class="form-control" id="action_notes" name="notes" rows="4" 
+                                      placeholder="Enter your notes for this action..." required></textarea>
+                            <small class="text-muted">Please provide a reason or comment for this action</small>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="fas fa-times me-1"></i> Cancel
+                        </button>
+                        <button type="submit" class="btn" id="actionConfirmBtn">
+                            <i class="fas fa-check me-1"></i> Confirm
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bulk Confirmation Modal -->
+    <div class="modal fade" id="bulkConfirmModal" tabindex="-1">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header" id="bulkModalHeader">
+                    <h5 class="modal-title" id="bulkModalTitle"></h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-info mb-3" id="bulkSummary"></div>
+                    
+                    <h6 class="mb-3">Selected Requests:</h6>
+                    <div class="table-responsive" style="max-height: 400px;">
+                        <table class="table table-sm table-hover">
+                            <thead class="table-light sticky-top">
+                                <tr>
+                                    <th>Employee</th>
+                                    <th>Category</th>
+                                    <th>Points</th>
+                                    <th>Date</th>
+                                </tr>
+                            </thead>
+                            <tbody id="bulkRequestsList"></tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="mt-3" id="bulkNotesSection" style="display: none;">
+                        <label for="bulk_notes" class="form-label fw-bold">
+                            Notes <span class="text-danger">*</span>
+                        </label>
+                        <textarea class="form-control" id="bulk_notes" rows="3" 
+                                  placeholder="Enter notes for this bulk action..." required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i> Cancel
+                    </button>
+                    <button type="button" class="btn" id="bulkConfirmBtn" onclick="confirmBulkAction()">
+                        <i class="fas fa-check me-1"></i> Confirm
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<style>
+    /* Tab visibility control - ensure only active tab shows */
+    .tab-content-section {
+        display: none !important;
+    }
+    .tab-content-section.active {
+        display: block !important;
+    }
+    
+    /* Stat card styling */
+    .border-left-warning {
+        border-left: 4px solid #f6c23e;
+    }
+    .border-left-success {
+        border-left: 4px solid #1cc88a;
+    }
+    .border-left-danger {
+        border-left: 4px solid #e74a3b;
+    }
+    .text-xs {
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .h5 {
+        font-size: 1.75rem;
+        font-weight: 700;
+    }
+    
+    /* Timeline styling */
+    .timeline {
+        max-height: 400px;
+        overflow-y: auto;
+    }
+    .timeline-item {
+        transition: all 0.2s;
+        padding: 0.75rem;
+        border-radius: 6px;
+    }
+    .timeline-item:hover {
+        background-color: #f8f9fa;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    .opacity-25 {
+        opacity: 0.25 !important;
+    }
+    
+    /* Pending Review Card Animation */
+    @keyframes bellRing {
+        0%, 100% { transform: rotate(0deg); }
+        10%, 30% { transform: rotate(-15deg); }
+        20%, 40% { transform: rotate(15deg); }
+        50% { transform: rotate(0deg); }
+    }
+    
+    .pending-review-card {
+        position: relative;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    
+    .pending-review-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 35px rgba(25, 118, 210, 0.2) !important;
+    }
+    
+    /* Force light blue background - override any other styles */
+    .pending-review-card {
+        background: linear-gradient(135deg, #E3F2FD 0%, #BBDEFB 100%) !important;
+    }
+</style>
+
+<script>
+let currentReviewPage = 1;
+let reviewPageSize = 10;
+let currentHistoryPage = 1;
+let historyPageSize = 10;
+
+function switchValidatorTab(tabName) {
+    // Remove preload styles if they exist
+    const preloadStyle = document.getElementById('tab-preload-style');
+    if (preloadStyle) {
+        preloadStyle.remove();
+    }
+    
+    // Hide all tabs
+    document.querySelectorAll('.tab-content-section').forEach(tab => {
+        tab.classList.remove('active');
+    });
+    
+    // Show selected tab
+    const targetTab = document.getElementById(tabName + '-tab');
+    if (targetTab) {
+        targetTab.classList.add('active');
+    }
+    
+    // Update sidebar active state
+    document.querySelectorAll('.sidebar-nav-item.tab-link').forEach(link => {
+        link.classList.remove('active');
+    });
+    const activeLink = document.querySelector(`[data-tab="${tabName}"]`);
+    if (activeLink) {
+        activeLink.classList.add('active');
+    }
+    
+    // ✅ Update URL with ?tab= parameter (ensures refresh stays on same tab - RULE 2)
+    const url = new URL(window.location);
+    url.searchParams.set('tab', tabName);
+    window.history.replaceState({}, '', url);
+    
+    // Save current tab to localStorage (backup mechanism)
+    localStorage.setItem('ta_validator_current_tab', tabName);
+    
+    // ✅ Update hidden form field for tab preservation on form submit
+    const currentTabField = document.getElementById('current_tab_field');
+    if (currentTabField) {
+        currentTabField.value = tabName;
+    }
+    
+    // Scroll to top
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// Override the base template's switchTab for this page
+window.switchTab = switchValidatorTab;
+
+// Initialize tabs on page load - Always start with Dashboard
+(function() {
+    // Wait for DOM to be ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initializeTabs);
+    } else {
+        // DOM is already ready
+        initializeTabs();
+    }
+    
+    function initializeTabs() {
+        // Add click handlers to sidebar nav items
+        document.querySelectorAll('.sidebar-nav-item.tab-link').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const tabName = this.getAttribute('data-tab');
+                switchValidatorTab(tabName);
+            });
+        });
+        
+        // Dashboard switch detection and tab management
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlTab = urlParams.get('tab');
+        const lastDashboard = sessionStorage.getItem('last_dashboard');
+        const currentDashboard = 'ta_validator';
+        
+        // ✅ FIX: Detect cross-dashboard navigation
+        // Check both sessionStorage tracker AND referrer URL to catch all dashboard switches
+        let isDashboardSwitch = false;
+        
+        if (lastDashboard !== null && lastDashboard !== currentDashboard) {
+            // Coming from a tracked dashboard that's different
+            isDashboardSwitch = true;
+        } else if (document.referrer) {
+            // Check if referrer is from a different dashboard path
+            const referrerPath = new URL(document.referrer).pathname;
+            const currentPath = window.location.pathname;
+            // If referrer has a different dashboard path (not /ta/), it's a switch
+            if (referrerPath.includes('/') && !referrerPath.includes('/ta/') && currentPath.includes('/ta/')) {
+                isDashboardSwitch = true;
+            }
+        }
+        
+        // Always update current dashboard tracker
+        sessionStorage.setItem('last_dashboard', currentDashboard);
+        
+        let activeTabName;
+        
+        if (isDashboardSwitch) {
+            // Coming from a different dashboard → force overview tab
+            activeTabName = 'overview';
+            localStorage.removeItem('ta_validator_current_tab');
+            const url = new URL(window.location);
+            url.searchParams.set('tab', 'overview');
+            window.history.replaceState({}, '', url);
+        } else if (urlTab) {
+            // URL has explicit tab parameter → use it
+            const validTabs = ['overview', 'review', 'history'];
+            activeTabName = validTabs.includes(urlTab) ? urlTab : 'overview';
+        } else {
+            // Same dashboard refresh → restore last active tab
+            activeTabName = localStorage.getItem('ta_validator_current_tab') || 'overview';
+        }
+        
+        // Remove all active states first
+        document.querySelectorAll('.tab-content-section').forEach(tab => {
+            tab.classList.remove('active');
+        });
+        document.querySelectorAll('.sidebar-nav-item.tab-link').forEach(link => {
+            link.classList.remove('active');
+        });
+        
+        // Activate the saved tab
+        const activeTab = document.getElementById(activeTabName + '-tab');
+        if (activeTab) {
+            activeTab.classList.add('active');
+        }
+        const activeLink = document.querySelector('[data-tab="' + activeTabName + '"]');
+        if (activeLink) {
+            activeLink.classList.add('active');
+        }
+        
+        // Update URL with tab parameter
+        const url = new URL(window.location);
+        url.searchParams.set('tab', activeTabName);
+        window.history.replaceState({}, '', url);
+    }
+})();
+
+// Additional initialization after DOM is fully loaded
+document.addEventListener('DOMContentLoaded', function() {
+    
+    // Initialize pagination to show only 10 records by default
+    updateReviewPagination();
+    
+    // Restore selected checkboxes from localStorage
+    const savedSelections = JSON.parse(localStorage.getItem('ta_validator_selections') || '[]');
+    if (savedSelections.length > 0) {
+        document.querySelectorAll('input[name="selected_requests"]').forEach(cb => {
+            if (savedSelections.includes(cb.value)) {
+                cb.checked = true;
+            }
+        });
+        // Update select all checkbox state
+        updateSelectAllCheckbox();
+    }
+    
+    // Select all checkbox - only if it exists
+    const selectAllCheckbox = document.getElementById('selectAll');
+    if (selectAllCheckbox) {
+        selectAllCheckbox.addEventListener('change', function() {
+            // Only select checkboxes in visible rows (current page only)
+            const rows = document.querySelectorAll('#reviewRequestsBody .review-row');
+            rows.forEach(row => {
+                // Check if row is visible (not hidden by pagination or search)
+                if (!row.classList.contains('d-none') && row.style.display !== 'none') {
+                    const checkbox = row.querySelector('input[name="selected_requests"]');
+                    if (checkbox) {
+                        checkbox.checked = selectAllCheckbox.checked;
+                    }
+                }
+            });
+            saveSelections();
+        });
+    }
+    
+    // Save selections when individual checkboxes change
+    document.querySelectorAll('input[name="selected_requests"]').forEach(cb => {
+        cb.addEventListener('change', function() {
+            saveSelections();
+            updateSelectAllCheckbox();
+        });
+    });
+    
+    // View notes buttons - using event delegation for dynamically loaded content
+    document.body.addEventListener('click', function(e) {
+        if (e.target.closest('.view-notes-btn') || e.target.closest('.view-history-notes-btn')) {
+            const btn = e.target.closest('.view-notes-btn') || e.target.closest('.view-history-notes-btn');
+            const notes = btn.getAttribute('data-notes');
+            document.getElementById('modalNotes').textContent = notes;
+            new bootstrap.Modal(document.getElementById('notesModal')).show();
+        }
+    });
+});
+
+// Save selected checkboxes to localStorage
+function saveSelections() {
+    const selected = [];
+    document.querySelectorAll('input[name="selected_requests"]:checked').forEach(cb => {
+        selected.push(cb.value);
+    });
+    localStorage.setItem('ta_validator_selections', JSON.stringify(selected));
+}
+
+// Update select all checkbox based on individual selections
+function updateSelectAllCheckbox() {
+    // Only consider checkboxes in visible rows (current page only)
+    const rows = document.querySelectorAll('#reviewRequestsBody .review-row');
+    let visibleCheckboxes = [];
+    let checkedCount = 0;
+    
+    rows.forEach(row => {
+        // Check if row is visible (not hidden by pagination or search)
+        if (!row.classList.contains('d-none') && row.style.display !== 'none') {
+            const checkbox = row.querySelector('input[name="selected_requests"]');
+            if (checkbox) {
+                visibleCheckboxes.push(checkbox);
+                if (checkbox.checked) {
+                    checkedCount++;
+                }
+            }
+        }
+    });
+    
+    const selectAllCheckbox = document.getElementById('selectAll');
+    if (selectAllCheckbox && visibleCheckboxes.length > 0) {
+        selectAllCheckbox.checked = visibleCheckboxes.length === checkedCount;
+        selectAllCheckbox.indeterminate = checkedCount > 0 && checkedCount < visibleCheckboxes.length;
+    }
+}
+
+function singleAction(requestId, action) {
+    const modal = document.getElementById('actionConfirmModal');
+    const header = document.getElementById('actionModalHeader');
+    const title = document.getElementById('actionModalTitle');
+    const message = document.getElementById('actionConfirmMessage');
+    const btn = document.getElementById('actionConfirmBtn');
+    
+    document.getElementById('action_request_id').value = requestId;
+    document.getElementById('action_type_value').value = action;
+    document.getElementById('action_notes').value = '';
+    
+    if (action === 'approve') {
+        header.style.backgroundColor = '#28a745';
+        header.style.color = 'white';
+        title.innerHTML = '<i class="fas fa-check-circle me-2"></i>Approve Request';
+        message.textContent = 'Are you sure you want to approve this request?';
+        btn.className = 'btn btn-success';
+        btn.innerHTML = '<i class="fas fa-check me-1"></i> Approve';
+    } else {
+        header.style.backgroundColor = '#dc3545';
+        header.style.color = 'white';
+        title.innerHTML = '<i class="fas fa-times-circle me-2"></i>Reject Request';
+        message.textContent = 'Are you sure you want to reject this request?';
+        btn.className = 'btn btn-danger';
+        btn.innerHTML = '<i class="fas fa-times me-1"></i> Reject';
+    }
+    
+    new bootstrap.Modal(modal).show();
+}
+
+const actionConfirmForm = document.getElementById('actionConfirmForm');
+if (actionConfirmForm) {
+    actionConfirmForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const form = document.getElementById('reviewForm');
+        const requestId = document.getElementById('action_request_id').value;
+        const action = document.getElementById('action_type_value').value;
+        const notes = document.getElementById('action_notes').value;
+    
+    // Show loading state on button
+    const submitBtn = document.getElementById('actionConfirmBtn');
+    const originalBtnContent = submitBtn.innerHTML;
+    submitBtn.disabled = true;
+    
+    if (action === 'approve') {
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Approving...';
+    } else {
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Rejecting...';
+    }
+    
+    form.querySelector('#action_type').value = 'single_action';
+    
+    // Add hidden fields for single action
+    let requestIdInput = form.querySelector('input[name="request_id"]');
+    if (!requestIdInput) {
+        requestIdInput = document.createElement('input');
+        requestIdInput.type = 'hidden';
+        requestIdInput.name = 'request_id';
+        form.appendChild(requestIdInput);
+    }
+    requestIdInput.value = requestId;
+    
+    let actionInput = form.querySelector('input[name="action"]');
+    if (!actionInput) {
+        actionInput = document.createElement('input');
+        actionInput.type = 'hidden';
+        actionInput.name = 'action';
+        form.appendChild(actionInput);
+    }
+    actionInput.value = action;
+    
+    let notesInput = form.querySelector('input[name="response_notes"]');
+    if (!notesInput) {
+        notesInput = document.createElement('input');
+        notesInput.type = 'hidden';
+        notesInput.name = 'response_notes';
+        form.appendChild(notesInput);
+    }
+    notesInput.value = notes;
+    
+    // Clear selections after single action
+    localStorage.removeItem('ta_validator_selections');
+    
+    bootstrap.Modal.getInstance(document.getElementById('actionConfirmModal')).hide();
+    form.submit();
+    });
+}
+
+function bulkAction(actionType) {
+    const checkboxes = document.querySelectorAll('input[name="selected_requests"]:checked');
+    if (checkboxes.length === 0) {
+        alert('Please select at least one request');
+        return;
+    }
+    
+    const modal = document.getElementById('bulkConfirmModal');
+    const header = document.getElementById('bulkModalHeader');
+    const title = document.getElementById('bulkModalTitle');
+    const summary = document.getElementById('bulkSummary');
+    const btn = document.getElementById('bulkConfirmBtn');
+    const notesSection = document.getElementById('bulkNotesSection');
+    const notesLabel = notesSection.querySelector('label');
+    
+    if (actionType === 'bulk_approve') {
+        header.style.backgroundColor = '#28a745';
+        header.style.color = 'white';
+        title.innerHTML = '<i class="fas fa-check-circle me-2"></i>Bulk Approve';
+        summary.innerHTML = `<i class="fas fa-info-circle me-2"></i>You are about to approve <strong>${checkboxes.length}</strong> request(s).`;
+        btn.className = 'btn btn-success';
+        btn.innerHTML = '<i class="fas fa-check me-1"></i> Approve All';
+        notesSection.style.display = 'block';
+        notesLabel.innerHTML = 'Notes <span class="text-danger">*</span>';
+        document.getElementById('bulk_notes').placeholder = 'Enter your notes for this action...';
+        document.getElementById('bulk_notes').value = '';
+    } else {
+        header.style.backgroundColor = '#dc3545';
+        header.style.color = 'white';
+        title.innerHTML = '<i class="fas fa-times-circle me-2"></i>Bulk Reject';
+        summary.innerHTML = `<i class="fas fa-exclamation-triangle me-2"></i>You are about to reject <strong>${checkboxes.length}</strong> request(s).`;
+        btn.className = 'btn btn-danger';
+        btn.innerHTML = '<i class="fas fa-times me-1"></i> Reject All';
+        notesSection.style.display = 'block';
+        notesLabel.innerHTML = 'Reason <span class="text-danger">*</span>';
+        document.getElementById('bulk_notes').placeholder = 'Enter rejection reason...';
+        document.getElementById('bulk_notes').value = '';
+    }
+    
+    // Build list of selected requests
+    const tbody = document.getElementById('bulkRequestsList');
+    tbody.innerHTML = '';
+    checkboxes.forEach(cb => {
+        const row = cb.closest('tr');
+        const cells = row.querySelectorAll('td');
+        tbody.innerHTML += `<tr>
+            <td>${cells[2].textContent}</td>
+            <td>${cells[4].textContent}</td>
+            <td>${cells[5].textContent}</td>
+            <td>${cells[1].textContent}</td>
+        </tr>`;
+    });
+    
+    btn.setAttribute('data-action', actionType);
+    new bootstrap.Modal(modal).show();
+}
+
+function confirmBulkAction() {
+    const actionType = document.getElementById('bulkConfirmBtn').getAttribute('data-action');
+    const form = document.getElementById('reviewForm');
+    const notes = document.getElementById('bulk_notes').value.trim();
+    
+    // Validate notes for both approve and reject
+    if (!notes) {
+        alert('Please provide notes for this action');
+        return;
+    }
+    
+    // Show loading state on button
+    const submitBtn = document.getElementById('bulkConfirmBtn');
+    const originalBtnContent = submitBtn.innerHTML;
+    submitBtn.disabled = true;
+    
+    if (actionType === 'bulk_approve') {
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Approving...';
+    } else {
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Rejecting...';
+    }
+    
+    // Add notes to form based on action type
+    if (actionType === 'bulk_approve') {
+        let notesInput = form.querySelector('input[name="response_notes"]');
+        if (!notesInput) {
+            notesInput = document.createElement('input');
+            notesInput.type = 'hidden';
+            notesInput.name = 'response_notes';
+            form.appendChild(notesInput);
+        }
+        notesInput.value = notes;
+    } else if (actionType === 'bulk_reject') {
+        let notesInput = form.querySelector('input[name="rejection_notes"]');
+        if (!notesInput) {
+            notesInput = document.createElement('input');
+            notesInput.type = 'hidden';
+            notesInput.name = 'rejection_notes';
+            form.appendChild(notesInput);
+        }
+        notesInput.value = notes;
+    }
+    
+    form.querySelector('#action_type').value = actionType;
+    
+    // Clear selections after bulk action
+    localStorage.removeItem('ta_validator_selections');
+    
+    bootstrap.Modal.getInstance(document.getElementById('bulkConfirmModal')).hide();
+    form.submit();
+}
+
+// Review table pagination and search
+function searchReviewTable() {
+    const input = document.getElementById('reviewSearchInput').value.toLowerCase();
+    const rows = document.querySelectorAll('#reviewRequestsBody .review-row');
+    
+    rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        row.style.display = text.includes(input) ? '' : 'none';
+    });
+    
+    currentReviewPage = 1;
+    updateReviewPagination();
+}
+
+function changeReviewPageSize() {
+    reviewPageSize = parseInt(document.getElementById('reviewPageSize').value);
+    currentReviewPage = 1;
+    updateReviewPagination();
+}
+
+function changeReviewPage(page) {
+    const rows = Array.from(document.querySelectorAll('#reviewRequestsBody .review-row')).filter(r => r.style.display !== 'none');
+    const totalPages = Math.ceil(rows.length / reviewPageSize);
+    
+    if (page === 'prev') currentReviewPage = Math.max(1, currentReviewPage - 1);
+    else if (page === 'next') currentReviewPage = Math.min(totalPages, currentReviewPage + 1);
+    else currentReviewPage = page;
+    
+    updateReviewPagination();
+}
+
+function updateReviewPagination() {
+    const rows = Array.from(document.querySelectorAll('#reviewRequestsBody .review-row'));
+    const visibleRows = rows.filter(r => r.style.display !== 'none');
+    const totalPages = Math.ceil(visibleRows.length / reviewPageSize);
+    
+    // Hide all rows first
+    rows.forEach(r => r.classList.add('d-none'));
+    
+    // Show current page rows
+    const start = (currentReviewPage - 1) * reviewPageSize;
+    const end = start + reviewPageSize;
+    visibleRows.slice(start, end).forEach(r => r.classList.remove('d-none'));
+    
+    // Update info
+    document.getElementById('reviewInfoBottom').textContent = 
+        `Showing ${start + 1} to ${Math.min(end, visibleRows.length)} of ${visibleRows.length} entries`;
+    
+    // Update pagination buttons
+    const pagination = document.getElementById('reviewPagination');
+    pagination.innerHTML = '';
+    
+    // Previous button
+    const prevLi = document.createElement('li');
+    prevLi.className = `page-item ${currentReviewPage === 1 ? 'disabled' : ''}`;
+    prevLi.innerHTML = `<a class="page-link" href="#" onclick="changeReviewPage('prev'); return false;">Previous</a>`;
+    pagination.appendChild(prevLi);
+    
+    // Page numbers
+    for (let i = 1; i <= totalPages; i++) {
+        if (i === 1 || i === totalPages || (i >= currentReviewPage - 1 && i <= currentReviewPage + 1)) {
+            const li = document.createElement('li');
+            li.className = `page-item ${i === currentReviewPage ? 'active' : ''}`;
+            li.innerHTML = `<a class="page-link" href="#" onclick="changeReviewPage(${i}); return false;">${i}</a>`;
+            pagination.appendChild(li);
+        } else if (i === currentReviewPage - 2 || i === currentReviewPage + 2) {
+            const li = document.createElement('li');
+            li.className = 'page-item disabled';
+            li.innerHTML = '<a class="page-link" href="#">...</a>';
+            pagination.appendChild(li);
+        }
+    }
+    
+    // Next button
+    const nextLi = document.createElement('li');
+    nextLi.className = `page-item ${currentReviewPage === totalPages ? 'disabled' : ''}`;
+    nextLi.innerHTML = `<a class="page-link" href="#" onclick="changeReviewPage('next'); return false;">Next</a>`;
+    pagination.appendChild(nextLi);
+    
+    // Update select all checkbox state after page change
+    updateSelectAllCheckbox();
+}
+
+// History table filtering and pagination
+function filterHistoryTable() {
+    const year = document.getElementById('historyYearFilter').value;
+    const quarter = document.getElementById('historyQuarterFilter').value;
+    const grade = document.getElementById('historyGradeFilter').value;
+    const status = document.getElementById('historyStatusFilter').value;
+    const search = document.getElementById('historySearchInput').value.toLowerCase();
+    
+    const rows = document.querySelectorAll('#historyTableBody .history-row');
+    
+    rows.forEach(row => {
+        const matchYear = !year || row.getAttribute('data-year') === year;
+        const matchQuarter = !quarter || row.getAttribute('data-quarter') === quarter;
+        const matchGrade = !grade || row.getAttribute('data-grade') === grade;
+        const matchStatus = !status || row.getAttribute('data-status') === status;
+        const matchSearch = !search || row.textContent.toLowerCase().includes(search);
+        
+        row.style.display = (matchYear && matchQuarter && matchGrade && matchStatus && matchSearch) ? '' : 'none';
+    });
+    
+    currentHistoryPage = 1;
+    updateHistoryPagination();
+}
+
+function resetHistoryFilters() {
+    document.getElementById('historyYearFilter').value = '';
+    document.getElementById('historyQuarterFilter').value = '';
+    document.getElementById('historyGradeFilter').value = '';
+    document.getElementById('historyStatusFilter').value = '';
+    document.getElementById('historySearchInput').value = '';
+    filterHistoryTable();
+}
+
+function changeHistoryPageSize() {
+    historyPageSize = parseInt(document.getElementById('historyPageSize').value);
+    currentHistoryPage = 1;
+    updateHistoryPagination();
+}
+
+function updateHistoryPagination() {
+    const rows = Array.from(document.querySelectorAll('#historyTableBody .history-row'));
+    const visibleRows = rows.filter(r => r.style.display !== 'none');
+    const totalPages = Math.ceil(visibleRows.length / historyPageSize);
+    
+    // Hide all rows first
+    rows.forEach(r => r.classList.add('d-none'));
+    
+    // Show current page rows
+    const start = (currentHistoryPage - 1) * historyPageSize;
+    const end = start + historyPageSize;
+    visibleRows.slice(start, end).forEach(r => r.classList.remove('d-none'));
+    
+    // Update info
+    document.getElementById('historyInfo').textContent = 
+        `Showing ${start + 1} to ${Math.min(end, visibleRows.length)} of ${visibleRows.length} entries`;
+    
+    // Update pagination buttons
+    const pagination = document.getElementById('historyPagination');
+    pagination.innerHTML = '';
+    
+    // Previous button
+    const prevLi = document.createElement('li');
+    prevLi.className = `page-item ${currentHistoryPage === 1 ? 'disabled' : ''}`;
+    prevLi.innerHTML = `<a class="page-link" href="#" onclick="currentHistoryPage = Math.max(1, currentHistoryPage - 1); updateHistoryPagination(); return false;">Previous</a>`;
+    pagination.appendChild(prevLi);
+    
+    // Page numbers
+    for (let i = 1; i <= totalPages; i++) {
+        if (i === 1 || i === totalPages || (i >= currentHistoryPage - 1 && i <= currentHistoryPage + 1)) {
+            const li = document.createElement('li');
+            li.className = `page-item ${i === currentHistoryPage ? 'active' : ''}`;
+            li.innerHTML = `<a class="page-link" href="#" onclick="currentHistoryPage = ${i}; updateHistoryPagination(); return false;">${i}</a>`;
+            pagination.appendChild(li);
+        } else if (i === currentHistoryPage - 2 || i === currentHistoryPage + 2) {
+            const li = document.createElement('li');
+            li.className = 'page-item disabled';
+            li.innerHTML = '<a class="page-link" href="#">...</a>';
+            pagination.appendChild(li);
+        }
+    }
+    
+    // Next button
+    const nextLi = document.createElement('li');
+    nextLi.className = `page-item ${currentHistoryPage === totalPages ? 'disabled' : ''}`;
+    nextLi.innerHTML = `<a class="page-link" href="#" onclick="currentHistoryPage = Math.min(${totalPages}, currentHistoryPage + 1); updateHistoryPagination(); return false;">Next</a>`;
+    pagination.appendChild(nextLi);
+}
+</script>
+{% endblock %}

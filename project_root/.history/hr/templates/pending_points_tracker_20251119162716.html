@@ -1,0 +1,580 @@
+{% extends "base.html" %}
+
+{% block title %}Pending Points Tracker - HR Portal{% endblock %}
+{% block page_title %}Pending Points Tracker{% endblock %}
+
+{% block extra_css %}
+<style>
+    .tracker-card {
+        border-radius: 8px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        margin-bottom: 20px;
+        transition: transform 0.2s;
+    }
+    
+    .tracker-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+    
+    .stat-card {
+        border-left: 4px solid;
+        padding: 15px;
+    }
+    
+    .stat-card.blue { border-left-color: #4e73df; }
+    .stat-card.yellow { border-left-color: #f6c23e; }
+    .stat-card.green { border-left-color: #1cc88a; }
+    .stat-card.red { border-left-color: #e74a3b; }
+    .stat-card.purple { border-left-color: #6f42c1; }
+    .stat-card.orange { border-left-color: #fd7e14; }
+    
+    .stat-value {
+        font-size: 2rem;
+        font-weight: bold;
+        margin-bottom: 5px;
+    }
+    
+    .stat-label {
+        color: #6c757d;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        font-weight: 500;
+    }
+    
+    .filter-panel {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 10px;
+        padding: 25px;
+        margin-bottom: 25px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    
+    .filter-panel label {
+        color: white;
+        font-weight: 500;
+        margin-bottom: 5px;
+        font-size: 0.9rem;
+    }
+    
+    .filter-panel .form-control,
+    .filter-panel .form-select {
+        border: none;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        font-size: 0.9rem;
+    }
+    
+    .requests-table {
+        font-size: 0.9rem;
+    }
+    
+    .requests-table thead th {
+        background-color: #f8f9fc;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        font-weight: 600;
+        color: #5a5c69;
+        border-bottom: 2px solid #e3e6f0;
+        padding: 12px 8px;
+    }
+    
+    .requests-table tbody td {
+        padding: 12px 8px;
+        vertical-align: middle;
+    }
+    
+    .requests-table tbody tr:hover {
+        background-color: #f8f9fc;
+    }
+    
+    .status-badge {
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+    
+    .status-pending {
+        background-color: #fff3cd;
+        color: #856404;
+    }
+    
+    .status-approved {
+        background-color: #d1ecf1;
+        color: #0c5460;
+    }
+    
+    .status-rejected {
+        background-color: #f8d7da;
+        color: #721c24;
+    }
+    
+    .location-badge {
+        padding: 4px 10px;
+        border-radius: 15px;
+        font-size: 0.7rem;
+        font-weight: 500;
+        background-color: #e7f3ff;
+        color: #0066cc;
+    }
+    
+    .source-badge {
+        padding: 4px 10px;
+        border-radius: 15px;
+        font-size: 0.7rem;
+        font-weight: 500;
+        background-color: #f0f0f0;
+        color: #555;
+    }
+    
+    .btn-filter {
+        padding: 10px 25px;
+        font-weight: 500;
+        border: none;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        transition: all 0.3s;
+    }
+    
+    .btn-filter:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+    
+    /* Reset Button Styling */
+    .btn-outline-light[href*="pending_points_tracker"] {
+        background-color: white !important;
+        color: #4e73df !important;
+        border: 2px solid white !important;
+        font-weight: 600 !important;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-outline-light[href*="pending_points_tracker"]:hover {
+        background-color: #f8f9fc !important;
+        color: #2e59d9 !important;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3) !important;
+    }
+    
+    .btn-outline-light[href*="pending_points_tracker"]:active {
+        transform: translateY(0);
+    }
+    
+    .export-btn {
+        padding: 8px 20px;
+        font-size: 0.9rem;
+    }
+    
+    .table-wrapper {
+        overflow-x: auto;
+        margin-top: 20px;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: #6c757d;
+    }
+    
+    .empty-state i {
+        font-size: 4rem;
+        margin-bottom: 20px;
+        opacity: 0.3;
+    }
+    
+    .empty-state h5 {
+        font-weight: 600;
+        margin-bottom: 10px;
+    }
+    
+    .loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.5);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+    }
+    
+    .loading-overlay.show {
+        display: flex;
+    }
+    
+    .spinner-content {
+        background: white;
+        padding: 30px 50px;
+        border-radius: 10px;
+        text-align: center;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+    }
+    
+    .active-filter-badge {
+        display: inline-block;
+        background: rgba(255,255,255,0.2);
+        color: white;
+        padding: 5px 15px;
+        border-radius: 20px;
+        margin: 5px 5px 0 0;
+        font-size: 0.85rem;
+    }
+    
+    .active-filter-badge i {
+        margin-right: 5px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- Loading Overlay -->
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="spinner-content">
+        <div class="spinner-border text-primary mb-3" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <div class="fw-bold">Loading Data...</div>
+        <small class="text-muted">Please wait</small>
+    </div>
+</div>
+
+<!-- Filter Panel -->
+<div class="filter-panel">
+    <form method="GET" action="{{ url_for('pending_tracker.pending_points_tracker') }}" id="filterForm">
+        <div class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label">
+                    <i class="fas fa-user me-1"></i>Employee Name/ID
+                </label>
+                <input type="text" name="employee" class="form-control" 
+                       placeholder="Search employee..." 
+                       value="{{ filters.employee }}">
+            </div>
+            
+            <div class="col-md-3">
+                <label class="form-label">
+                    <i class="fas fa-tag me-1"></i>Category
+                </label>
+                <input type="text" name="category" class="form-control" 
+                       placeholder="Search category..." 
+                       value="{{ filters.category }}"
+                       list="categoryList">
+                <datalist id="categoryList">
+                    {% for cat in all_categories %}
+                        <option value="{{ cat }}">
+                    {% endfor %}
+                </datalist>
+            </div>
+            
+            <div class="col-md-2">
+                <label class="form-label">
+                    <i class="fas fa-filter me-1"></i>Status
+                </label>
+                <select name="status" class="form-select">
+                    <option value="all" {% if filters.status == 'all' %}selected{% endif %}>All Status</option>
+                    <option value="pending" {% if filters.status == 'pending' %}selected{% endif %}>Pending</option>
+                    <option value="approved" {% if filters.status == 'approved' %}selected{% endif %}>Approved</option>
+                    <option value="rejected" {% if filters.status == 'rejected' %}selected{% endif %}>Rejected</option>
+                </select>
+            </div>
+            
+            <div class="col-md-2">
+                <label class="form-label">
+                    <i class="fas fa-source me-1"></i>Source
+                </label>
+                <select name="source" class="form-select">
+                    <option value="all" {% if filters.source == 'all' %}selected{% endif %}>All Sources</option>
+                    <option value="manager_request" {% if filters.source == 'manager_request' %}selected{% endif %}>Manager Request</option>
+                    <option value="hr_bonus" {% if filters.source == 'hr_bonus' %}selected{% endif %}>HR Bonus</option>
+                    <option value="netsuite_sales" {% if filters.source == 'netsuite_sales' %}selected{% endif %}>NetSuite Sales</option>
+                    <option value="netsuite_so" {% if filters.source == 'netsuite_so' %}selected{% endif %}>NetSuite SO</option>
+                </select>
+            </div>
+            
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="submit" class="btn btn-light btn-filter w-100">
+                    <i class="fas fa-search me-2"></i>Search
+                </button>
+            </div>
+        </div>
+        
+        <div class="row g-3 mt-2">
+            <div class="col-md-3">
+                <label class="form-label">
+                    <i class="fas fa-calendar-alt me-1"></i>Start Date
+                </label>
+                <input type="date" name="start_date" class="form-control" 
+                       value="{{ filters.start_date }}">
+            </div>
+            
+            <div class="col-md-3">
+                <label class="form-label">
+                    <i class="fas fa-calendar-check me-1"></i>End Date
+                </label>
+                <input type="date" name="end_date" class="form-control" 
+                       value="{{ filters.end_date }}">
+            </div>
+            
+            <div class="col-md-3 d-flex align-items-end">
+                <a href="{{ url_for('pending_tracker.pending_points_tracker') }}" 
+                   class="btn btn-outline-light w-100">
+                    <i class="fas fa-undo me-2"></i>Reset Filters
+                </a>
+            </div>
+            
+            <div class="col-md-3 d-flex align-items-end">
+                <button type="button" class="btn btn-success w-100 export-btn" onclick="exportToCSV()">
+                    <i class="fas fa-file-excel me-2"></i>Export to CSV
+                </button>
+            </div>
+        </div>
+        
+        <!-- Active Filters Display -->
+        {% if filters.employee or filters.category or filters.status != 'all' or filters.source != 'all' or filters.start_date or filters.end_date %}
+        <div class="mt-3">
+            <div class="d-flex flex-wrap align-items-center">
+                <span style="color: white; margin-right: 10px; font-weight: 500;">Active Filters:</span>
+                {% if filters.employee %}
+                    <span class="active-filter-badge">
+                        <i class="fas fa-user"></i>{{ filters.employee }}
+                    </span>
+                {% endif %}
+                {% if filters.category %}
+                    <span class="active-filter-badge">
+                        <i class="fas fa-tag"></i>{{ filters.category }}
+                    </span>
+                {% endif %}
+                {% if filters.status != 'all' %}
+                    <span class="active-filter-badge">
+                        <i class="fas fa-filter"></i>{{ filters.status|title }}
+                    </span>
+                {% endif %}
+                {% if filters.source != 'all' %}
+                    <span class="active-filter-badge">
+                        <i class="fas fa-source"></i>{{ filters.source }}
+                    </span>
+                {% endif %}
+                {% if filters.start_date and filters.end_date %}
+                    <span class="active-filter-badge">
+                        <i class="fas fa-calendar"></i>{{ filters.start_date }} to {{ filters.end_date }}
+                    </span>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </form>
+</div>
+
+<!-- Summary Statistics -->
+<div class="row mb-4">
+    <div class="col-xl-2 col-md-4 col-sm-6 mb-3">
+        <div class="card tracker-card stat-card blue h-100">
+            <div class="card-body">
+                <div class="stat-value text-primary">{{ summary.total_requests }}</div>
+                <div class="stat-label">Total Requests</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-2 col-md-4 col-sm-6 mb-3">
+        <div class="card tracker-card stat-card yellow h-100">
+            <div class="card-body">
+                <div class="stat-value" style="color: #f6c23e;">{{ summary.pending_count }}</div>
+                <div class="stat-label">Pending</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-2 col-md-4 col-sm-6 mb-3">
+        <div class="card tracker-card stat-card green h-100">
+            <div class="card-body">
+                <div class="stat-value" style="color: #1cc88a;">{{ summary.approved_count }}</div>
+                <div class="stat-label">Approved</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-2 col-md-4 col-sm-6 mb-3">
+        <div class="card tracker-card stat-card red h-100">
+            <div class="card-body">
+                <div class="stat-value" style="color: #e74a3b;">{{ summary.rejected_count }}</div>
+                <div class="stat-label">Rejected</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-2 col-md-4 col-sm-6 mb-3">
+        <div class="card tracker-card stat-card purple h-100">
+            <div class="card-body">
+                <div class="stat-value" style="color: #6f42c1;">{{ summary.total_points }}</div>
+                <div class="stat-label">Total Points</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-2 col-md-4 col-sm-6 mb-3">
+        <div class="card tracker-card stat-card orange h-100">
+            <div class="card-body">
+                <div class="stat-value" style="color: #fd7e14;">{{ summary.pending_points }}</div>
+                <div class="stat-label">Pending Points</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Requests Table -->
+<div class="card tracker-card">
+    <div class="card-header bg-primary text-white py-3">
+        <h6 class="m-0 font-weight-bold">
+            <i class="fas fa-list-alt me-2"></i>Points Requests Tracking
+            <span class="badge bg-light text-primary ms-2">{{ requests|length }} Results</span>
+        </h6>
+    </div>
+    <div class="card-body p-0">
+        {% if requests %}
+            <div class="table-wrapper">
+                <table class="table table-hover requests-table mb-0" id="requestsTable">
+                    <thead>
+                        <tr>
+                            <th style="width: 50px;">#</th>
+                            <th>Employee</th>
+                            <th>Emp ID</th>
+                            <th>Grade</th>
+                            <th>Category</th>
+                            <th class="text-center">Points</th>
+                            <th>Status</th>
+                            <th>Pending At</th>
+                            <th>Source</th>
+                            <th>Requested By</th>
+                            <th>Request Date</th>
+                            <th>Event Date</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for req in requests %}
+                            <tr>
+                                <td>{{ loop.index }}</td>
+                                <td><strong>{{ req.employee_name }}</strong></td>
+                                <td>{{ req.employee_id }}</td>
+                                <td><span class="badge bg-info">{{ req.employee_grade }}</span></td>
+                                <td>
+                                    <div>{{ req.category_name }}</div>
+                                    <small class="text-muted">{{ req.category_code }}</small>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge bg-primary" style="font-size: 0.85rem;">
+                                        {{ req.points }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="status-badge 
+                                        {% if req.status == 'Pending' %}status-pending
+                                        {% elif req.status == 'Approved' %}status-approved
+                                        {% elif req.status == 'Rejected' %}status-rejected
+                                        {% endif %}">
+                                        {{ req.status }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="location-badge">
+                                        {{ req.pending_location }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="source-badge">
+                                        {{ req.source }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <div>{{ req.requested_by_name }}</div>
+                                    <small class="text-muted">{{ req.requested_by_role }}</small>
+                                </td>
+                                <td>
+                                    {% if req.request_date %}
+                                        {{ req.request_date.strftime('%Y-%m-%d') }}
+                                        <br><small class="text-muted">{{ req.request_date.strftime('%H:%M') }}</small>
+                                    {% else %}
+                                        N/A
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if req.event_date %}
+                                        {{ req.event_date.strftime('%Y-%m-%d') }}
+                                    {% else %}
+                                        N/A
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <small>{{ req.description[:50] }}{% if req.description|length > 50 %}...{% endif %}</small>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <i class="fas fa-inbox"></i>
+                <h5>No Requests Found</h5>
+                <p>Try adjusting your filters or search criteria</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Show loading overlay on form submit
+    const filterForm = document.getElementById('filterForm');
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    
+    if (filterForm) {
+        filterForm.addEventListener('submit', function() {
+            if (loadingOverlay) {
+                loadingOverlay.classList.add('show');
+            }
+        });
+    }
+});
+
+function exportToCSV() {
+    const table = document.getElementById('requestsTable');
+    if (!table) {
+        alert('No data to export');
+        return;
+    }
+    
+    let csv = [];
+    const rows = table.querySelectorAll('tr');
+    
+    for (let i = 0; i < rows.length; i++) {
+        const row = [], cols = rows[i].querySelectorAll('td, th');
+        
+        for (let j = 0; j < cols.length; j++) {
+            let text = cols[j].innerText.replace(/"/g, '""');
+            row.push('"' + text + '"');
+        }
+        
+        csv.push(row.join(','));
+    }
+    
+    // Download CSV
+    const csvFile = new Blob([csv.join('\n')], { type: 'text/csv' });
+    const downloadLink = document.createElement('a');
+    downloadLink.download = 'pending_points_tracker_' + new Date().toISOString().split('T')[0] + '.csv';
+    downloadLink.href = window.URL.createObjectURL(csvFile);
+    downloadLink.style.display = 'none';
+    document.body.appendChild(downloadLink);
+    downloadLink.click();
+    document.body.removeChild(downloadLink);
+}
+</script>
+{% endblock %}

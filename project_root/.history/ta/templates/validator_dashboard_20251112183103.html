@@ -1,0 +1,625 @@
+{% extends "ta_base.html" %}
+
+{% block title %}TA Validator Dashboard{% endblock %}
+{% block dashboard_title %}TA Validator Dashboard{% endblock %}
+
+{% block sidebar_nav %}
+<!-- Validator Navigation Items -->
+<a href="javascript:void(0);" class="sidebar-nav-item tab-link" data-tab="overview">
+    <div>
+        <i class="fas fa-tachometer-alt"></i>
+        <span>Dashboard</span>
+    </div>
+</a>
+
+<a href="javascript:void(0);" class="sidebar-nav-item tab-link" data-tab="pending">
+    <div>
+        <i class="fas fa-clock"></i>
+        <span>Pending Requests</span>
+    </div>
+    <span class="badge bg-warning text-dark ms-2" id="pending-badge">{{ pending_count|default(0) }}</span>
+</a>
+
+<a href="javascript:void(0);" class="sidebar-nav-item tab-link" data-tab="history">
+    <div>
+        <i class="fas fa-history"></i>
+        <span>History</span>
+    </div>
+</a>
+{% endblock %}
+
+{% block content %}
+<style>
+    .border-left-warning {
+        border-left: 4px solid #f6c23e !important;
+    }
+    
+    .border-left-success {
+        border-left: 4px solid #1cc88a !important;
+    }
+    
+    @keyframes fadeIn {
+        from { 
+            opacity: 0;
+            transform: translateY(-5px);
+        }
+        to { 
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    .tab-section-visible {
+        animation: fadeIn 0.3s ease-in-out;
+    }
+</style>
+
+<!-- ✅ INLINE SCRIPT TO ACTIVATE TAB IMMEDIATELY -->
+<script>
+(function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlTab = urlParams.get('tab');
+    const savedTab = localStorage.getItem('ta_validator_active_tab');
+    const activeTab = urlTab || savedTab || 'overview';
+    
+    window.taValidatorActiveTab = activeTab;
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        // Hide all tabs
+        ['overview', 'pending', 'history'].forEach(function(tab) {
+            const el = document.getElementById('tab-' + tab);
+            if (el) el.style.display = 'none';
+        });
+        
+        // Show active tab
+        const activeEl = document.getElementById('tab-' + activeTab);
+        if (activeEl) {
+            activeEl.style.display = 'block';
+            activeEl.classList.add('tab-section-visible');
+        }
+        
+        // Activate sidebar link
+        document.querySelectorAll('.tab-link').forEach(function(link) {
+            link.classList.remove('active');
+        });
+        const activeLink = document.querySelector('.tab-link[data-tab="' + activeTab + '"]');
+        if (activeLink) {
+            activeLink.classList.add('active');
+        }
+        
+        // Initialize DataTables
+        if (activeTab === 'pending' && typeof $ !== 'undefined' && $.fn.DataTable) {
+            {% if validator_requests %}
+            setTimeout(function() {
+                if (!$.fn.DataTable.isDataTable('#pendingTable')) {
+                    $('#pendingTable').DataTable({
+                        order: [[1, 'asc']],
+                        pageLength: 25,
+                        responsive: true,
+                        columnDefs: [
+                            { orderable: false, targets: [0, 10] }
+                        ]
+                    });
+                }
+            }, 100);
+            {% endif %}
+        }
+        
+        if (activeTab === 'history' && typeof $ !== 'undefined' && $.fn.DataTable) {
+            {% if history_data %}
+            setTimeout(function() {
+                if (!$.fn.DataTable.isDataTable('#historyTable')) {
+                    $('#historyTable').DataTable({
+                        order: [[0, 'desc']],
+                        pageLength: 25,
+                        responsive: true,
+                        dom: 'Bfrtip',
+                        buttons: ['csv', 'excel']
+                    });
+                }
+            }, 100);
+            {% endif %}
+        }
+    });
+})();
+</script>
+
+<div class="container-fluid">
+    <!-- ======================== OVERVIEW TAB ======================== -->
+    <div id="tab-overview" style="display: none;">
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h4 class="mb-1">
+                                    <i class="fas fa-user-check text-success"></i> TA Validator Dashboard
+                                </h4>
+                                <p class="text-muted mb-0">
+                                    <i class="fas fa-info-circle"></i> Review and approve/reject point requests
+                                </p>
+                            </div>
+                            <div class="text-end">
+                                <div class="badge bg-warning text-dark fs-5 px-3 py-2">
+                                    <i class="fas fa-clock"></i> 
+                                    Pending: <strong>{{ pending_count|default(0) }}</strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Stats -->
+        <div class="row">
+            <div class="col-md-6 mb-4">
+                <div class="card border-left-warning shadow h-100 py-2">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                    Pending Requests
+                                </div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                    {{ pending_count|default(0) }}
+                                </div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-clock fa-2x text-gray-300"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 mb-4">
+                <div class="card border-left-success shadow h-100 py-2">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                    Total Processed
+                                </div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                    {{ history_data|length if history_data else 0 }}
+                                </div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-check-circle fa-2x text-gray-300"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Action -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0"><i class="fas fa-bolt"></i> Quick Action</h5>
+                    </div>
+                    <div class="card-body text-center">
+                        <button class="btn btn-warning btn-lg" onclick="switchTab('pending')">
+                            <i class="fas fa-clock fa-2x mb-2"></i><br>
+                            View Pending Requests ({{ pending_count|default(0) }})
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ======================== PENDING REQUESTS TAB ======================== -->
+    <div id="tab-pending" style="display: none;">
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-warning text-dark">
+                        <h5 class="mb-0">
+                            <i class="fas fa-clock"></i> Pending Requests
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        {% if validator_requests %}
+                        <form method="POST" action="{{ url_for('ta.validator_dashboard') }}" id="bulkActionForm">
+                            <div class="table-responsive">
+                                <table class="table table-hover" id="pendingTable">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th style="width: 40px;">
+                                                <input type="checkbox" id="selectAll" class="form-check-input">
+                                            </th>
+                                            <th>Request Date</th>
+                                            <th>Event Date</th>
+                                            <th>Employee</th>
+                                            <th>Grade</th>
+                                            <th>Category</th>
+                                            <th>Quantity</th>
+                                            <th>Points</th>
+                                            <th>Notes</th>
+                                            <th>Updater</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for req in validator_requests %}
+                                        <tr>
+                                            <td>
+                                                <input type="checkbox" name="selected_requests" 
+                                                       value="{{ req.request_id }}" class="form-check-input request-checkbox">
+                                            </td>
+                                            <td>{{ req.request_date }}</td>
+                                            <td>{{ req.event_date }}</td>
+                                            <td>
+                                                <strong>{{ req.employee_name }}</strong><br>
+                                                <small class="text-muted">{{ req.employee_id }}</small>
+                                            </td>
+                                            <td><span class="badge bg-info">{{ req.grade }}</span></td>
+                                            <td>{{ req.category_name }}</td>
+                                            <td class="text-center"><strong>{{ req.quantity }}</strong></td>
+                                            <td class="text-primary"><strong>{{ req.points }}</strong></td>
+                                            <td>
+                                                {% if req.notes %}
+                                                <button type="button" class="btn btn-sm btn-info btn-view-notes" 
+                                                        data-notes="{{ req.notes | e }}"
+                                                        data-employee="{{ req.employee_name }}">
+                                                    <i class="fas fa-eye me-1"></i>View
+                                                </button>
+                                                {% else %}
+                                                <span class="text-muted fst-italic">No notes</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>{{ req.updater_name }}</td>
+                                            <td>
+                                                <button type="button" class="btn btn-sm btn-success" 
+                                                        onclick="singleAction('{{ req.request_id }}', 'approve')">
+                                                    <i class="fas fa-check"></i>
+                                                </button>
+                                                <button type="button" class="btn btn-sm btn-danger" 
+                                                        onclick="singleAction('{{ req.request_id }}', 'reject')">
+                                                    <i class="fas fa-times"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            
+                            <hr>
+                            
+                            <div class="row mt-3">
+                                <div class="col-md-6 mb-3">
+                                    <label for="rejection_notes" class="form-label">
+                                        Rejection Notes (for bulk reject)
+                                    </label>
+                                    <textarea class="form-control" id="rejection_notes" name="rejection_notes" 
+                                              rows="2" placeholder="Enter reason for rejection"></textarea>
+                                </div>
+                                <div class="col-md-6 d-flex align-items-end mb-3">
+                                    <div class="btn-group w-100" role="group">
+                                        <button type="submit" name="action_type" value="bulk_approve" 
+                                                class="btn btn-success btn-lg">
+                                            <i class="fas fa-check"></i> Approve Selected
+                                        </button>
+                                        <button type="submit" name="action_type" value="bulk_reject" 
+                                                class="btn btn-danger btn-lg">
+                                            <i class="fas fa-times"></i> Reject Selected
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                        {% else %}
+                        <div class="alert alert-success">
+                            <i class="fas fa-check-circle"></i> No pending requests at this time.
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ======================== HISTORY TAB ======================== -->
+    <div id="tab-history" style="display: none;">
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-history"></i> Validation History
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        {% if history_data %}
+                        <div class="table-responsive">
+                            <table class="table table-hover" id="historyTable">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Event Date</th>
+                                        <th>Employee</th>
+                                        <th>Grade</th>
+                                        <th>Category</th>
+                                        <th>Quantity</th>
+                                        <th>Points</th>
+                                        <th>Notes</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for record in history_data %}
+                                    <tr>
+                                        <td>{{ record.date }}</td>
+                                        <td>{{ record.event_date }}</td>
+                                        <td>{{ record.employee }}</td>
+                                        <td><span class="badge bg-secondary">{{ record.grade }}</span></td>
+                                        <td>{{ record.category }}</td>
+                                        <td class="text-center">{{ record.quantity }}</td>
+                                        <td class="text-primary"><strong>{{ record.points }}</strong></td>
+                                        <td>
+                                            {% if record.notes %}
+                                            <button type="button" class="btn btn-sm btn-info btn-view-notes" 
+                                                    data-notes="{{ record.notes | e }}"
+                                                    data-employee="{{ record.employee }}">
+                                                <i class="fas fa-eye me-1"></i>View
+                                            </button>
+                                            {% else %}
+                                            <span class="text-muted fst-italic">No notes</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if record.status == 'Approved' %}
+                                            <span class="badge bg-success">
+                                                <i class="fas fa-check"></i> Approved
+                                            </span>
+                                            {% else %}
+                                            <span class="badge bg-danger">
+                                                <i class="fas fa-times"></i> Rejected
+                                            </span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle"></i> No history records found.
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ======================== MODALS ======================== -->
+
+<!-- Notes View Modal -->
+<div class="modal fade" id="notesModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title"><i class="fas fa-file-alt me-2"></i>Request Notes</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <strong>Employee:</strong> <span id="modalEmployeeName" class="text-info fw-bold"></span>
+                </div>
+                <div>
+                    <strong>Notes:</strong>
+                    <div class="p-3 bg-light rounded mt-2 border-start border-info border-4" 
+                         id="modalNotesContent" 
+                         style="white-space: pre-wrap; word-wrap: break-word; max-height: 400px; overflow-y: auto;">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>Close
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Single Action Modal -->
+<div class="modal fade" id="singleActionModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('ta.validator_dashboard') }}" id="singleActionForm">
+                <input type="hidden" name="action_type" value="single_action">
+                <input type="hidden" name="request_id" id="modal_request_id">
+                <input type="hidden" name="action" id="modal_action">
+                
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalTitle">Confirm Action</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p id="modalMessage"></p>
+                    <div id="notesSection">
+                        <label for="modal_response_notes" class="form-label">
+                            Notes <span class="text-danger">*</span>
+                        </label>
+                        <textarea class="form-control" id="modal_response_notes" 
+                                  name="response_notes" rows="3" required
+                                  placeholder="Enter notes for this action"></textarea>
+                        <small class="text-muted" id="notesHint">Please provide a reason for your decision</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn" id="modalSubmitBtn">Confirm</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Tab switching
+function switchTab(tabName) {
+    // Hide all tabs
+    ['overview', 'pending', 'history'].forEach(function(tab) {
+        const el = document.getElementById('tab-' + tab);
+        if (el) el.style.display = 'none';
+    });
+    
+    // Show target tab
+    const targetEl = document.getElementById('tab-' + tabName);
+    if (targetEl) {
+        targetEl.style.display = 'block';
+        targetEl.classList.add('tab-section-visible');
+    }
+    
+    // Update sidebar
+    document.querySelectorAll('.tab-link').forEach(el => el.classList.remove('active'));
+    const link = document.querySelector('.tab-link[data-tab="' + tabName + '"]');
+    if (link) link.classList.add('active');
+    
+    // Update URL and localStorage
+    const url = new URL(window.location);
+    url.searchParams.set('tab', tabName);
+    window.history.pushState({}, '', url);
+    localStorage.setItem('ta_validator_active_tab', tabName);
+    
+    // Init DataTables
+    if (tabName === 'pending' && typeof $ !== 'undefined' && $.fn.DataTable && !$.fn.DataTable.isDataTable('#pendingTable')) {
+        {% if validator_requests %}
+        setTimeout(function() {
+            $('#pendingTable').DataTable({
+                order: [[1, 'asc']],
+                pageLength: 25,
+                responsive: true,
+                columnDefs: [
+                    { orderable: false, targets: [0, 10] }
+                ]
+            });
+        }, 100);
+        {% endif %}
+    }
+    
+    if (tabName === 'history' && typeof $ !== 'undefined' && $.fn.DataTable && !$.fn.DataTable.isDataTable('#historyTable')) {
+        {% if history_data %}
+        setTimeout(function() {
+            $('#historyTable').DataTable({
+                order: [[0, 'desc']],
+                pageLength: 25,
+                responsive: true,
+                dom: 'Bfrtip',
+                buttons: ['csv', 'excel']
+            });
+        }, 100);
+        {% endif %}
+    }
+    
+    // Close mobile sidebar
+    if (window.innerWidth < 992) {
+        $('#sidebar, #sidebarOverlay').removeClass('active');
+    }
+}
+
+$(document).ready(function() {
+    // Tab click handlers
+    $('.tab-link').on('click', function(e) {
+        e.preventDefault();
+        switchTab($(this).data('tab'));
+    });
+    
+    // View notes modal
+    $(document).on('click', '.btn-view-notes', function() {
+        const notes = $(this).data('notes');
+        const employee = $(this).data('employee');
+        
+        $('#modalEmployeeName').text(employee);
+        $('#modalNotesContent').text(notes);
+        
+        new bootstrap.Modal($('#notesModal')).show();
+    });
+    
+    // Select All checkbox
+    $('#selectAll').on('change', function() {
+        $('.request-checkbox').prop('checked', this.checked);
+    });
+    
+    // Update select all
+    $('.request-checkbox').on('change', function() {
+        const total = $('.request-checkbox').length;
+        const checked = $('.request-checkbox:checked').length;
+        $('#selectAll').prop('checked', total === checked);
+    });
+    
+    // Bulk action form validation
+    $('#bulkActionForm').on('submit', function(e) {
+        const checkedCount = $('.request-checkbox:checked').length;
+        const actionType = $('button[type="submit"]:focus').val();
+        
+        if (checkedCount === 0) {
+            e.preventDefault();
+            alert('Please select at least one request.');
+            return false;
+        }
+        
+        if (actionType === 'bulk_reject' && !$('#rejection_notes').val().trim()) {
+            if (!confirm('You have not provided rejection notes. Continue anyway?')) {
+                e.preventDefault();
+                return false;
+            }
+        }
+        
+        if (actionType === 'bulk_approve') {
+            return confirm(`Approve ${checkedCount} request(s)?`);
+        } else if (actionType === 'bulk_reject') {
+            return confirm(`Reject ${checkedCount} request(s)?`);
+        }
+    });
+    
+    // Single action form validation
+    $('#singleActionForm').on('submit', function(e) {
+        const notes = $('#modal_response_notes').val().trim();
+        
+        if (!notes) {
+            e.preventDefault();
+            alert('Please provide notes for your decision.');
+            $('#modal_response_notes').focus();
+            return false;
+        }
+        
+        return true;
+    });
+});
+
+// Single action handler
+function singleAction(requestId, action) {
+    $('#modal_request_id').val(requestId);
+    $('#modal_action').val(action);
+    $('#modal_response_notes').val('');
+    
+    if (action === 'approve') {
+        $('#modalTitle').text('Approve Request');
+        $('#modalMessage').text('Are you sure you want to approve this request?');
+        $('#modalSubmitBtn').removeClass('btn-danger').addClass('btn-success').text('Approve');
+        $('#notesHint').text('Please provide notes explaining your approval');
+    } else {
+        $('#modalTitle').text('Reject Request');
+        $('#modalMessage').text('Are you sure you want to reject this request?');
+        $('#modalSubmitBtn').removeClass('btn-success').addClass('btn-danger').text('Reject');
+        $('#notesHint').text('Please provide a reason for rejection');
+    }
+    
+    const modal = new bootstrap.Modal(document.getElementById('singleActionModal'));
+    modal.show();
+}
+</script>
+{% endblock %}

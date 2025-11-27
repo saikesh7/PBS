@@ -1,0 +1,679 @@
+{% extends "employee_base.html" %}
+
+{% block title %}Raise Request{% endblock %}
+{% block nav_raise %}active{% endblock %}
+
+{% block extra_css %}
+<style>
+    .manager-info-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    .manager-info-card .info-row {
+        margin-bottom: 10px;
+    }
+    .manager-info-card .info-label {
+        font-weight: 600;
+        opacity: 0.9;
+    }
+    .manager-info-card .info-value {
+        font-size: 1.1rem;
+    }
+    .hr-contact-note {
+        background-color: #fff3cd;
+        border-left: 4px solid #ffc107;
+        padding: 15px;
+        border-radius: 4px;
+        margin-top: 15px;
+        color: #856404;
+    }
+    .hr-contact-note strong {
+        color: #856404;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Raise Request Form -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header pmo-header-primary">
+                    <div class="d-flex align-items-center">
+                        <div class="topbar-icon">
+                            <i class="fas fa-plus-circle"></i>
+                        </div>
+                        <div class="topbar-info">
+                            <div class="topbar-title">Raise Points Request</div>
+                            <div class="topbar-subtitle">Submit a new points request</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if categories %}
+                    <form method="POST" action="{{ url_for('employee_raise_request.submit_request') }}" enctype="multipart/form-data" id="raiseRequestForm">
+                        
+                        <!-- Category Selection -->
+                        <div class="mb-3">
+                            <label for="category_id" class="form-label">
+                                <i class="fas fa-tags me-2"></i>Category <span class="text-danger">*</span>
+                            </label>
+                            <select name="category_id" id="category_id" class="form-select" required>
+                                <option value="">-- Select Category --</option>
+                                {% for category in categories %}
+                                <option value="{{ category._id }}" 
+                                        data-department="{{ category.category_department }}"
+                                        data-frequency="{{ category.frequency }}">
+                                    {{ category.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text" id="categoryDescription"></div>
+                        </div>
+
+                        <!-- Category Details Display -->
+                        <div class="mb-3" id="categoryDetailsContainer" style="display: none;">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h6 class="card-title mb-3">
+                                        <i class="fas fa-info-circle text-primary me-2"></i>Category Details
+                                    </h6>
+                                    <div class="row">
+                                        <div class="col-md-3">
+                                            <strong>Your Grade:</strong>
+                                            <div class="badge bg-primary mt-1" id="userGrade">-</div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <strong>Points Per Unit:</strong>
+                                            <div class="badge bg-success mt-1" id="pointsPerUnit">-</div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <strong>Min Points:</strong>
+                                            <div class="badge bg-warning text-dark mt-1" id="minPoints">-</div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <strong>Frequency:</strong>
+                                            <div class="badge bg-info mt-1" id="frequency">-</div>
+                                        </div>
+                                    </div>
+                                    <div class="mt-3" id="categoryDescriptionDetail"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- PM CATEGORY - ASSIGNED MANAGER DISPLAY -->
+                        <div class="mb-3" id="pmManagerContainer" style="display: none;">
+                            <label class="form-label">
+                                <i class="fas fa-user-tie me-2"></i>Assigned Manager (Request Validator)
+                            </label>
+                            <div class="manager-info-card">
+                                <div class="row">
+                                    <div class="col-md-6 info-row">
+                                        <div class="info-label">Name:</div>
+                                        <div class="info-value" id="managerName">-</div>
+                                    </div>
+                                    <div class="col-md-6 info-row">
+                                        <div class="info-label">Employee ID:</div>
+                                        <div class="info-value" id="managerEmpId">-</div>
+                                    </div>
+                                    <div class="col-md-6 info-row">
+                                        <div class="info-label">Role:</div>
+                                        <div class="info-value" id="managerRole">-</div>
+                                    </div>
+                                    <div class="col-md-6 info-row">
+                                        <div class="info-label">Email:</div>
+                                        <div class="info-value" id="managerEmail">-</div>
+                                    </div>
+                                </div>
+                                <div class="hr-contact-note">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    <strong>Note:</strong> This request will be submitted to your assigned manager shown above. 
+                                    To change your manager assignment, please contact the HR team.
+                                </div>
+                            </div>
+                            <input type="hidden" name="selected_validator_id" id="pm_validator_id">
+                        </div>
+
+                        <!-- REGULAR CATEGORIES - VALIDATOR SELECTION DROPDOWN -->
+                        <div class="mb-3" id="validatorDropdownContainer" style="display: none;">
+                            <label for="selected_validator_id" class="form-label">
+                                <i class="fas fa-user-check me-2"></i>Select Validator (Send Request To) <span class="text-danger">*</span>
+                            </label>
+                            <select name="selected_validator_id" id="selected_validator_id" class="form-select" disabled>
+                                <option value="">-- Loading validators... --</option>
+                            </select>
+                            <small class="form-text text-muted" id="validatorTypeInfo"></small>
+                        </div>
+
+                        <!-- Validator Warning -->
+                        <div class="mb-3" id="validatorWarning" style="display: none;">
+                            <div class="alert alert-warning">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                <strong>Warning:</strong> <span id="validatorWarningText"></span>
+                            </div>
+                        </div>
+
+                        <!-- Points Information -->
+                        <div class="mb-3" id="pointsInfoContainer" style="display: none;">
+                            <label class="form-label">
+                                <i class="fas fa-star me-2"></i>Points Information
+                            </label>
+                            <div class="alert alert-info" id="pointsInfo">
+                                <i class="fas fa-info-circle me-2"></i>
+                                Select a category to see available points for your grade.
+                            </div>
+                        </div>
+
+                        <!-- Notes -->
+                        <div class="mb-3">
+                            <label for="notes" class="form-label">
+                                <i class="fas fa-sticky-note me-2"></i>Notes <span class="text-danger">*</span>
+                            </label>
+                            <textarea name="notes" id="notes" class="form-control" rows="4" 
+                                      placeholder="Add details about your request (achievements, impact, metrics, etc.)..." 
+                                      required></textarea>
+                            <small class="form-text text-muted">
+                                Please provide detailed information to support your request
+                            </small>
+                        </div>
+
+                        <!-- Attachment -->
+                        <div class="mb-3">
+                            <label for="attachment" class="form-label">
+                                <i class="fas fa-paperclip me-2"></i>Attachment <span class="text-danger">*</span>
+                            </label>
+                            <input type="file" class="form-control" id="attachment" name="attachment" required>
+                            <small class="form-text text-muted">
+                                Max size: 5MB. Supported formats: PDF, DOC, DOCX, XLS, XLSX, JPG, PNG
+                            </small>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <div class="text-end">
+                            <button type="reset" class="btn btn-secondary me-2" onclick="resetForm()">
+                                <i class="fas fa-redo me-2"></i>Reset
+                            </button>
+                            <button type="submit" class="btn btn-primary" id="submitBtn" disabled>
+                                <i class="fas fa-paper-plane me-2"></i>Submit Request
+                            </button>
+                        </div>
+                    </form>
+                    {% else %}
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>No Categories Available:</strong> No active employee-raised categories are available at this time. Please contact HR.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pending Requests -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header pmo-header-yellow">
+                    <div class="d-flex align-items-center">
+                        <div class="topbar-icon">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="topbar-info">
+                            <div class="topbar-title">Pending Requests</div>
+                            <div class="topbar-subtitle">View your submitted requests awaiting approval</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if pending_requests %}
+                    <div class="table-responsive">
+                        <table class="table table-hover pmo-table" id="pendingRequestsTable">
+                            <thead>
+                                <tr>
+                                    <th><i class="fas fa-tag me-2"></i>Category</th>
+                                    <th><i class="fas fa-building me-2"></i>Department</th>
+                                    <th><i class="fas fa-star me-2"></i>Points</th>
+                                    <th><i class="fas fa-user-check me-2"></i>Assigned Validator</th>
+                                    <th><i class="fas fa-calendar me-2"></i>Requested On</th>
+                                    <th><i class="fas fa-paperclip me-2"></i>Attachment</th>
+                                    <th><i class="fas fa-sticky-note me-2"></i>Notes</th>
+                                    <th><i class="fas fa-info-circle me-2"></i>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for request in pending_requests %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ request.category_name }}</strong>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-primary">
+                                            {{ request.category_department|replace('_', ' ')|upper }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-success">{{ request.points }}</span>
+                                    </td>
+                                    <td>
+                                        {% if request.assigned_validator_name %}
+                                        <div>
+                                            <strong>{{ request.assigned_validator_name }}</strong>
+                                            {% if request.assigned_validator_emp_id %}
+                                            <br><small class="text-muted">{{ request.assigned_validator_emp_id }}</small>
+                                            {% endif %}
+                                        </div>
+                                        {% else %}
+                                        <span class="text-muted">N/A</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {{ request.request_date.strftime('%d-%m-%Y %I:%M %p') if request.request_date else 'N/A' }}
+                                    </td>
+                                    <td>
+                                        {% if request.has_attachment %}
+                                        <a href="{{ url_for('employee_raise_request.get_attachment', request_id=request.id) }}" 
+                                           class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-download me-1"></i>Download
+                                        </a>
+                                        {% else %}
+                                        <span class="text-muted">None</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if request.submission_notes %}
+                                        <button class="btn btn-sm btn-outline-info view-note-btn"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#notesModal"
+                                                data-notes="{{ request.submission_notes | e }}"
+                                                data-category="{{ request.category_name }}">
+                                            <i class="fas fa-eye me-1"></i>View
+                                        </button>
+                                        {% else %}
+                                        <span class="text-muted">No notes</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-warning text-dark">
+                                            <i class="fas fa-clock me-1"></i>Pending
+                                        </span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        You don't have any pending requests at this time.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Notes Modal -->
+<div class="modal fade" id="notesModal" tabindex="-1" aria-labelledby="notesModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="notesModalLabel">
+                    <i class="fas fa-sticky-note me-2"></i>Request Notes
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <strong>Category:</strong>
+                    <span id="modalCategoryName" class="badge bg-primary"></span>
+                </div>
+                <div class="card bg-light">
+                    <div class="card-body">
+                        <p id="modalNotesContent" class="mb-0" style="white-space: pre-wrap;"></p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const categorySelect = document.getElementById('category_id');
+    const validatorDropdownContainer = document.getElementById('validatorDropdownContainer');
+    const pmManagerContainer = document.getElementById('pmManagerContainer');
+    const validatorSelect = document.getElementById('selected_validator_id');
+    const validatorWarning = document.getElementById('validatorWarning');
+    const validatorWarningText = document.getElementById('validatorWarningText');
+    const validatorTypeInfo = document.getElementById('validatorTypeInfo');
+    const submitBtn = document.getElementById('submitBtn');
+    const categoryDetailsContainer = document.getElementById('categoryDetailsContainer');
+    const pointsInfoContainer = document.getElementById('pointsInfoContainer');
+    const categoryDescription = document.getElementById('categoryDescription');
+    
+    let isPmCategory = false;
+    let hasValidValidator = false;
+    
+    // Category change handler
+    categorySelect.addEventListener('change', function() {
+        const categoryId = this.value;
+        
+        if (!categoryId) {
+            resetCategorySelection();
+            return;
+        }
+        
+        // Reset state
+        isPmCategory = false;
+        hasValidValidator = false;
+        submitBtn.disabled = true;
+        
+        // Hide both validator sections initially
+        validatorDropdownContainer.style.display = 'none';
+        pmManagerContainer.style.display = 'none';
+        validatorWarning.style.display = 'none';
+        
+        // Show loading state for regular validators
+        validatorSelect.innerHTML = '<option value="">-- Loading validators... --</option>';
+        validatorSelect.disabled = true;
+        
+        // Fetch category details
+        fetchCategoryDetails(categoryId);
+        
+        // Fetch validators (will determine if PM or regular category)
+        fetchValidators(categoryId);
+    });
+    
+    // Validator change handler (for regular categories)
+    validatorSelect.addEventListener('change', function() {
+        if (this.value && categorySelect.value && !isPmCategory) {
+            submitBtn.disabled = false;
+        } else if (!isPmCategory) {
+            submitBtn.disabled = true;
+        }
+    });
+    
+    // Fetch category details function
+    function fetchCategoryDetails(categoryId) {
+        fetch(`/employee/get-category-details/${categoryId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Update category details display
+                    document.getElementById('userGrade').textContent = data.grade;
+                    document.getElementById('pointsPerUnit').textContent = data.points_per_unit;
+                    document.getElementById('minPoints').textContent = data.min_points_per_frequency;
+                    document.getElementById('frequency').textContent = data.frequency;
+                    
+                    // Store if PM category
+                    isPmCategory = data.is_pm_category || false;
+                    
+                    // Update description
+                    if (data.description) {
+                        document.getElementById('categoryDescriptionDetail').innerHTML = 
+                            `<div class="alert alert-light mb-0"><strong>Description:</strong> ${data.description}</div>`;
+                    }
+                    
+                    // Show containers
+                    categoryDetailsContainer.style.display = 'block';
+                    pointsInfoContainer.style.display = 'block';
+                    
+                    // Update points info
+                    document.getElementById('pointsInfo').innerHTML = `
+                        <strong>Points for your grade (${data.grade}):</strong> ${data.points_per_unit} points per unit<br>
+                        <strong>Minimum required (${data.frequency}):</strong> ${data.min_points_per_frequency} points<br>
+                        <strong>Department:</strong> ${data.category_department.replace(/_/g, ' ').toUpperCase()}
+                        ${isPmCategory ? '<br><span class="badge bg-purple mt-2" style="color: purple;"><i class="fas fa-user-tie me-1"></i>PM Category - Manager Assignment</span>' : ''}
+                    `;
+                    
+                    categoryDescription.innerHTML = `
+                        <i class="fas fa-info-circle text-primary me-1"></i>
+                        <strong>${data.category_name}</strong> - You will receive <strong>${data.points_per_unit} points</strong> for this request.
+                        ${isPmCategory ? ' <span class="badge bg-purple text-white">PM Category</span>' : ''}
+                    `;
+                } else {
+                    console.error('Error fetching category details:', data.error);
+                    showError('Failed to load category details');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showError('Error loading category details');
+            });
+    }
+    
+    // Fetch validators function
+    function fetchValidators(categoryId) {
+        fetch(`/employee/api/get-validators-by-category/${categoryId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    if (data.is_pm_category) {
+                        // Display PM Manager
+                        displayPmManager(data.assigned_manager);
+                    } else {
+                        // Display regular validators
+                        displayValidators(data);
+                    }
+                } else {
+                    // Handle errors
+                    if (data.is_pm_category) {
+                        showPmError(data.error);
+                    } else {
+                        showValidatorError(data.error);
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching validators:', error);
+                if (isPmCategory) {
+                    showPmError('Failed to load manager information. Please try again.');
+                } else {
+                    showValidatorError('Failed to load validators. Please try again.');
+                }
+            });
+    }
+    
+    // Display PM Manager
+    function displayPmManager(manager) {
+        pmManagerContainer.style.display = 'block';
+        validatorDropdownContainer.style.display = 'none';
+        validatorWarning.style.display = 'none';
+        
+        document.getElementById('managerName').textContent = manager.name;
+        document.getElementById('managerEmpId').textContent = manager.employee_id;
+        document.getElementById('managerRole').textContent = manager.role;
+        document.getElementById('managerEmail').textContent = manager.email;
+        document.getElementById('pm_validator_id').value = manager.id;
+        
+        hasValidValidator = true;
+        submitBtn.disabled = false;
+        
+        console.log('✅ PM Manager loaded:', manager.name);
+    }
+    
+    // Display Regular Validators
+    function displayValidators(data) {
+        pmManagerContainer.style.display = 'none';
+        validatorDropdownContainer.style.display = 'block';
+        validatorWarning.style.display = 'none';
+        
+        if (data.validators && data.validators.length > 0) {
+            // Populate validator dropdown
+            validatorSelect.innerHTML = '<option value="">-- Select Validator --</option>';
+            
+            data.validators.forEach(validator => {
+                const option = document.createElement('option');
+                option.value = validator.id;
+                option.textContent = `${validator.name} (${validator.employee_id}) - ${validator.role} - ${validator.grade}`;
+                validatorSelect.appendChild(option);
+            });
+            
+            validatorSelect.disabled = false;
+            hasValidValidator = true;
+            
+            // Update validator type info
+            validatorTypeInfo.innerHTML = `
+                <i class="fas fa-users me-1"></i>
+                Showing ${data.validators.length} validator(s) from <strong>${data.department_name}</strong> department
+            `;
+            
+            console.log(`✅ Loaded ${data.validators.length} validators for ${data.department_name}`);
+        } else {
+            showValidatorError('No validators available for this category');
+        }
+    }
+    
+    // Show PM Error
+    function showPmError(errorMessage) {
+        pmManagerContainer.style.display = 'block';
+        pmManagerContainer.innerHTML = `
+            <div class="alert alert-danger">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                <strong>Manager Assignment Error:</strong><br>
+                ${errorMessage}
+            </div>
+        `;
+        validatorDropdownContainer.style.display = 'none';
+        submitBtn.disabled = true;
+        hasValidValidator = false;
+    }
+    
+    // Show Validator Error
+    function showValidatorError(errorMessage) {
+        validatorSelect.innerHTML = '<option value="">-- No validators available --</option>';
+        validatorSelect.disabled = true;
+        validatorWarning.style.display = 'block';
+        validatorWarningText.textContent = errorMessage || 'No validators found for this category';
+        submitBtn.disabled = true;
+        hasValidValidator = false;
+    }
+    
+    // Show generic error
+    function showError(message) {
+        alert(message);
+    }
+    
+    // Reset category selection
+    function resetCategorySelection() {
+        validatorDropdownContainer.style.display = 'none';
+        pmManagerContainer.style.display = 'none';
+        validatorWarning.style.display = 'none';
+        categoryDetailsContainer.style.display = 'none';
+        pointsInfoContainer.style.display = 'none';
+        categoryDescription.textContent = '';
+        validatorSelect.innerHTML = '<option value="">-- Select Validator --</option>';
+        validatorSelect.disabled = true;
+        submitBtn.disabled = true;
+        isPmCategory = false;
+        hasValidValidator = false;
+    }
+    
+    // File validation
+    const attachmentInput = document.getElementById('attachment');
+    if (attachmentInput) {
+        attachmentInput.addEventListener('change', function() {
+            const file = this.files[0];
+            if (file) {
+                const maxSize = 5 * 1024 * 1024; // 5MB
+                const allowedTypes = ['application/pdf', 'application/msword', 
+                                     'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                                     'application/vnd.ms-excel',
+                                     'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                                     'image/jpeg', 'image/png', 'image/jpg'];
+                
+                if (file.size > maxSize) {
+                    alert('File size exceeds 5MB limit');
+                    this.value = '';
+                    return;
+                }
+                
+                if (!allowedTypes.includes(file.type)) {
+                    alert('Invalid file type. Please upload PDF, DOC, XLS, JPG, or PNG files.');
+                    this.value = '';
+                    return;
+                }
+            }
+        });
+    }
+    
+    // Notes modal handler
+    document.querySelectorAll('.view-note-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const notes = this.getAttribute('data-notes');
+            const category = this.getAttribute('data-category');
+            document.getElementById('modalNotesContent').textContent = notes;
+            document.getElementById('modalCategoryName').textContent = category;
+        });
+    });
+    
+    // Form validation before submit
+    const raiseRequestForm = document.getElementById('raiseRequestForm');
+    if (raiseRequestForm) {
+        raiseRequestForm.addEventListener('submit', function(e) {
+            const category = document.getElementById('category_id').value;
+            const notes = document.getElementById('notes').value.trim();
+            const attachment = document.getElementById('attachment').files.length;
+            
+            if (!category) {
+                e.preventDefault();
+                alert('Please select a category');
+                return false;
+            }
+            
+            if (!hasValidValidator) {
+                e.preventDefault();
+                alert('Please ensure a valid validator is selected or assigned');
+                return false;
+            }
+            
+            // For regular categories, check validator selection
+            if (!isPmCategory) {
+                const validator = document.getElementById('selected_validator_id').value;
+                if (!validator) {
+                    e.preventDefault();
+                    alert('Please select a validator');
+                    return false;
+                }
+            }
+            
+            if (!notes) {
+                e.preventDefault();
+                alert('Please enter notes/description');
+                return false;
+            }
+            
+            if (!attachment) {
+                e.preventDefault();
+                alert('Please attach a file');
+                return false;
+            }
+            
+            console.log('✅ Form validation passed. Submitting...');
+        });
+    }
+});
+
+// Reset form function
+function resetForm() {
+    document.getElementById('validatorDropdownContainer').style.display = 'none';
+    document.getElementById('pmManagerContainer').style.display = 'none';
+    document.getElementById('validatorWarning').style.display = 'none';
+    document.getElementById('categoryDetailsContainer').style.display = 'none';
+    document.getElementById('pointsInfoContainer').style.display = 'none';
+    document.getElementById('categoryDescription').textContent = '';
+    document.getElementById('submitBtn').disabled = true;
+}
+</script>
+{% endblock %}

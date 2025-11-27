@@ -1,0 +1,4 @@
+employee_id,category_code,title,date,number_of_units,notes
+A1,technical,Introduction to Docker,2025-05-01,1,Sample technical session
+A2,certification,AWS Solutions Architect,2025-05-02,1,Sample certification
+A1,certification,AWS Solutions Architect,2025-05-03,1,Sample certification

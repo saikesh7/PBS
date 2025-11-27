@@ -1,0 +1,742 @@
+{% extends "marketing_base.html" %}
+
+{% block title %}Processed Requests - Marketing Dashboard{% endblock %}
+{% block topbar_title %}Processed History{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Card styling */
+    .card {
+        border: none;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        margin-bottom: 0;
+    }
+    
+    .card-header {
+        background: rgb(0, 32, 96);
+        color: white;
+        padding: 12px 20px;
+        border-radius: 8px 8px 0 0 !important;
+        border: none;
+        font-size: 14px;
+        font-weight: 600;
+    }
+    
+    .card-body {
+        padding: 0;
+    }
+    
+    /* Filter section */
+    .filter-section {
+        background-color: #f8f9fc;
+        padding: 20px;
+        border-bottom: 1px solid #e3e6f0;
+    }
+    
+    .filter-label {
+        font-size: 13px;
+        font-weight: 600;
+        color: #5a5c69;
+        margin-bottom: 8px;
+        display: block;
+    }
+    
+    .form-select {
+        border: 1px solid #d1d3e2;
+        border-radius: 4px;
+        padding: 8px 12px;
+        font-size: 14px;
+    }
+    
+    .form-select:focus {
+        border-color: #4e73df;
+        box-shadow: 0 0 0 0.2rem rgba(78, 115, 223, 0.25);
+    }
+    
+    .filter-buttons {
+        display: flex;
+        gap: 8px;
+        align-items: flex-end;
+        height: 100%;
+        width: 100%;
+    }
+    
+    .filter-buttons .btn {
+        padding: 8px 16px;
+        font-size: 13px;
+        border-radius: 4px;
+        font-weight: 500;
+        height: 38px;
+        white-space: nowrap;
+    }
+    
+    /* Table styling - Match PM/Arch style */
+    .table-responsive {
+        border-radius: 0 0 8px 8px;
+        overflow-x: auto;
+        overflow-y: visible;
+        max-width: 100%;
+    }
+    
+    .table-responsive::-webkit-scrollbar {
+        height: 8px;
+    }
+    
+    .table-responsive::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 4px;
+    }
+    
+    .table-responsive::-webkit-scrollbar-thumb {
+        background: #888;
+        border-radius: 4px;
+    }
+    
+    .table-responsive::-webkit-scrollbar-thumb:hover {
+        background: #555;
+    }
+    
+    #processedTable {
+        margin-bottom: 0 !important;
+        width: 100%;
+        min-width: 1200px;
+    }
+    
+    #processedTable thead th {
+        background-color: #f8f9fc;
+        color: #5a5c69;
+        font-weight: 600;
+        font-size: 13px;
+        padding: 12px 15px;
+        border-bottom: 1px solid #e3e6f0;
+        white-space: nowrap;
+        vertical-align: middle;
+        text-align: center;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+    
+    #processedTable thead th:nth-child(1) {
+        min-width: 180px;
+        width: 180px;
+    }
+    
+    #processedTable thead th:nth-child(3) {
+        min-width: 250px;
+    }
+    
+    #processedTable thead th:nth-child(4) {
+        min-width: 100px;
+        width: 100px;
+    }
+    
+    /* Date columns - Requested On and Processed On */
+    #processedTable thead th:nth-child(5),
+    #processedTable thead th:nth-child(6) {
+        min-width: 130px;
+        width: 130px;
+    }
+    
+    #processedTable tbody td {
+        padding: 12px 15px;
+        vertical-align: middle;
+        font-size: 14px;
+        border-bottom: 1px solid #e3e6f0;
+        text-align: center;
+    }
+    
+    #processedTable tbody td:nth-child(1) {
+        min-width: 180px;
+        width: 180px;
+    }
+    
+    #processedTable tbody td:nth-child(3) {
+        min-width: 250px;
+    }
+    
+    #processedTable tbody td:nth-child(4) {
+        min-width: 100px;
+        width: 100px;
+    }
+    
+    /* Date columns - Requested On and Processed On */
+    #processedTable tbody td:nth-child(5),
+    #processedTable tbody td:nth-child(6) {
+        min-width: 130px;
+        width: 130px;
+    }
+    
+    #processedTable tbody tr:hover {
+        background-color: #f8f9fc;
+    }
+    
+    #processedTable tbody tr:last-child td {
+        border-bottom: none;
+    }
+    
+    /* Action columns - Notes and Attachment */
+    #processedTable thead th:nth-child(8),
+    #processedTable thead th:nth-child(9),
+    #processedTable tbody td:nth-child(8),
+    #processedTable tbody td:nth-child(9) {
+        min-width: 120px;
+        white-space: nowrap;
+    }
+    
+    /* Keep controls outside scroll */
+    .datatable-controls {
+        background: white;
+        margin: 0 !important;
+        padding: 15px 20px !important;
+        border-bottom: 1px solid #e3e6f0;
+        display: flex !important;
+        justify-content: space-between;
+        align-items: center;
+        min-height: 60px;
+    }
+    
+    .datatable-controls .col-sm-6 {
+        flex: 0 0 auto;
+        width: auto;
+        min-width: 200px;
+    }
+    
+    .datatable-controls .col-sm-6:first-child {
+        flex: 1;
+        max-width: 300px;
+    }
+    
+    /* Keep pagination row outside scroll */
+    .pagination-row {
+        background: white;
+        margin: 0 !important;
+        padding: 15px 20px !important;
+        border-top: 1px solid #e3e6f0;
+        display: flex !important;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .pagination-row .col-sm-6 {
+        flex: 0 0 auto;
+        width: auto;
+    }
+    
+    /* DataTables controls - Force single line with flexbox */
+    .datatable-controls {
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        flex-wrap: nowrap !important;
+    }
+    
+    .dataTables_wrapper .dataTables_length,
+    div.dataTables_wrapper div.dataTables_length {
+        float: none !important;
+        margin: 0 !important;
+        display: flex !important;
+        align-items: center !important;
+        white-space: nowrap !important;
+        flex-wrap: nowrap !important;
+    }
+    
+    .dataTables_wrapper .dataTables_length label,
+    div.dataTables_wrapper div.dataTables_length label {
+        display: flex !important;
+        align-items: center !important;
+        margin: 0 !important;
+        white-space: nowrap !important;
+        flex-wrap: nowrap !important;
+        gap: 8px !important;
+    }
+    
+    .dataTables_wrapper .dataTables_filter,
+    div.dataTables_wrapper div.dataTables_filter {
+        float: none !important;
+        margin: 0 !important;
+        white-space: nowrap !important;
+        display: flex !important;
+        align-items: center !important;
+    }
+    
+    .dataTables_wrapper .dataTables_filter label,
+    div.dataTables_wrapper div.dataTables_filter label {
+        display: flex !important;
+        align-items: center !important;
+        white-space: nowrap !important;
+        margin: 0 !important;
+        gap: 8px !important;
+    }
+    
+    .dataTables_wrapper .dataTables_filter input,
+    div.dataTables_wrapper div.dataTables_filter input {
+        border: 1px solid #d1d3e2 !important;
+        border-radius: 4px !important;
+        padding: 6px 12px !important;
+        margin: 0 !important;
+        font-size: 14px !important;
+        width: 200px !important;
+        display: inline-block !important;
+    }
+    
+    .dataTables_wrapper .dataTables_length select,
+    div.dataTables_wrapper div.dataTables_length select {
+        border: 1px solid #d1d3e2 !important;
+        border-radius: 4px !important;
+        padding: 6px 35px 6px 12px !important;
+        margin: 0 !important;
+        font-size: 14px !important;
+        min-width: 100px !important;
+        width: auto !important;
+        display: inline-block !important;
+        vertical-align: middle !important;
+        flex-shrink: 0 !important;
+    }
+    
+    .dataTables_wrapper .dataTables_info {
+        padding: 15px 20px;
+        font-size: 14px;
+        color: #858796;
+    }
+    
+    .dataTables_wrapper .dataTables_paginate {
+        padding: 15px 20px;
+    }
+    
+    .dataTables_wrapper .dataTables_paginate .paginate_button {
+        padding: 6px 12px;
+        margin: 0 2px;
+        border: 1px solid #d1d3e2;
+        border-radius: 4px;
+        background: white;
+        color: #4e73df;
+        font-size: 14px;
+    }
+    
+    .dataTables_wrapper .dataTables_paginate .paginate_button.current {
+        background: #4e73df;
+        color: white !important;
+        border-color: #4e73df;
+    }
+    
+    .dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+        background: #4e73df;
+        color: white !important;
+        border-color: #4e73df;
+    }
+    
+    /* Button styling */
+    .btn-sm {
+        padding: 6px 12px;
+        font-size: 13px;
+        border-radius: 4px;
+    }
+    
+    .btn-info {
+        background-color: #36b9cc;
+        border-color: #36b9cc;
+    }
+    
+    .btn-info:hover {
+        background-color: #2c9faf;
+        border-color: #2c9faf;
+    }
+    
+    .btn-primary {
+        background-color: #4e73df;
+        border-color: #4e73df;
+    }
+    
+    .btn-primary:hover {
+        background-color: #2e59d9;
+        border-color: #2e59d9;
+    }
+    
+    /* Badge styling */
+    .badge {
+        padding: 6px 12px;
+        font-size: 13px;
+        font-weight: 500;
+        border-radius: 4px;
+    }
+    
+    /* Modal styling */
+    .modal-header {
+        background: rgb(0, 32, 96);
+        color: white;
+        border-bottom: none;
+    }
+    
+    .modal-header .btn-close {
+        filter: brightness(0) invert(1);
+    }
+    
+    .notes-content {
+        background-color: #f8f9fc;
+        padding: 15px;
+        border-radius: 4px;
+        border-left: 4px solid #4e73df;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+        max-height: 400px;
+        overflow-y: auto;
+        font-size: 14px;
+    }
+    
+    .notes-label {
+        font-weight: 600;
+        color: #5a5c69;
+        margin-bottom: 8px;
+        display: block;
+        font-size: 14px;
+    }
+    
+    /* Alert styling */
+    .alert {
+        border-radius: 4px;
+        border: none;
+        font-size: 14px;
+    }
+    
+    .alert-info {
+        background-color: #d1ecf1;
+        color: #0c5460;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-3">
+    <div class="card">
+        <div class="card-header d-flex align-items-center justify-content-between">
+            <div>
+                <i class="fas fa-check-circle me-2"></i>
+                <span>Processed Marketing Category Requests</span>
+            </div>
+        </div>
+        <div class="card-body">
+            <!-- Filters -->
+            <div class="filter-section">
+                <div class="row g-3 align-items-end">
+                    <div class="col-lg-2 col-md-4 col-sm-6">
+                        <label class="filter-label">Year</label>
+                        <select id="yearFilter" class="form-select">
+                            <option value="">All</option>
+                        </select>
+                    </div>
+                    <div class="col-lg-2 col-md-4 col-sm-6">
+                        <label class="filter-label">Quarter</label>
+                        <select id="quarterFilter" class="form-select">
+                            <option value="">All</option>
+                        </select>
+                    </div>
+                    <div class="col-lg-2 col-md-4 col-sm-6">
+                        <label class="filter-label">Category</label>
+                        <select id="categoryFilter" class="form-select">
+                            <option value="">All</option>
+                        </select>
+                    </div>
+                    <div class="col-lg-2 col-md-4 col-sm-6">
+                        <label class="filter-label">Grade</label>
+                        <select id="gradeFilter" class="form-select">
+                            <option value="">All</option>
+                        </select>
+                    </div>
+                    <div class="col-lg-2 col-md-4 col-sm-6">
+                        <label class="filter-label">Status</label>
+                        <select id="statusFilter" class="form-select">
+                            <option value="">All</option>
+                        </select>
+                    </div>
+                    <div class="col-lg-2 col-md-6 col-sm-12">
+                        <label class="filter-label">&nbsp;</label>
+                        <div class="filter-buttons w-100">
+                            <button id="applyFilters" class="btn btn-primary flex-grow-1">
+                                Apply
+                            </button>
+                            <button id="resetFilters" class="btn btn-secondary flex-grow-1">
+                                Reset
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="tableWrapper">
+                <div class="table-responsive">
+                    <table class="table table-hover" id="processedTable">
+                    <thead>
+                        <tr>
+                            <th>Employee</th>
+                            <th>Grade</th>
+                            <th>Category</th>
+                            <th>Points</th>
+                            <th>Requested On</th>
+                            <th>Processed On</th>
+                            <th>Status</th>
+                            <th>Notes</th>
+                            <th>Attachment</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if processed_requests %}
+                        {% for req in processed_requests %}
+                        {% if req.request_date %}
+                            {% set req_month = req.request_date.month %}
+                            {% if 4 <= req_month <= 6 %}
+                                {% set fiscal_quarter = 'Q1' %}
+                            {% elif 7 <= req_month <= 9 %}
+                                {% set fiscal_quarter = 'Q2' %}
+                            {% elif 10 <= req_month <= 12 %}
+                                {% set fiscal_quarter = 'Q3' %}
+                            {% else %}
+                                {% set fiscal_quarter = 'Q4' %}
+                            {% endif %}
+                        {% else %}
+                            {% set fiscal_quarter = '' %}
+                        {% endif %}
+                        <tr data-year="{{ req.request_date.year if req.request_date else '' }}"
+                            data-quarter="{{ fiscal_quarter }}"
+                            data-category="{{ req.category_name }}"
+                            data-grade="{{ req.employee_grade }}"
+                            data-status="{{ req.status }}">
+                            <td>
+                                <strong>{{ req.employee_name }}</strong>
+                                <br>
+                                <small class="text-muted">{{ req.employee_id }}</small>
+                            </td>
+                            <td>{{ req.employee_grade }}</td>
+                            <td>{{ req.category_name }}</td>
+                            <td><strong>{{ req.points }}</strong></td>
+                            <td>{{ req.request_date.strftime('%d-%m-%Y') if req.request_date else 'N/A' }}</td>
+                            <td>{{ req.processed_date.strftime('%d-%m-%Y') if req.processed_date else 'N/A' }}</td>
+                            <td>
+                                {% if req.status == 'Approved' %}
+                                <span class="badge bg-success">Approved</span>
+                                {% else %}
+                                <span class="badge bg-danger">Rejected</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                {% if req.response_notes %}
+                                <button class="btn btn-sm btn-info btn-view-notes" 
+                                        data-notes="{{ req.response_notes | e }}"
+                                        data-employee="{{ req.employee_name }}"
+                                        data-status="{{ req.status }}">
+                                    <i class="fas fa-eye"></i> View
+                                </button>
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                {% if req.has_attachment %}
+                                <a href="{{ url_for('marketing_dashboard.get_attachment', request_id=req.id) }}" 
+                                   class="btn btn-sm btn-primary" download>
+                                    <i class="fas fa-download"></i> Download
+                                </a>
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        {% else %}
+                        <tr>
+                            <td colspan="9" style="padding: 40px; text-align: center;">
+                                <i class="fas fa-inbox" style="font-size: 3rem; color: #ccc; margin-bottom: 10px;"></i>
+                                <p style="font-size: 1.1rem; color: #666; margin: 0;">No processed requests found</p>
+                            </td>
+                        </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Notes Modal -->
+<div class="modal fade" id="notesModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-file-alt me-2"></i>Response Notes
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <span class="notes-label">Employee:</span>
+                    <span id="modalEmployeeName" class="fw-bold" style="color: var(--marketing-primary);"></span>
+                </div>
+                <div class="mb-3">
+                    <span class="notes-label">Status:</span>
+                    <span id="modalStatus"></span>
+                </div>
+                <div>
+                    <span class="notes-label">Notes:</span>
+                    <div class="notes-content" id="modalNotesContent"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>Close
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Initialize DataTable
+    {% if processed_requests %}
+    var table = $('#processedTable').DataTable({
+        order: [[5, 'desc']], // Sort by Processed On date, newest first
+        pageLength: 10,
+        lengthMenu: [[-1, 10, 25, 50], ["All", 10, 25, 50]],
+        language: {
+            search: "Search:",
+            lengthMenu: "Show _MENU_ entries",
+            info: "Showing _START_ to _END_ of _TOTAL_ entries",
+            infoEmpty: "No entries",
+            paginate: {
+                previous: "Previous",
+                next: "Next"
+            }
+        },
+        dom: '<"row datatable-controls"<"col-sm-6"l><"col-sm-6"f>>rt<"row pagination-row"<"col-sm-6"i><"col-sm-6"p>>'
+    });
+    
+    // Move controls and pagination outside the scrollable area
+    $('.table-responsive').before($('.datatable-controls'));
+    $('.table-responsive').after($('.pagination-row'));
+    
+    // Force inline styles on the select dropdown to ensure proper width
+    $('.dataTables_length select').css({
+        'min-width': '100px',
+        'width': 'auto',
+        'padding': '6px 35px 6px 12px'
+    });
+    
+    // Force "Show entries" to stay on one line
+    $('.dataTables_length label').css({
+        'display': 'flex',
+        'align-items': 'center',
+        'white-space': 'nowrap',
+        'gap': '8px',
+        'flex-wrap': 'nowrap'
+    });
+    
+    $('.dataTables_length').css({
+        'display': 'flex',
+        'align-items': 'center',
+        'white-space': 'nowrap',
+        'flex-wrap': 'nowrap'
+    });
+    
+    // Populate filter dropdowns dynamically from table data
+    var years = new Set();
+    var quarters = new Set();
+    var categories = new Set();
+    var grades = new Set();
+    var statuses = new Set();
+    
+    $('#processedTable tbody tr').each(function() {
+        var year = $(this).data('year');
+        var quarter = $(this).data('quarter');
+        var category = $(this).data('category');
+        var grade = $(this).data('grade');
+        var status = $(this).data('status');
+        
+        if (year) years.add(year);
+        if (quarter) quarters.add(quarter);
+        if (category) categories.add(category);
+        if (grade) grades.add(grade);
+        if (status) statuses.add(status);
+    });
+    
+    // Populate Year filter (sorted descending)
+    Array.from(years).sort((a, b) => b - a).forEach(function(year) {
+        $('#yearFilter').append(`<option value="${year}">${year}</option>`);
+    });
+    
+    // Populate Quarter filter (sorted Q1, Q2, Q3, Q4)
+    Array.from(quarters).sort().forEach(function(quarter) {
+        $('#quarterFilter').append(`<option value="${quarter}">${quarter}</option>`);
+    });
+    
+    // Populate Category filter (sorted alphabetically)
+    Array.from(categories).sort().forEach(function(category) {
+        $('#categoryFilter').append(`<option value="${category}">${category}</option>`);
+    });
+    
+    // Populate Grade filter (sorted alphabetically)
+    Array.from(grades).sort().forEach(function(grade) {
+        $('#gradeFilter').append(`<option value="${grade}">${grade}</option>`);
+    });
+    
+    // Populate Status filter (sorted alphabetically)
+    Array.from(statuses).sort().forEach(function(status) {
+        $('#statusFilter').append(`<option value="${status}">${status}</option>`);
+    });
+    
+    // Custom filter function
+    $.fn.dataTable.ext.search.push(function(settings, data, dataIndex) {
+        if (settings.nTable.id !== 'processedTable') return true;
+        
+        var row = $(table.row(dataIndex).node());
+        var yearFilter = $('#yearFilter').val();
+        var quarterFilter = $('#quarterFilter').val();
+        var categoryFilter = $('#categoryFilter').val();
+        var gradeFilter = $('#gradeFilter').val();
+        var statusFilter = $('#statusFilter').val();
+        
+        if (yearFilter && row.data('year') != yearFilter) return false;
+        if (quarterFilter && row.data('quarter') != quarterFilter) return false;
+        if (categoryFilter && row.data('category') != categoryFilter) return false;
+        if (gradeFilter && row.data('grade') != gradeFilter) return false;
+        if (statusFilter && row.data('status') != statusFilter) return false;
+        
+        return true;
+    });
+    
+    // Apply filters
+    $('#applyFilters').click(function() {
+        table.draw();
+    });
+    
+    // Reset filters
+    $('#resetFilters').click(function() {
+        $('#yearFilter, #quarterFilter, #categoryFilter, #gradeFilter, #statusFilter').val('');
+        table.draw();
+    });
+    {% endif %}
+    
+    // View Notes
+    $(document).on('click', '.btn-view-notes', function() {
+        var notes = $(this).data('notes');
+        var employee = $(this).data('employee');
+        var status = $(this).data('status');
+        
+        $('#modalEmployeeName').text(employee);
+        $('#modalNotesContent').text(notes);
+        
+        if (status === 'Approved') {
+            $('#modalStatus').html('<span class="badge bg-success">Approved</span>');
+        } else {
+            $('#modalStatus').html('<span class="badge bg-danger">Rejected</span>');
+        }
+        
+        $('#notesModal').modal('show');
+    });
+});
+</script>
+{% endblock %}

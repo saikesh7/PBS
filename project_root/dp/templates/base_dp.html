@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}DP Dashboard{% endblock %}</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts - Lexend -->
+    <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- Custom CSS -->
+    <style>
+        body {
+            font-family: 'Lexend', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: #f4f6f9;
+            margin: 0;
+            padding: 0;
+        }
+        
+        /* Top Navigation Bar */
+        .navbar {
+            position: fixed;
+            top: 0;
+            right: 0;
+            left: 250px;
+            height: 100px;
+            background-color: #002060;
+            box-shadow: 0 2px 4px rgba(0,0,0,.1);
+            z-index: 1030;
+        }
+        
+        .navbar-brand {
+            font-weight: 700;
+            color: white !important;
+            font-size: 1.1rem;
+        }
+        
+        .navbar .nav-link {
+            color: rgba(255,255,255,.9) !important;
+        }
+        
+        /* Sidebar */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 250px;
+            height: 100vh;
+            background-color: #002060;
+            box-shadow: 2px 0 10px rgba(0,0,0,.1);
+            padding: 0;
+            z-index: 1040;
+            overflow-y: auto;
+            transition: transform 0.3s ease;
+        }
+        
+        /* Mobile responsive */
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-250px);
+            }
+            
+            .sidebar.show {
+                transform: translateX(0);
+            }
+            
+            .navbar {
+                left: 0 !important;
+            }
+            
+            .content-offset {
+                margin-left: 0 !important;
+            }
+        }
+        
+        .sidebar .nav-link {
+            color: rgba(255,255,255,.7);
+            padding: 0.9rem 1.2rem;
+            border-left: 3px solid transparent;
+            transition: all 0.2s;
+            font-size: 0.95rem;
+        }
+        
+        .sidebar .nav-link:hover {
+            color: white;
+            background-color: rgba(255,255,255,.05);
+            border-left-color: #4e9af1;
+        }
+        
+        .sidebar .nav-link.active {
+            color: white;
+            background-color: rgba(78, 154, 241, 0.15);
+            border-left-color: #4e9af1;
+        }
+        
+        .sidebar .nav-link i {
+            margin-right: 0.7rem;
+            width: 20px;
+            text-align: center;
+        }
+        
+        /* Content Area */
+        .content-wrapper {
+            margin-top: 110px;
+            min-height: calc(100vh - 110px);
+            background-color: #f4f6f9;
+            padding: 1.5rem;
+        }
+        
+        .card {
+            border: none;
+            box-shadow: 0 0.15rem 1.75rem 0 rgba(58,59,69,.08);
+            margin-bottom: 1.5rem;
+            border-radius: 0.35rem;
+        }
+        
+        .card-header {
+            background-color: #1a2942;
+            color: white;
+            border-bottom: 1px solid #e3e6f0;
+            padding: 0.75rem 1.25rem;
+            font-weight: 600;
+        }
+        
+        .card-header.bg-primary {
+            background-color: #1a2942 !important;
+        }
+        
+        .card-body {
+            padding: 1.25rem;
+        }
+        
+        /* Badges */
+        .badge {
+            padding: 0.35rem 0.65rem;
+            font-weight: 600;
+        }
+        
+        /* Tables */
+        .table {
+            margin-bottom: 0;
+        }
+        
+        .table thead th {
+            border-bottom: 2px solid #dee2e6;
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: #5a5c69;
+        }
+        
+        /* Hamburger Menu Button - Hidden on Desktop */
+        .sidebar-toggle {
+            display: none;
+            position: fixed;
+            top: 15px;
+            left: 15px;
+            z-index: 1050;
+            background-color: #002060;
+            border: none;
+            color: white;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+        
+        .sidebar-toggle:hover {
+            background-color: #003080;
+        }
+        
+        /* Overlay for mobile sidebar */
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            z-index: 1035;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .sidebar-overlay.show {
+            display: block;
+            opacity: 1;
+        }
+        
+        /* Mobile-only styles */
+        @media (max-width: 768px) {
+            /* Show hamburger button on mobile */
+            .sidebar-toggle {
+                display: block;
+            }
+            
+            /* Hide sidebar by default on mobile */
+            .sidebar {
+                transform: translateX(-250px);
+            }
+            
+            /* Show sidebar when active */
+            .sidebar.show {
+                transform: translateX(0);
+            }
+            
+            /* Navbar full width on mobile */
+            .navbar {
+                left: 0 !important;
+                height: 80px;
+            }
+            
+            .navbar .container-fluid {
+                flex-direction: column;
+                padding: 0.3rem !important;
+                gap: 0.2rem;
+            }
+            
+            .navbar .d-flex {
+                position: static !important;
+                padding: 0.2rem 0.5rem !important;
+            }
+            
+            .navbar h5 {
+                font-size: 0.85rem !important;
+                letter-spacing: 0.5px !important;
+            }
+            
+            .navbar .fas.fa-award {
+                font-size: 0.75rem;
+            }
+            
+            /* Main content full width on mobile */
+            div[style*="margin-left: 250px"] {
+                margin-left: 0 !important;
+            }
+            
+            /* Content wrapper adjustments */
+            .content-wrapper {
+                margin-top: 90px;
+                padding: 0.75rem;
+            }
+            
+            /* Card adjustments */
+            .card-body {
+                padding: 0.75rem;
+            }
+            
+            .card-header {
+                padding: 0.5rem 0.75rem;
+                font-size: 0.85rem;
+            }
+            
+            /* Table responsive */
+            .table {
+                font-size: 0.8rem;
+            }
+            
+            .table thead th {
+                font-size: 0.75rem;
+                padding: 0.4rem;
+            }
+            
+            .table tbody td {
+                padding: 0.4rem;
+            }
+            
+            /* Badge adjustments */
+            .badge {
+                font-size: 0.7rem;
+                padding: 0.25rem 0.4rem;
+            }
+            
+            /* Hide less important table columns */
+            .table .hide-mobile {
+                display: none;
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .navbar {
+                height: 70px;
+            }
+            
+            .navbar h5 {
+                font-size: 0.75rem !important;
+            }
+            
+            .content-wrapper {
+                margin-top: 80px;
+                padding: 0.5rem;
+            }
+            
+            .card {
+                margin-bottom: 1rem;
+            }
+            
+            .table {
+                font-size: 0.7rem;
+            }
+            
+            .table thead th,
+            .table tbody td {
+                padding: 0.3rem;
+            }
+            
+            h3 {
+                font-size: 1.2rem;
+            }
+            
+            h5 {
+                font-size: 0.95rem;
+            }
+        }
+    </style>
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Hamburger Menu Toggle Button (Mobile Only) -->
+    <button class="sidebar-toggle" id="sidebarToggle" onclick="toggleSidebar()">
+        <i class="fas fa-bars"></i>
+    </button>
+    
+    <!-- Sidebar Overlay (Mobile Only) -->
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+    
+    <!-- Sidebar -->
+    <nav class="sidebar">
+        <!-- Logo in Sidebar -->
+        <div class="text-center" style="padding: 1rem; height: 100px; display: flex; flex-direction: column; align-items: center; justify-content: center; border-bottom: 1px solid rgba(255,255,255,0.1);">
+            <img src="https://www.prowesssoft.com/wp-content/uploads/2025/05/Prowess-white-logo.png" 
+                 alt="Prowess Soft Logo" 
+                 class="sidebar-logo mb-1" 
+                 style="max-height: 40px; width: auto;">
+            <div style="font-size: 12px; font-weight: 500; color: white;">PROWESS SOFT</div>
+        </div>
+        
+        <ul class="nav flex-column mt-3">
+            <li class="nav-item">
+                <a class="nav-link {% if request.endpoint == 'dp.dashboard' %}active{% endif %}" href="{{ url_for('dp.dashboard') }}">
+                    <i class="fas fa-tachometer-alt"></i>
+                    <span>Dashboard</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if request.endpoint == 'dp.leaderboard' %}active{% endif %}" href="{{ url_for('dp.leaderboard') }}">
+                    <i class="fas fa-trophy"></i>
+                    <span>Leaderboard</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if request.endpoint == 'dp.pending_requests' %}active{% endif %}" href="{{ url_for('dp.pending_requests') }}">
+                    <i class="fas fa-clock"></i>
+                    <span>Pending Requests</span>
+                </a>
+            </li>
+        </ul>
+        
+        <!-- Switch Dashboard Section -->
+        <div class="px-3 py-2 mt-3">
+            <small class="text-white-50 text-uppercase" style="font-size: 11px;">
+                <i class="fas fa-th-large me-1"></i> Switch Dashboard
+            </small>
+        </div>
+        
+        <ul class="nav flex-column">
+            <!-- ALWAYS show Employee View as first option -->
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('employee_dashboard.dashboard') }}">
+                    <i class="fas fa-user"></i>
+                    <span>Employee View</span>
+                </a>
+            </li>
+            
+            <!-- Show other dashboards if user has access -->
+            {% if user and user.dashboard_access %}
+                {% set dashboard_list = user.dashboard_access if user.dashboard_access is iterable and user.dashboard_access is not string else [user.dashboard_access] %}
+                
+                {% for dashboard in dashboard_list %}
+                    {# Don't show current dashboard (dp) in switcher #}
+                    {% if dashboard == 'pmo_up' %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('pmo.updater_dashboard') }}">
+                            <i class="fas fa-tasks"></i>
+                            <span>PMO Updater</span>
+                        </a>
+                    </li>
+                    {% elif dashboard == 'pmo_va' %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('pmo.validator_dashboard') }}">
+                            <i class="fas fa-clipboard-check"></i>
+                            <span>PMO Validator</span>
+                        </a>
+                    </li>
+                    {% elif dashboard == 'pm_arch' or dashboard == 'pmarch' %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('pm_arch.dashboard') }}">
+                            <i class="fas fa-drafting-compass"></i>
+                            <span>PM/Arch Dashboard</span>
+                        </a>
+                    </li>
+                    {% elif dashboard == 'pm' %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('pm.dashboard') }}">
+                            <i class="fas fa-project-diagram"></i>
+                            <span>PM Dashboard</span>
+                        </a>
+                    </li>
+                    {% elif dashboard == 'ta_up' %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('ta.updater_dashboard') }}">
+                            <i class="fas fa-user-plus"></i>
+                            <span>TA Updater</span>
+                        </a>
+                    </li>
+                    {% elif dashboard == 'ta_va' %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('ta.validator_dashboard') }}">
+                            <i class="fas fa-user-check"></i>
+                            <span>TA Validator</span>
+                        </a>
+                    </li>
+                    {% elif dashboard == 'ld' %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('ld.dashboard') }}">
+                            <i class="fas fa-graduation-cap"></i>
+                            <span>L&D Dashboard</span>
+                        </a>
+                    </li>
+                    {% elif dashboard == 'ld_up' %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('ld.updater_dashboard') }}">
+                            <i class="fas fa-user-edit"></i>
+                            <span>L&D Updater</span>
+                        </a>
+                    </li>
+                    {% elif dashboard == 'ld_va' %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('ld.validator_dashboard') }}">
+                            <i class="fas fa-book-reader"></i>
+                            <span>L&D Validator</span>
+                        </a>
+                    </li>
+                    {% elif dashboard == 'hr_up' %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('hr_roles.updater_dashboard') }}">
+                            <i class="fas fa-user-edit"></i>
+                            <span>HR Updater</span>
+                        </a>
+                    </li>
+                    {% elif dashboard == 'hr_va' %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('hr_roles.validator_dashboard') }}">
+                            <i class="fas fa-user-check"></i>
+                            <span>HR Validator</span>
+                        </a>
+                    </li>
+                    {% elif dashboard == 'hr' %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('hr_analytics.pbs_analytics') }}">
+                            <i class="fas fa-chart-line"></i>
+                            <span>HR Analytics</span>
+                        </a>
+                    </li>
+                    {% elif dashboard == 'marketing' %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('marketing_dashboard.dashboard') }}">
+                            <i class="fas fa-bullhorn"></i>
+                            <span>Marketing Dashboard</span>
+                        </a>
+                    </li>
+                    {% elif dashboard == 'presales' %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('presales.dashboard') }}">
+                            <i class="fas fa-handshake"></i>
+                            <span>Presales Dashboard</span>
+                        </a>
+                    </li>
+                    {% elif dashboard == 'central' %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('central.dashboard') }}">
+                            <i class="fas fa-building"></i>
+                            <span>Central Dashboard</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                {% endfor %}
+            {% endif %}
+        </ul>
+        
+        <div class="px-3 py-2 mt-3">
+            <small class="text-white-50 text-uppercase" style="font-size: 11px;">
+                <i class="fas fa-cog me-1"></i> Account
+            </small>
+        </div>
+        
+        <ul class="nav flex-column">
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('auth.logout') }}">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Logout</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+
+    <!-- Main Content Area (offset by sidebar width) -->
+    <div style="margin-left: 250px;">
+        <!-- Top Navigation Bar -->
+        <nav class="navbar navbar-expand-lg navbar-dark sticky-top" style="padding: 0;">
+            <div class="container-fluid" style="padding: 0; display: flex; justify-content: center; align-items: center;">
+                <!-- DP Dashboard Section -->
+                <div class="d-flex align-items-center" style="padding: 0.8rem 1.5rem; position: absolute; left: 0;">
+                    <i class="fas fa-chart-pie text-white me-2"></i>
+                    <span class="text-white fw-bold">DP Dashboard</span>
+                </div>
+                
+                <!-- Center: Title -->
+                <div style="padding: 0.8rem;">
+                    <h5 class="mb-0 text-white fw-bold" style="letter-spacing: 1px;">
+                        <i class="fas fa-award me-2" style="color: #ffc107;"></i>POINTS BASED SYSTEM
+                    </h5>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="content-wrapper" style="padding: 1.5rem;">
+                <!-- Flash Messages -->
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }} alert-dismissible fade show mt-3" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    
+    <!-- Socket.IO for Real-Time Events -->
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    
+    <script>
+        // Initialize Socket.IO connection for real-time events
+        const socket = io({
+            transports: ['websocket', 'polling']
+        });
+        
+        // Get current user ID from session
+        const currentUserId = '{{ session.get("user_id") }}';
+        
+        socket.on('connect', function() {
+            console.log('✅ Socket.IO connected for DP dashboard');
+            
+            // Join DP-specific room
+            if (currentUserId) {
+                socket.emit('join_room', {
+                    room: `dp_${currentUserId}`,
+                    user_id: currentUserId,
+                    role: 'dp'
+                });
+                console.log(`Joined room: dp_${currentUserId}`);
+            }
+        });
+        
+        socket.on('disconnect', function() {
+            console.log('❌ Socket.IO disconnected');
+        });
+        
+        // Listen for DP employee points updates
+        socket.on('dp_employee_points_update', function(data) {
+            console.log('🔔 DP Points Update received:', data);
+            
+            // Trigger immediate refresh of points data
+            if (typeof refreshPointsData === 'function') {
+                refreshPointsData();
+            }
+            
+            // Show toast notification
+            showPointsNotification(data);
+        });
+        
+        // Listen for employee list updates (when employees are assigned/unassigned)
+        socket.on('dp_employee_list_update', function(data) {
+            console.log('🔔 DP Employee List Update received:', data);
+            console.log('Reloading page to show updated employee list...');
+            
+            // Reload the page to show updated employee list
+            location.reload();
+        });
+        
+        // Poll for employee list and points updates every 3 seconds
+        let lastEmployeeCount = parseInt('{{ employees_data|length }}');
+        let pendingReload = false;
+        console.log('Initial employee count:', lastEmployeeCount);
+        
+        // Only run auto-update on dashboard page, not on leaderboard or pending-requests
+        const isLeaderboardPage = window.location.pathname.includes('/leaderboard');
+        const isPendingRequestsPage = window.location.pathname.includes('/pending-requests');
+        
+        if (!isLeaderboardPage && !isPendingRequestsPage) {
+            setInterval(function() {
+            console.log('Checking for updates...');
+            fetch('/dp/api/employees-points-summary')
+                .then(response => {
+                    console.log('API response status:', response.status);
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Full API response:', data);
+                    const currentCount = data.employees ? data.employees.length : 0;
+                    console.log('Current count from API:', currentCount, 'Last count:', lastEmployeeCount);
+                    if (data.employees && data.employees.length > 0) {
+                        console.log('First employee data:', data.employees[0]);
+                    }
+                    
+                    // Check if modal is open
+                    const modalOpen = document.querySelector('.modal.show') !== null;
+                    
+                    if (currentCount !== lastEmployeeCount) {
+                        console.log('Employee count changed from ' + lastEmployeeCount + ' to ' + currentCount);
+                        
+                        if (modalOpen) {
+                            console.log('Modal is open, updating table without reload.');
+                            // Update count
+                            lastEmployeeCount = currentCount;
+                            
+                            // Update the badge
+                            const badge = document.querySelector('.badge.bg-primary');
+                            if (badge && badge.textContent !== currentCount.toString()) {
+                                badge.textContent = currentCount;
+                            }
+                            
+                            // Try to update the table with new employees
+                            const hasAllDetails = data.employees.every(emp => emp.employee_name && emp.employee_name !== 'Unknown');
+                            if (hasAllDetails) {
+                                updateEmployeeTable(data.employees);
+                            } else {
+                                console.log('Some employee details missing, will reload when modal closes');
+                                pendingReload = true;
+                            }
+                        } else {
+                            console.log('Reloading page...');
+                            location.reload();
+                        }
+                    } else if (data.employees) {
+                        // Update points for existing employees without reload
+                        updateEmployeePoints(data.employees);
+                    }
+                    
+                    // If modal was closed and there's a pending reload
+                    if (!modalOpen && pendingReload) {
+                        console.log('Modal closed, reloading to show new employees...');
+                        location.reload();
+                    }
+                })
+                .catch(error => console.error('Error checking for updates:', error));
+            }, 3000); // Check every 3 seconds
+        }
+        
+        function updateEmployeePoints(employees) {
+            employees.forEach(emp => {
+                const row = document.querySelector('tr[onclick*="' + emp.employee_id + '"]');
+                if (row) {
+                    const cells = row.querySelectorAll('td');
+                    if (cells.length >= 9) {
+                        // Update Q1, Q2, Q3, Q4, Total (indices 4-8)
+                        cells[4].textContent = emp.quarterly_points.Q1 || 0;
+                        cells[5].textContent = emp.quarterly_points.Q2 || 0;
+                        cells[6].textContent = emp.quarterly_points.Q3 || 0;
+                        cells[7].textContent = emp.quarterly_points.Q4 || 0;
+                        cells[8].querySelector('strong').textContent = emp.total_points || 0;
+                    }
+                }
+            });
+        }
+        
+        function updateEmployeeTable(employees) {
+            const tbody = document.querySelector('#employeesTableBody, tbody');
+            if (!tbody) return;
+            
+            // Get current employee IDs in table
+            const currentRows = tbody.querySelectorAll('tr[onclick]');
+            const currentEmployeeIds = Array.from(currentRows).map(row => {
+                const onclick = row.getAttribute('onclick');
+                const match = onclick.match(/showEmployeeDetails\('([^']+)'\)/);
+                return match ? match[1] : null;
+            }).filter(id => id !== null);
+            
+            // Check for new employees
+            employees.forEach(emp => {
+                if (!currentEmployeeIds.includes(emp.employee_id)) {
+                    console.log('Adding new employee to table:', emp.employee_id);
+                    // Create new row for this employee
+                    const newRow = document.createElement('tr');
+                    newRow.style.cursor = 'pointer';
+                    newRow.setAttribute('onclick', "showEmployeeDetails('" + emp.employee_id + "')");
+                    
+                    // If employee details are missing, skip for now
+                    if (!emp.employee_name || emp.employee_name === 'Unknown') {
+                        console.log('Employee details missing from API, will reload after modal closes');
+                        // Don't add the row yet, will reload when modal closes
+                        return;
+                    }
+                    
+                    newRow.innerHTML = `
+                        <td><strong><a href="#" onclick="event.preventDefault();" style="text-decoration: none; color: inherit;">${emp.employee_name || 'Unknown'}</a></strong></td>
+                        <td class="hide-mobile">${emp.employee_employee_id || 'N/A'}</td>
+                        <td class="hide-mobile">${emp.employee_email || 'N/A'}</td>
+                        <td class="hide-mobile">${emp.employee_department || 'N/A'}</td>
+                        <td>${emp.quarterly_points.Q1 || 0}</td>
+                        <td>${emp.quarterly_points.Q2 || 0}</td>
+                        <td>${emp.quarterly_points.Q3 || 0}</td>
+                        <td>${emp.quarterly_points.Q4 || 0}</td>
+                        <td><strong>${emp.total_points || 0}</strong></td>
+                    `;
+                    
+                    tbody.appendChild(newRow);
+                } else {
+                    // Update existing employee points
+                    const row = document.querySelector('tr[onclick*="' + emp.employee_id + '"]');
+                    if (row) {
+                        const cells = row.querySelectorAll('td');
+                        if (cells.length >= 9) {
+                            cells[4].textContent = emp.quarterly_points.Q1 || 0;
+                            cells[5].textContent = emp.quarterly_points.Q2 || 0;
+                            cells[6].textContent = emp.quarterly_points.Q3 || 0;
+                            cells[7].textContent = emp.quarterly_points.Q4 || 0;
+                            cells[8].querySelector('strong').textContent = emp.total_points || 0;
+                        }
+                    }
+                }
+            });
+            
+            // Check for removed employees
+            currentEmployeeIds.forEach(currentId => {
+                const stillExists = employees.some(emp => emp.employee_id === currentId);
+                if (!stillExists) {
+                    console.log('Removing employee from table:', currentId);
+                    const row = document.querySelector('tr[onclick*="' + currentId + '"]');
+                    if (row) {
+                        row.remove();
+                    }
+                }
+            });
+        }
+        
+
+        
+        function showPointsNotification(data) {
+            // Create toast notification
+            const toastHtml = `
+                <div class="toast align-items-center text-white bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true" style="position: fixed; top: 80px; right: 20px; z-index: 9999;">
+                    <div class="d-flex">
+                        <div class="toast-body">
+                            <strong>${data.employee_name}</strong> received <strong>${data.points} points</strong> for ${data.category_name}
+                        </div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                    </div>
+                </div>
+            `;
+            
+            const toastElement = $(toastHtml);
+            $('body').append(toastElement);
+            
+            const toast = new bootstrap.Toast(toastElement[0], {
+                autohide: true,
+                delay: 5000
+            });
+            toast.show();
+            
+            // Remove toast element after it's hidden
+            toastElement.on('hidden.bs.toast', function() {
+                $(this).remove();
+            });
+        }
+        
+
+    </script>
+    
+    <script>
+        // Mobile sidebar toggle functionality
+        function toggleSidebar() {
+            const sidebar = document.querySelector('.sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            
+            sidebar.classList.toggle('show');
+            overlay.classList.toggle('show');
+        }
+        
+        function closeSidebar() {
+            const sidebar = document.querySelector('.sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            
+            sidebar.classList.remove('show');
+            overlay.classList.remove('show');
+        }
+        
+        // Close sidebar when clicking on a link (mobile only)
+        document.addEventListener('DOMContentLoaded', function() {
+            if (window.innerWidth <= 768) {
+                const sidebarLinks = document.querySelectorAll('.sidebar .nav-link');
+                sidebarLinks.forEach(link => {
+                    link.addEventListener('click', function() {
+                        closeSidebar();
+                    });
+                });
+            }
+        });
+        
+        // Handle window resize
+        window.addEventListener('resize', function() {
+            if (window.innerWidth > 768) {
+                // Remove mobile classes when switching to desktop
+                const sidebar = document.querySelector('.sidebar');
+                const overlay = document.getElementById('sidebarOverlay');
+                sidebar.classList.remove('show');
+                overlay.classList.remove('show');
+            }
+        });
+    </script>
+    
+    {% block scripts %}{% endblock %}
+</body>
+</html>

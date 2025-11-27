@@ -1,0 +1,2561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TA Dashboard</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+    <!-- DataTables CSS -->
+    <link href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" rel="stylesheet">
+    <!-- DataTables Buttons CSS -->
+    <link href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.bootstrap5.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('ta.static', filename='ta_dashboard.css') }}">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600&display=swap" rel="stylesheet">
+   <style>
+    .text-nowrap {
+    white-space: nowrap !important;
+}
+
+   </style> 
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="d-flex flex-column align-items-center">
+                <img src="https://www.prowesssoft.com/wp-content/uploads/2025/05/Prowess-white-logo.png" alt="PS Logo" class="sidebar-logo mb-1" style="max-height: 40px;">
+                <div class="text-success" style="font-size: 12px; font-weight: 500;">PROWESS SOFT</div>
+            </div>
+        </div>
+        <div class="pt-2 pb-2 ps-3 pe-3 text-white"></div>
+
+        <div class="sidebar-nav">
+            <!-- Reward Points -->
+            <a href="#assignPointsTab"
+               class="sidebar-nav-item {% if tab == 'reward_points' %}{% endif %}"
+               data-bs-toggle="tab"
+               data-bs-target="#assignPointsTab">
+                <div>
+                    <i class="fas fa-plus-circle"></i>
+                    <span>Reward Points</span>
+                </div>
+            </a>
+
+            <!-- Bulk Upload -->
+            <a href="#bulkUploadTab"
+               class="sidebar-nav-item {% if tab == 'bulk_upload' %}active{% endif %}"
+               data-bs-toggle="tab"
+               data-bs-target="#bulkUploadTab">
+                <div>
+                    <i class="fas fa-upload"></i>
+                    <span>Bulk Upload</span>
+                </div>
+            </a>
+
+            <!-- Interview History -->
+            <a href="#history"
+               class="sidebar-nav-item {% if tab == 'history' %}active{% endif %}"
+               data-bs-toggle="tab"
+               data-bs-target="#history">
+                <div>
+                    <i class="fas fa-history"></i>
+                    <span>Interview History</span>
+                </div>
+            </a>
+
+            <div class="sidebar-divider"></div>
+
+            <!-- Logout -->
+            <a href="{{ url_for('auth.logout') }}" class="sidebar-nav-item" id="logoutLink">
+                <div>
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Logout</span>
+                </div>
+            </a>
+        </div>
+    </div>
+
+    <!-- Sidebar Overlay (for mobile) -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    
+    <!-- Topbar -->
+    <div class="topbar">
+        <div class="topbar-left">
+            <button class="sidebar-toggle" id="sidebarToggle">
+                <i class="fas fa-bars"></i>
+            </button>
+            <div class="topbar-icon">
+                <i class="fas fa-chart-line"></i>
+            </div>
+            <div class="topbar-info">
+                <div class="topbar-title">TA Updater Dashboard</div>
+                <div class="topbar-subtitle">
+                    <span class="topbar-badge bg-primary">{{ current_quarter }}</span>
+                    <span class="topbar-badge bg-secondary">{{ current_month }}</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Center Heading -->
+        <div class="topbar-center">
+            <h6 class="topbar-heading">
+                <i class="fas fa-award me-2" style="color: gold;"></i><span>POINTS BASED SYSTEM</span>
+            </h6>
+        </div>
+    </div>
+
+    <!-- Notification Toast Container -->
+    <div class="position-fixed top-0 end-0 p-3" style="z-index: 9999">
+        <div id="updaterToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true" data-bs-autohide="true" data-bs-delay="5000">
+            <div class="toast-header">
+                <i class="fas fa-bell me-2"></i>
+                <strong class="me-auto">Notification</strong>
+                <small class="text-muted">just now</small>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body">
+                <div id="updaterToastMsg"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="content-wrapper">
+        <!-- Flash messages with animation -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        {% if bulk_upload_successes %}
+        <div class="alert alert-success mb-4" id="bulkSuccessMessage">
+            <h5><i class="fas fa-check-circle me-2"></i>Successful Uploads</h5>
+            <ul class="mb-0">
+                {% for success in bulk_upload_successes %}
+                    <li>{{ success }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
+        {% if bulk_upload_errors %}
+        <div class="alert alert-warning alert-dismissible fade show mt-3" role="alert">
+            <h5 class="alert-heading">CSV Upload Issues</h5>
+            <ul class="mb-0">
+                {% for error in bulk_upload_errors %}
+                <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endif %}
+
+        <!-- Information alert about grade restrictions -->
+        <div class="alert alert-info alert-dismissible fade show mb-4">
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            <h5><i class="fas fa-info-circle"></i> Important Information</h5>
+            <p>As a TA manager, you can assign interview points to all employees except those with <strong>A1 and B1 grades</strong>, as these grades have 0 minimum requirements.</p>
+            <p>The system will automatically validate eligibility when you select an employee.</p>
+        </div>
+
+        <!-- Hidden Tab Navigation (for Bootstrap tab functionality) -->
+        <ul class="nav nav-tabs" id="taTabs" role="tablist" style="display:none;">
+            <!-- Reward Points Tab -->
+            <li class="nav-item" role="presentation">
+                <button class="nav-link " id="assignPoints2Tab" data-bs-toggle="tab" data-bs-target="#assignPointsTab" type="button" role="tab" aria-selected="true">
+                    Reward Points
+                </button>
+            </li>
+
+            <!-- Bulk Upload Tab -->
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="bulkUploadtab" data-bs-toggle="tab" data-bs-target="#bulkUploadTab" type="button" role="tab" aria-selected="false">Bulk Upload</button>
+            </li>
+
+            <!-- Interview History Tab -->
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="history-tab" data-bs-toggle="tab" data-bs-target="#history" type="button" role="tab" aria-selected="false">Interview History</button>
+            </li>
+        </ul>
+
+        <!-- Tab Content -->
+        <div class="tab-content" id="maintaTabContent">
+            <!-- Reward Points Tab -->
+            <div class="tab-pane fade show active" id="assignPointsTab" role="tabpanel" aria-labelledby="assignPoints2Tab">
+                <div class="card" id="assignInterviewPointsSection">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-plus-circle me-2"></i> Assign Interview Points
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <!-- Error message area for grade restrictions -->
+                        <div id="modal-grade-error" class="d-none alert alert-danger mb-3">
+                            <i class="fas fa-exclamation-circle me-2"></i>
+                            <span id="modal-grade-error-message"></span>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="department" class="form-label">Department</label>
+                                <select class="form-select" id="department" onchange="updateGrades()">
+                                    <option value="" disabled hidden selected>Select Department</option>
+                                    <option value="all">All Departments</option>
+                                    {% for dept in departments.keys() %}
+                                    <option value="{{ dept }}">{{ dept }}</option>
+                                    {% endfor %}
+                                </select>
+
+                            </div>
+                            <div class="col-md-6">
+                                <label for="grade" class="form-label">Grade</label>
+                                <select class="form-select" id="grade" onchange="updateEmployees()">
+                                    <option value="" disabled hidden selected>Select Grade</option>
+                                    <option value="all">All Grades</option>
+                                    <option value="B2">B2</option>
+                                    <option value="C1">C1</option>
+                                    <option value="C2">C2</option>
+                                    <option value="D1">D1</option>
+                                    <option value="D2">D2</option>
+                                </select>
+                                <small class="text-muted">Note: A1 and B1 grades are not eligible for interview points.</small>
+                            </div>
+                        </div>
+
+                       <div class="mb-3">
+                            <label for="employee_id" class="form-label">Employee</label>
+                            <select class="form-select" id="employee_id" onchange="checkEmployeeProgress()" required>
+                                <option value=""hidden disabled selected >Select Employee</option>
+                            </select>
+                        </div>
+
+                        
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="number_of_interviews" class="form-label">Number of Interviews</label>
+                                <input type="number" class="form-control" id="number_of_interviews" required min="1" value="1">
+                                <div class="form-text">Points per interview: {{ interview_category.points_per_unit }}</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="totalPoints" class="form-label">Total Points</label>
+                                <input type="text" class="form-control bg-light" id="totalPoints" readonly>
+                            </div>
+                            <!-- Add this after the "Total Points" field and before the "Notes" field -->
+                            <div class="col-md-6">
+                                <label for="eventDate" class="form-label">Event Date <span class="text-danger">*</span></label>
+                                <input type="date" class="form-control" id="eventDate" max="" >
+                                <div class="form-text">Date when the interviews were conducted (cannot be a future date)</div>
+                            </div>
+
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="notes" class="form-label">Notes <span class="text-danger">*</span></label>
+                            <textarea class="form-control" id="notes" rows="3" placeholder="Enter details about these interviews..." required></textarea>
+                        </div>
+
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="confirmed" value="true" required>
+                            <label class="form-label" for="confirmed">I confirm that this information is correct</label>
+                        </div>
+                        <div class="d-grid">
+                            <button type="button" class="btn btn-success" id="verify-assign-btn" disabled>
+                                <i class="fas fa-check me-1"></i> Assign Points
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bulk Upload Tab -->
+            <div class="tab-pane fade" id="bulkUploadTab" role="tabpanel" aria-labelledby="bulkUpload-tab">
+                <div class="card" id="bulkUploadSection">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-upload me-2"></i> Bulk Upload Interview Points
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-info">
+                            <h6 class="mb-2 d-flex align-items-center">
+                                <i class="fas fa-info-circle me-2"></i>Bulk Upload Instructions
+                            </h6>
+                            <ul class="mb-0">
+                                <li>Download the CSV template below</li>
+                                <li>Fill in the required information for each employee</li>
+                                <li><b>employee_id</b> (required)</li>
+                                <li><b>number_of_interviews</b> (required)</li>
+                                <li><b>notes</b> (required)</li>
+                                <li><b>eventDate</b> (required)</li>
+                                <li>Upload the completed CSV file</li>
+                                <li>Review the validation results before confirming</li>
+                            </ul>
+                        </div>
+
+                        <div class="alert alert-warning">
+                            <h6 class="mb-2 d-flex align-items-center">
+                                <i class="fas fa-exclamation-triangle me-2"></i>Important Notes
+                            </h6>
+                            <ul class="mb-0">
+                                <li>Employees with A1 and B1 grades will be automatically skipped during validation</li>
+                                <li>You'll have the opportunity to review validation results before finalizing the upload</li>
+                                <li>Any errors in the CSV will be highlighted for your review</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="mb-4" style="justify-content:right; display:flex;">
+                            <a href="#" class="btn btn-outline-primary" onclick="downloadTemplate()">
+                                <i class="fas fa-download me-2"></i>Download CSV Template
+                            </a>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <div class="mb-3">
+                                <label for="csv_file" class="form-label">Choose CSV file</label>
+                                <input class="form-control" type="file" id="csv_file" accept=".csv" required>
+                            </div>
+                            
+                            <div class="d-flex gap-2">
+                                <button type="button" id="validateCsvBtn" class="btn btn-outline-primary">
+                                    <i class="fas fa-check-circle me-2"></i>Validate CSV
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- CSV Validation Results (hidden until validation) -->
+                        <div id="csvValidationResults" class="d-none validation-results">
+                            <h5>3. Review Validation Results</h5>
+                            
+                            <div class="card mb-3">
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-3">
+                                            <div class="text-center">
+                                                <h6>Total Rows</h6>
+                                                <h4 id="totalRowsCount">0</h4>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="text-center text-success">
+                                                <h6>Valid Rows</h6>
+                                                <h4 id="validRowsCount">0</h4>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="text-center text-danger">
+                                                <h6>Invalid Rows</h6>
+                                                <h4 id="invalidRowsCount">0</h4>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="text-center text-info">
+                                                <h6>Total Points</h6>
+                                                <h4 id="totalPointsCount">0</h4>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <div class="card h-100">
+                                        <div class="card-header">
+                                            <i class="fas fa-exclamation-triangle me-2"></i>Issues
+                                        </div>
+                                        <div class="card-body">
+                                            <div id="errorsList">
+                                                <p class="text-success">No issues found.</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="card h-100">
+                                        <div class="card-header">
+                                            <i class="fas fa-chart-pie me-2"></i>Summary
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <h6>By Department</h6>
+                                                    <div id="departmentSummary"></div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <h6>By Grade</h6>
+                                                    <div id="gradeSummary"></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="text-center mb-3">
+                                <button type="button" id="viewDetailsBtn" class="btn btn-outline-info" data-bs-toggle="modal" data-bs-target="#csvDetailsModal">
+                                    <i class="fas fa-list-ul me-2"></i>View Detailed Results
+                                </button>
+                            </div>
+                            
+                            <div class="alert alert-warning">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="confirmBulkUpload">
+                                    <label class="form-check-label" for="confirmBulkUpload">
+                                        I have reviewed the validation results and confirm that I want to proceed with this upload.
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <div class="d-grid">
+                                <button type="button" id="verify-bulk-btn" class="btn btn-primary btn-lg" disabled>
+                                    <i class="fas fa-cloud-upload-alt me-2"></i>Confirm Upload
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+             <!-- Interview History Tab -->
+            <div class="tab-pane fade " id="history" role="tabpanel" aria-labelledby="history-tab">
+                <!-- Filters for interview history -->
+                <div class="card">
+                    <div class="card-header bg-info text-white">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-history me-2"></i>
+                            <span>Interview Points History</span>
+                        </div>
+                    </div>
+                    <!-- Filter Row: All filters in one line, always -->
+                    <div class="row filter-row-fixed g-3 px-3 pt-3 pb-0">
+                        <div class="col-12 col-md-3">
+                            <div class="form-group">
+                                <label for="yearFilter"><i class="fas fa-calendar me-1"></i> Year</label>
+                                <select class="form-select" id="yearFilter">
+                                    <option value="">All Years</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-3">
+                            <div class="form-group">
+                                <label for="quarterFilter"><i class="fas fa-calendar-alt me-1"></i> Quarter</label>
+                                <select class="form-select" id="quarterFilter">
+                                    <option value="">All Quarters</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-3">
+                            <div class="form-group">
+                                <label for="gradeFilter"><i class="fas fa-layer-group me-1"></i> Grade</label>
+                                <select class="form-select" id="gradeFilter">
+                                    <option value="">All Grades</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-3">
+                            <div class="form-group">
+                                <label for="statusFilter"><i class="fa fa-check-circle me-1 text-primary"></i>  Status</label>
+                                <select class="form-select" id="statusFilter">
+                                    <option value="">All Status</option>
+                                    <option value="Approved">Approved</option>
+                                    <option value="Rejected">Rejected</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="d-flex justify-content-end mt-3">
+                            <button id="applyFilters" class="btn btn-primary" style="margin-right:13px;">
+                                <i class="fas fa-filter me-1"></i> Apply Filters
+                            </button>
+                            <button id="resetFilters" class="btn btn-outline-secondary me-2">
+                                <i class="fas fa-undo me-1"></i> Reset Filters
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-striped" id="historyTable" style="width:100%;">
+                                    <thead>
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Event Date</th>
+                                            <th>Employee</th>
+                                            <th>Grade</th>
+                                            <th>Interviews</th>
+                                            <th>Points</th>
+                                            <th>Notes</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <!-- Table rows will be populated by JavaScript -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>  
+
+            
+        </div>
+
+    
+        <!-- Bulk Upload Modal -->
+        <div class="modal fade" id="bulkUploadModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header bg-primary text-white">
+                        <h5 class="modal-title"><i class="fas fa-upload me-2"></i>Bulk Upload Interview Points</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="alert alert-info">
+                            <h6 class="mb-2 d-flex align-items-center">
+                                <i class="fas fa-info-circle me-2"></i>Bulk Upload Instructions
+                            </h6>
+                            <ol class="mb-0">
+                                <li>Download the CSV template below</li>
+                                <li>Fill in the required information for each employee</li>
+                                <li>Upload the completed CSV file</li>
+                                <li>Review the validation results before confirming</li>
+                            </ol>
+                        </div>
+
+                        <div class="alert alert-warning">
+                            <h6 class="mb-2 d-flex align-items-center">
+                                <i class="fas fa-exclamation-triangle me-2"></i>Important Notes
+                            </h6>
+                            <ul class="mb-0">
+                                <li>Employees with A1 and B1 grades will be automatically skipped during validation</li>
+                                <li>You'll have the opportunity to review validation results before finalizing the upload</li>
+                                <li>Any errors in the CSV will be highlighted for your review</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <h5>1. Download Template</h5>
+                            <a href="#" class="btn btn-outline-primary" onclick="downloadTemplate()">
+                                <i class="fas fa-download me-2"></i>Download CSV Template
+                            </a>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <h5>2. Upload Completed CSV</h5>
+                            <div class="mb-3">
+                                <label for="csv_file" class="form-label">Choose CSV file</label>
+                                <input class="form-control" type="file" id="csv_file" accept=".csv" required>
+                            </div>
+                            
+                            <div class="d-flex gap-2">
+                                <button type="button" id="validateCsvBtn" class="btn btn-outline-primary">
+                                    <i class="fas fa-check-circle me-2"></i>Validate CSV
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- CSV Validation Results (hidden until validation) -->
+                        <div id="csvValidationResults" class="d-none validation-results">
+                            <h5>3. Review Validation Results</h5>
+                            
+                            <div class="card mb-3">
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-3">
+                                            <div class="text-center">
+                                                <h6>Total Rows</h6>
+                                                <h4 id="totalRowsCount">0</h4>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="text-center text-success">
+                                                <h6>Valid Rows</h6>
+                                                <h4 id="validRowsCount">0</h4>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="text-center text-danger">
+                                                <h6>Invalid Rows</h6>
+                                                <h4 id="invalidRowsCount">0</h4>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="text-center text-info">
+                                                <h6>Total Points</h6>
+                                                <h4 id="totalPointsCount">0</h4>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <div class="card h-100">
+                                        <div class="card-header">
+                                            <i class="fas fa-exclamation-triangle me-2"></i>Issues
+                                        </div>
+                                        <div class="card-body">
+                                            <div id="errorsList">
+                                                <p class="text-success">No issues found.</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="card h-100">
+                                        <div class="card-header">
+                                            <i class="fas fa-chart-pie me-2"></i>Summary
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <h6>By Department</h6>
+                                                    <div id="departmentSummary"></div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <h6>By Grade</h6>
+                                                    <div id="gradeSummary"></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="text-center mb-3">
+                                <button type="button" id="viewDetailsBtn" class="btn btn-outline-info" data-bs-toggle="modal" data-bs-target="#csvDetailsModal">
+                                    <i class="fas fa-list-ul me-2"></i>View Detailed Results
+                                </button>
+                            </div>
+                            
+                            <div class="alert alert-warning">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="confirmBulkUpload">
+                                    <label class="form-check-label" for="confirmBulkUpload">
+                                        I have reviewed the validation results and confirm that I want to proceed with this upload.
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <div class="d-grid">
+                                <button type="button" id="verify-bulk-btn" class="btn btn-primary btn-lg" disabled>
+                                    <i class="fas fa-cloud-upload-alt me-2"></i>Confirm Upload
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    
+        <!-- CSV Details Modal -->
+        <div class="modal fade" id="csvDetailsModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-xl" role="document">
+                <div class="modal-content">
+                    <div class="modal-header bg-info text-white">
+                        <h5 class="modal-title"><i class="fas fa-list-ul me-2"></i>CSV Upload Details</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped responsive-progress-table" id="csvDetailsTable">
+                                <thead>
+                                    <tr>
+                                        <th class="col-row">Row</th>
+                                        <th class="col-status">Status</th>
+                                        <th class="col-employee">Employee</th>
+                                        <th class="col-id">ID</th>
+                                        <th class="col-department">Department</th>
+                                        <th class="col-grade">Grade</th>
+                                        <th class="col-interviews">Interviews</th>
+                                        <th class="col-points">Points</th>
+                                        <th class="col-event-date" style="white-space: nowrap;">Event Date</th>
+
+                                        <th class="col-issues">Issues</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="csvDetailsTableBody">
+                                    <!-- Populated by JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    
+               <!-- Verification Modal for Single Assignment -->
+        <div class="modal fade" id="verifyAssignModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header bg-warning text-dark border-0">
+                        <h5 class="modal-title"><i class="fas fa-exclamation-triangle me-2"></i>Verify Interview Points Assignment</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body p-4">
+                        <p class="mb-4">Please verify that the following information is correct:</p>
+                        
+                        <div class="info-container bg-light p-4 rounded mb-4">
+                            <div class="row mb-2">
+                                <div class="col-5 fw-bold">Employee:</div>
+                                <div class="col-7" id="verify-employee-name"></div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-5 fw-bold">Employee ID:</div>
+                                <div class="col-7" id="verify-employee-id"></div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-5 fw-bold">Department:</div>
+                                <div class="col-7" id="verify-department"></div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-5 fw-bold">Grade:</div>
+                                <div class="col-7" id="verify-grade"></div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-5 fw-bold">Interviews:</div>
+                                <div class="col-7" id="verify-interviews"></div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-5 fw-bold">Points:</div>
+                                <div class="col-7 text-primary fw-bold" id="verify-points"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="alert alert-info d-flex align-items-center">
+                            <i class="fas fa-info-circle me-2 fs-5"></i>
+                            <span>Once submitted, this assignment will be recorded and the employee's quarterly progress will be updated.</span>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-0 justify-content-center gap-2">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" id="cancel-assign-btn">Cancel</button>
+                        <button type="button" class="btn btn-primary" id="confirm-assign-btn">
+                            <i class="fas fa-check me-1"></i> Confirm Assignment
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Verification Modal for Bulk Upload -->
+        <div class="modal fade" id="verifyBulkUploadModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header bg-warning text-dark">
+                        <h5 class="modal-title"><i class="fas fa-exclamation-triangle me-2"></i>Verify Bulk Upload</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="mb-3">Please verify that you want to submit the following bulk upload:</p>
+                        
+                        <div class="card bg-light mb-3">
+                            <div class="card-body">
+                                <div class="row mb-3">
+                                    <div class="col-md-3 text-center">
+                                        <div class="fw-bold">File Name</div>
+                                        <div id="verify-bulk-filename" class="mt-2"></div>
+                                    </div>
+                                    <div class="col-md-3 text-center">
+                                        <div class="fw-bold">Total Rows</div>
+                                        <div id="verify-bulk-rows" class="mt-2"></div>
+                                    </div>
+                                    <div class="col-md-3 text-center">
+                                        <div class="fw-bold">Valid Entries</div>
+                                        <div id="verify-bulk-valid" class="mt-2"></div>
+                                    </div>
+                                    <div class="col-md-3 text-center">
+                                        <div class="fw-bold">Total Points</div>
+                                        <div id="verify-bulk-points" class="mt-2 fw-bold text-primary"></div>
+                                    </div>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="fw-bold mb-2">Departments</div>
+                                        <div id="verify-bulk-departments"></div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="fw-bold mb-2">Grades</div>
+                                        <div id="verify-bulk-grades"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div id="verify-bulk-skipped-warning" class="alert alert-warning d-none mb-3">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <span id="verify-bulk-skipped-count"></span> employees with A1 or B1 grades will be skipped.
+                        </div>
+                        
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Once submitted, all valid entries in this bulk upload will be processed and recorded.
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-primary" id="confirm-bulk-btn">
+                            <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" style="display: none;"></span>
+                            <i class="fas fa-check me-1 button-icon"></i>
+                            <span class="button-text">Confirm Upload</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- View Full Notes Modal -->
+        <div class="modal fade" id="viewNotesModal" tabindex="-1" aria-labelledby="viewNotesModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header bg-primary text-white">
+                        <h5 class="modal-title" id="viewNotesModalLabel">
+                            <i class="fas fa-sticky-note me-2"></i> Full Notes
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body" style="max-height: 400px; overflow-y: auto; background-color: #f8f9fa;">
+                        <pre id="fullNotesText" style="white-space: pre-wrap;"></pre>
+                    </div>
+                    <!-- Added Close Button in Footer -->
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- Hidden Form for assignment submission -->
+        <form id="assignInterviewForm" method="post" action="{{ url_for('ta.dashboard') }}" style="display: none;">
+            <input type="hidden" name="action_type" value="assign_interview_points">
+            <input type="hidden" name="employee_id" id="form_employee_id">
+            <input type="hidden" name="number_of_interviews" id="form_interviews">
+            <input type="hidden" name="notes" id="form_notes">
+            <input type="hidden" name="confirmed" value="true">
+        </form>
+        
+        <!-- Hidden Form for bulk upload submission -->
+        <form id="bulkUploadForm" method="post" action="{{ url_for('ta.dashboard') }}" enctype="multipart/form-data" style="display: none;">
+            <input type="hidden" name="action_type" value="bulk_upload">
+            <input type="file" id="form_csv_file" name="csv_file">
+        </form>
+
+        <!-- JavaScript Libraries -->
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+        <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+        <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+        <script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
+        <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.bootstrap5.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+        <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
+        <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.print.min.js"></script>
+        <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+
+<script>
+     let validatedCsvFile = null;
+
+            // Initialize sidebar toggle functionality
+            document.addEventListener('DOMContentLoaded', function() {
+                const sidebar = document.getElementById('sidebar');
+                const sidebarToggle = document.getElementById('sidebarToggle');
+                const sidebarOverlay = document.getElementById('sidebarOverlay');
+                
+                if (sidebarToggle) {
+                    sidebarToggle.addEventListener('click', function() {
+                        sidebar.classList.toggle('show');
+                        sidebarOverlay.classList.toggle('show');
+                        const toggleIcon = sidebarToggle.querySelector('i');
+                        if (sidebar.classList.contains('show')) {
+                            toggleIcon.classList.remove('fa-bars');
+                            toggleIcon.classList.add('fa-times');
+                        } else {
+                            toggleIcon.classList.remove('fa-times');
+                            toggleIcon.classList.add('fa-bars');
+                        }
+                    });
+                }
+                
+                if (sidebarOverlay) {
+                    sidebarOverlay.addEventListener('click', function() {
+                        sidebar.classList.remove('show');
+                        sidebarOverlay.classList.remove('show');
+                        const toggleIcon = sidebarToggle.querySelector('i');
+                        toggleIcon.classList.remove('fa-times');
+                        toggleIcon.classList.add('fa-bars');
+                    });
+                }
+                
+                window.addEventListener('resize', function() {
+                    if (window.innerWidth > 992 && sidebar.classList.contains('show')) {
+                        sidebar.classList.remove('show');
+                        sidebarOverlay.classList.remove('show');
+                        const toggleIcon = sidebarToggle.querySelector('i');
+                        toggleIcon.classList.remove('fa-times');
+                        toggleIcon.classList.add('fa-bars');
+                    }
+                });
+                
+                const sidebarNavItems = document.querySelectorAll('.sidebar-nav-item');
+                sidebarNavItems.forEach(item => {
+                    item.addEventListener('click', function(e) {
+                        const target = this.getAttribute('data-bs-target');
+                        if (target) {
+                            e.preventDefault();
+                            const tabEl = document.querySelector(`#taTabs button[data-bs-target="${target}"]`);
+                            if (tabEl) {
+                                const tab = new bootstrap.Tab(tabEl);
+                                tab.show();
+                            }
+                            sidebarNavItems.forEach(navItem => navItem.classList.remove('active'));
+                            this.classList.add('active');
+                        }
+                        if (window.innerWidth <= 992) {
+                            setTimeout(() => {
+                                sidebar.classList.remove('show');
+                                sidebarOverlay.classList.remove('show');
+                                const toggleIcon = sidebarToggle.querySelector('i');
+                                toggleIcon.classList.remove('fa-times');
+                                toggleIcon.classList.add('fa-bars');
+                            }, 100);
+                        }
+                    });
+                });
+
+                // Initialize history table with dynamic loading
+                initializeHistoryTable();
+                
+                const interviewsInput = document.getElementById('number_of_interviews');
+                if (interviewsInput) {
+                    interviewsInput.addEventListener('input', function() {
+                        const interviews = parseInt(this.value) || 0;
+                        const pointsPerInterview = {{ interview_category.points_per_unit if interview_category else 0 }};
+                        document.getElementById('totalPoints').value = interviews * pointsPerInterview;
+                    });
+                    interviewsInput.dispatchEvent(new Event('input'));
+                }
+                
+                const confirmCheckbox = document.getElementById('confirmBulkUpload');
+                const verifyBulkBtn = document.getElementById('verify-bulk-btn');
+                if (confirmCheckbox && verifyBulkBtn) {
+                    confirmCheckbox.addEventListener('change', function() {
+                        verifyBulkBtn.disabled = !this.checked;
+                    });
+                }
+                
+                setTimeout(function() {
+                    document.querySelectorAll('.alert-dismissible').forEach(alert => {
+                        const bsAlert = new bootstrap.Alert(alert);
+                        bsAlert.close();
+                    });
+                }, 5000);
+                
+                const verifyAssignBtn = document.getElementById('verify-assign-btn');
+                if (verifyAssignBtn) {
+                    verifyAssignBtn.addEventListener('click', function() {
+                        const employeeSelect = document.getElementById('employee_id');
+                        
+                        if (!employeeSelect.value) {
+                            alert("Please select an employee first.");
+                            return;
+                        }
+                        
+                       const employeeId = employeeSelect.value;
+                        const employeeData = employeesData[employeeId]; // Get the employee's data object
+                        
+                        // Check if employee data exists before proceeding
+                        if (!employeeData) {
+                            alert('Could not find data for the selected employee. Please try again.');
+                            return;
+                        }
+
+                        const employeeName = employeeSelect.options[employeeSelect.selectedIndex].text;
+                        // Get the ID and grade from the data object, not the HTML
+                        const displayedEmployeeId = employeeData.employee_id; 
+                        const grade = employeeData.grade;
+                        
+                        let employeeDepartment;
+                        if (employeeData.department) {
+                            employeeDepartment = employeesData[employeeId].department;
+                        } else if (employeeSelect.selectedOptions[0].getAttribute('data-department')) {
+                            employeeDepartment = employeeSelect.selectedOptions[0].getAttribute('data-department');
+                        } else {
+                            const departmentSelect = document.getElementById('department');
+                            if (departmentSelect.value !== 'all') {
+                                employeeDepartment = departmentSelect.options[departmentSelect.selectedIndex].text;
+                            } else {
+                                employeeDepartment = "Not assigned";
+                            }
+                        }
+                        
+                        const interviews = document.getElementById('number_of_interviews').value;
+                        const points = document.getElementById('totalPoints').value;
+                        const notes = document.getElementById('notes').value;
+                        const confirmed = document.getElementById('confirmed').checked;
+                        const eventDate = document.getElementById('eventDate').value;
+                        
+                        if (!employeeId || !interviews || !confirmed ||!eventDate ) {
+                            alert("Please fill in all required fields.");
+                            return;
+                        }
+                        
+                        if (grade === 'A1' || grade === 'B1') {
+                            alert(`Cannot assign interview points to ${grade} grade employees.`);
+                            return;
+                        }
+                        
+                        document.getElementById('verify-employee-name').textContent = employeeName;
+                        document.getElementById('verify-employee-id').textContent = displayedEmployeeId;
+                        document.getElementById('verify-department').textContent = employeeDepartment;
+                        document.getElementById('verify-grade').textContent = grade;
+                        document.getElementById('verify-interviews').textContent = interviews;
+                        document.getElementById('verify-points').textContent = points;
+            
+                        
+                        const verifyModal = new bootstrap.Modal(document.getElementById('verifyAssignModal'));
+                        verifyModal.show();
+                        
+                        $.ajax({
+                            url: "{{ url_for('ta.get_employee_details') }}",
+                            method: "POST",
+                            data: {
+                                employee_id: employeeId
+                            },
+                            success: function(response) {
+                                if (response.success && response.employee && response.employee.department) {
+                                    document.getElementById('verify-department').textContent = response.employee.department;
+                                }
+                            },
+                            error: function(xhr, status, error) {
+                                console.error("Error fetching employee details for modal:", error);
+                            }
+                        });
+                        
+
+                        document.getElementById('confirm-assign-btn').onclick = function() {
+                            document.getElementById('form_employee_id').value = employeeId;
+                            document.getElementById('form_interviews').value = interviews;
+                            document.getElementById('form_notes').value = notes;
+
+                            // Add event date to hidden form
+                            let eventDateInput = document.getElementById('form_event_date');
+                            if (!eventDateInput) {
+                                eventDateInput = document.createElement('input');
+                                eventDateInput.type = 'hidden';
+                                eventDateInput.name = 'event_date';
+                                eventDateInput.id = 'form_event_date';
+                                document.getElementById('assignInterviewForm').appendChild(eventDateInput);
+                            }
+                            eventDateInput.value = eventDate;
+                            
+                            document.getElementById('assignInterviewForm').submit();
+                        };
+                    });
+                }
+                
+                const verifyBulkUploadBtn = document.getElementById('verify-bulk-btn');
+                if (verifyBulkUploadBtn) {
+                    verifyBulkUploadBtn.addEventListener('click', function() {
+                        // *** FIX: Get the file name from our stored variable ***
+                        const fileName = validatedCsvFile ? validatedCsvFile.name : 'No file selected';
+                        
+                        const totalRows = document.getElementById('totalRowsCount').textContent;
+                        const validRows = document.getElementById('validRowsCount').textContent;
+                        const totalPoints = document.getElementById('totalPointsCount').textContent;
+                        
+                        const departmentSummary = document.getElementById('departmentSummary').innerHTML;
+                        const gradeSummary = document.getElementById('gradeSummary').innerHTML;
+                        
+                        const skippedWarning = document.getElementById('verify-bulk-skipped-warning');
+                        let skippedCount = 0;
+                        if (gradeSummary) {
+                            const a1Match = gradeSummary.match(/A1: (\d+) interviews/);
+                            const b1Match = gradeSummary.match(/B1: (\d+) interviews/);
+                            if (a1Match) skippedCount += parseInt(a1Match[1]);
+                            if (b1Match) skippedCount += parseInt(b1Match[1]);
+                        }
+                        
+                        if (skippedCount > 0) {
+                            skippedWarning.classList.remove('d-none');
+                            document.getElementById('verify-bulk-skipped-count').textContent = skippedCount + (skippedCount === 1 ? ' employee' : ' employees');
+                        } else {
+                            skippedWarning.classList.add('d-none');
+                        }
+                        
+                        document.getElementById('verify-bulk-filename').textContent = fileName;
+                        document.getElementById('verify-bulk-rows').textContent = totalRows;
+                        document.getElementById('verify-bulk-valid').textContent = validRows;
+                        document.getElementById('verify-bulk-points').textContent = totalPoints;
+                        document.getElementById('verify-bulk-departments').innerHTML = departmentSummary;
+                        document.getElementById('verify-bulk-grades').innerHTML = gradeSummary;
+                        
+                        const verifyModal = new bootstrap.Modal(document.getElementById('verifyBulkUploadModal'));
+                        verifyModal.show();
+                        
+                        // This is the final confirmation button inside the modal
+                        document.getElementById('confirm-bulk-btn').onclick = function() {
+                            // *** FIX: Check our stored variable instead of the file input ***
+                            if (validatedCsvFile) {
+                                const confirmBtn = this; 
+                                const spinner = confirmBtn.querySelector('.spinner-border');
+                                const buttonIcon = confirmBtn.querySelector('.button-icon');
+                                const buttonText = confirmBtn.querySelector('.button-text');
+
+                                confirmBtn.disabled = true;
+                                if (spinner) spinner.style.display = 'inline-block';
+                                if (buttonIcon) buttonIcon.style.display = 'none';
+                                if (buttonText) buttonText.textContent = 'Processing...';
+
+                                setTimeout(() => {
+                                    const formFileInput = document.getElementById('form_csv_file');
+                                    const dataTransfer = new DataTransfer();
+                                    // *** FIX: Add the stored file to the hidden form for submission ***
+                                    dataTransfer.items.add(validatedCsvFile);
+                                    formFileInput.files = dataTransfer.files;
+                                    document.getElementById('bulkUploadForm').submit();
+                                }, 150);
+
+                            } else {
+                                // This is the error the user was seeing
+                                alert("Please select a file to upload.");
+                            }
+                        };
+                    });
+                }
+                
+                const validateCsvBtn = document.getElementById('validateCsvBtn');
+                if (validateCsvBtn) {
+                    validateCsvBtn.addEventListener('click', function() {
+                        validateCsv();
+                    });
+                }
+
+                function clearAssignPointsForm() {
+                    // Reset form fields
+                    $('#department').val('');
+                    $('#grade').val('');
+                    $('#employee_id').html('<option value="" disabled hidden>Select Employee</option>');
+                    $('#number_of_interviews').val('1');
+                    $('#totalPoints').val('');
+                    $('#eventDate').val('');
+                    $('#notes').val('');
+                    $('#confirmed').prop('checked', false);
+
+                    // Hide progress info
+                    
+
+                    // Disable assign button
+                    $('#verify-assign-btn').prop('disabled', true);
+
+                    // Manually trigger change events to reset dependent fields
+                    $('#department').trigger('change');
+                }
+
+                const cancelAssignBtn = document.getElementById('cancel-assign-btn');
+                if (cancelAssignBtn) {
+                    cancelAssignBtn.addEventListener('click', function() {
+                        clearAssignPointsForm();
+                    });
+                }
+            });
+            
+            let employeesData = {};
+
+            function updateGrades() {
+                $('#employee_id').html('<option value="" hidden disabled selected>Select Employee</option>');
+            
+                $('#modal-grade-error').addClass('d-none');
+                
+                $("#grade option[value='A1']").remove();
+                $("#grade option[value='B1']").remove();
+                
+                updateEmployees();
+            }
+
+            function updateEmployees() {
+                const department = $('#department').val();
+                const grade = $('#grade').val();
+                
+                $('#employee_id').html('<option value="" hidden disabled selected>Select Employee</option>');
+                
+                $('#modal-grade-error').addClass('d-none');
+                
+                if (!department || !grade) {
+                    return;
+                }
+                
+                $('#employee_id').html('<option value="">Loading employees...</option>');
+                
+                $.ajax({
+                    url: "{{ url_for('ta.get_employees_for_interviews') }}",
+                    method: "POST",
+                    data: {
+                        department: department,
+                        grade: grade
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            let options = '<option value="" hidden disabled selected>Select Employee</option>';
+                            const eligibleEmployees = response.employees.filter(emp => 
+                                emp.grade !== 'A1' && emp.grade !== 'B1'
+                            );
+                            
+                            employeesData = {};
+                            eligibleEmployees.forEach(function(emp) {
+                                if (!emp.department && department !== 'all') {
+                                    emp.department = department;
+                                } else if (!emp.department) {
+                                    emp.department = "Department not specified";
+                                }
+                                employeesData[emp.id] = emp;
+                                options += `<option value="${emp.id}" data-department="${emp.department}">${emp.name} (${emp.employee_id})</option>`;
+                            });
+                            
+                            $('#employee_id').html(options);
+                            
+                            if (eligibleEmployees.length === 0) {
+                                $('#modal-grade-error').removeClass('d-none');
+                                $('#modal-grade-error-message').html(
+                                    'No eligible employees found for interview points in this selection.'
+                                );
+                            }
+                        } else {
+                            alert("Error: " + response.error);
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        alert("Error fetching employees: " + error);
+                    }
+                });
+            }
+
+            function getEmployeeDepartment() {
+                const employeeId = $('#employee_id').val();
+                const departmentVal = $('#department').val();
+                
+                if (departmentVal === 'all' && employeeId && employeesData[employeeId]) {
+                    return employeesData[employeeId].department;
+                }
+                return departmentVal;
+            }
+
+            function checkEmployeeProgress() {
+                const employeeId = $('#employee_id').val();
+                
+                if (!employeeId) {
+                    
+                    return;
+                }
+                
+                $.ajax({
+                    url: "{{ url_for('ta.get_employee_details') }}",
+                    method: "POST",
+                    data: {
+                        employee_id: employeeId
+                    },
+                    success: function(response) {
+                        if (response.success && response.employee) {
+                            if (employeesData[employeeId]) {
+                                employeesData[employeeId].department = response.employee.department;
+                            }
+                        } else {
+                            console.error("Failed to get employee details:", response.error);
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error("Error fetching employee details:", error);
+                    }
+                });
+                
+                $.ajax({
+                    url: "{{ url_for('ta.get_interview_limits') }}",
+                    method: "POST",
+                    data: {
+                        employee_id: employeeId
+                    },
+                    success: function(response) {
+                        if (response.grade === 'A1' || response.grade === 'B1') {
+                            
+                            $('#modal-grade-error').removeClass('d-none');
+                            $('#modal-grade-error-message').text(
+                                `${response.grade} grade employees are not eligible for interview points assignments.`
+                            );
+                            $('#verify-assign-btn').prop('disabled', true);
+                            return;
+                        } else {
+                            $('#verify-assign-btn').prop('disabled', false);
+                            $('#modal-grade-error').addClass('d-none');
+                        }
+                        
+                        
+                    },
+                    error: function(xhr, status, error) {
+                        let message = "Error fetching employee progress: " + error;
+                        if (xhr.responseJSON && xhr.responseJSON.error) {
+                            message = "Error fetching employee progress: " + xhr.responseJSON.error;
+                        }
+                        alert(message);
+                    }
+                });
+            }
+
+function validateCsv() {
+                const fileInput = document.getElementById('csv_file');
+                
+                if (!fileInput.files || fileInput.files.length === 0) {
+                    alert("Please select a CSV file to upload.");
+                    return;
+                }
+
+                // *** FIX: Store the selected file in our global variable ***
+                validatedCsvFile = fileInput.files[0];
+                
+                const formData = new FormData();
+                // Use the stored file for validation
+                formData.append('csv_file', validatedCsvFile);
+                
+                const validateBtn = document.getElementById('validateCsvBtn');
+                validateBtn.disabled = true;
+                validateBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Validating...';
+                
+                $.ajax({
+                    url: "{{ url_for('ta.validate_interview_csv') }}",
+                    method: "POST",
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function(response) {
+                        // ... (keep the entire success block as it is) ...
+                        validateBtn.disabled = false;
+                        validateBtn.innerHTML = '<i class="fas fa-check-circle me-2"></i>Validate CSV';
+                        
+                        $('#totalRowsCount').text(response.total_rows);
+                        $('#validRowsCount').text(response.valid_rows);
+                        $('#invalidRowsCount').text(response.invalid_rows);
+                        $('#totalPointsCount').text(response.summary.total_points);
+                        
+                        if (response.errors && response.errors.length > 0) {
+                            let errorHtml = '<ul class="mb-0">';
+                            response.errors.forEach(function(error) {
+                                errorHtml += `<li class="text-danger">${error}</li>`;
+                            });
+                            errorHtml += '</ul>';
+                            $('#errorsList').html(errorHtml);
+                        } else {
+                            $('#errorsList').html('<p class="text-success">No issues found.</p>');
+                        }
+                        
+                        let deptHtml = '<ul class="mb-0">';
+                        for (const [dept, count] of Object.entries(response.summary.departments)) {
+                            deptHtml += `<li>${dept}: ${count} interviews</li>`;
+                        }
+                        deptHtml += '</ul>';
+                        $('#departmentSummary').html(deptHtml);
+                        
+                        let gradeHtml = '<ul class="mb-0">';
+                        for (const [grade, count] of Object.entries(response.summary.grades)) {
+                            if (grade === 'A1' || grade === 'B1') {
+                                gradeHtml += `<li><span class="text-danger">${grade}: ${count} interviews (ineligible)</span></li>`;
+                            } else {
+                                gradeHtml += `<li>${grade}: ${count} interviews</li>`;
+                            }
+                        }
+                        gradeHtml += '</ul>';
+                        $('#gradeSummary').html(gradeHtml);
+                        
+                const detailsBody = $('#csvDetailsTableBody');
+                        detailsBody.empty();
+                        
+                        response.details.forEach(function(detail) {
+                            const rowClass = detail.is_valid ? '' : 'table-danger';
+                            const statusBadge = detail.is_valid ? 
+                                '<span class="badge bg-success">Valid</span>' : 
+                                '<span class="badge bg-danger">Invalid</span>';
+                            
+                            let issuesHtml = '';
+                            if (detail.issues && detail.issues.length > 0) {
+                                issuesHtml = `<ul class="mb-0 small">`;
+                                detail.issues.forEach(function(issue) {
+                                    issuesHtml += `<li>${issue}</li>`;
+                                });
+                                issuesHtml += `</ul>`;
+                            }
+                            
+                            if (detail.grade === 'A1' || detail.grade === 'B1') {
+                                detailsBody.append(`
+                                    <tr class="table-warning">
+                                        <td>${detail.row}</td>
+                                        <td><span class="badge bg-warning text-dark">Skipped</span></td>
+                                        <td>${detail.employee_name || ''}</td>
+                                        <td>${detail.employee_id || ''}</td>
+                                        <td>${detail.department || ''}</td>
+                                        <td>${detail.grade || ''}</td>
+                                        <td>${detail.interviews_count || ''}</td>
+                                        <td>${detail.points || ''}</td>
+                                        <td>${detail.event_date || ''}</td>
+                                        <td><span class="text-danger">Employee grade not eligible for interview points.</span> Employee with grade ${detail.grade} will be skipped during processing</td>
+                                    </tr>
+                                `);
+                                return;
+                            }
+                            
+                            detailsBody.append(`
+                                <tr class="${rowClass}">
+                                    <td>${detail.row}</td>
+                                    <td>${statusBadge}</td>
+                                    <td>${detail.employee_name || ''}</td>
+                                    <td>${detail.employee_id || ''}</td>
+                                    <td>${detail.department || ''}</td>
+                                    <td>${detail.grade || ''}</td>
+                                    <td>${detail.interviews_count || ''}</td>
+                                    <td>${detail.points || ''}</td>
+                                    <td>${detail.event_date || ''}</td>
+                                    <td>${issuesHtml}</td>
+                                </tr>
+                            `);
+                        });
+                        
+                        $('#csvValidationResults').removeClass('d-none');
+                        
+                        const hasIneligibleEmployees = response.details.some(detail => 
+                            detail.grade === 'A1' || detail.grade === 'B1'
+                        );
+                        
+                        if (hasIneligibleEmployees) {
+                            $('#errorsList').prepend(`
+                                <div class="alert alert-warning">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>
+                                    <strong>Note:</strong> Some employees in this CSV have A1 or B1 grades and are not eligible for interview points. These rows will be skipped during processing.
+                                </div>
+                            `);
+                        }
+                        
+                        $('#confirmBulkUpload').prop('checked', false);
+                        $('#verify-bulk-btn').prop('disabled', true);
+                        
+                        if (response.valid_rows > 0) {
+                            $('#confirmBulkUpload').prop('disabled', false);
+                        } else {
+                            $('#confirmBulkUpload').prop('disabled', true);
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        validateBtn.disabled = false;
+                        validateBtn.innerHTML = '<i class="fas fa-check-circle me-2"></i>Validate CSV';
+                        alert("Error validating CSV: " + error);
+                    }
+                });
+            }
+
+
+
+            function initializeHistoryTable() {
+  const historyDataTable = $('#historyTable').DataTable({
+    order: [[0, 'desc']],
+    pageLength: 10,
+    dom: '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>'
+        + '<"row"<"col-sm-12"t>>'
+        + '<"row"<"col-sm-12 col-md-5"i><"col-sm-12 col-md-7"p>>',
+    columns: [
+        { data: 'request_date' },
+        { data: 'event_date' },
+        { data: 'employee_name' },
+        { data: 'grade' },
+        { data: 'interviews_count' },
+        { data: 'points' },
+        { 
+            data: 'notes',
+            render: function(data, type, row) {
+                return `<button class="btn btn-sm btn-outline-primary view-notes-btn" data-notes="${data ? data.replace(/"/g, '&quot;') : ''}" data-bs-toggle="modal" data-bs-target="#viewNotesModal"><i class="fas fa-eye"></i> View</button>`;
+            }
+        },
+        { 
+            data: 'status',
+            render: function(data, type, row) {
+                const statusClass = data === 'Approved' ? 'bg-success' :
+                                   data === 'Rejected' ? 'bg-danger' :
+                                   data === 'Pending' ? 'bg-warning' : 'bg-info';
+                return `<span class="badge ${statusClass}">${data}</span>`;
+            }
+        }
+    ],
+    columnDefs: [
+        { targets: [0, 1], className: 'text-nowrap' } 
+    ],
+    language: {
+        search: 'Search:',
+        searchPlaceholder: "Search...",
+        lengthMenu: "Show _MENU_ entries",
+        info: "Showing _START_ to _END_ of _TOTAL_ entries",
+        infoEmpty: "Showing 0 to 0 of 0 entries",
+        infoFiltered: "(filtered from _MAX_ total entries)",
+        paginate: {
+            previous: '<i class="fas fa-chevron-left"></i>',
+            next: '<i class="fas fa-chevron-right"></i>'
+        }
+    }
+});
+
+
+    // Load initial data
+    loadHistoryData(historyDataTable);
+
+    // Set up filter listeners
+    $('#applyFilters').on('click', function() {
+        filterInterviewHistory(historyDataTable);
+    });
+    
+    $('#resetFilters').on('click', function() {
+        $('#yearFilter, #quarterFilter, #gradeFilter, #statusFilter').val('');
+        filterInterviewHistory(historyDataTable);
+    });
+}
+
+            function loadHistoryData(dataTable) {
+                $.ajax({
+                    url: "{{ url_for('ta.get_updater_history') }}",
+                    method: "POST",
+                    success: function(response) {
+                        if (response.success) {
+                            dataTable.clear();
+                            dataTable.rows.add(response.entries);
+                            dataTable.draw();
+                            populateFilterDropdowns(response.entries);
+                        } else {
+                            console.error("Failed to load history data:", response.error);
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error("Error loading history data:", error);
+                    }
+                });
+            }
+
+            function populateFilterDropdowns(data) {
+                const years = new Set();
+                const quarters = new Set();
+                const grades = new Set();
+
+                data.forEach(item => {
+                    if (item.request_date) {
+                        const dateParts = item.request_date.split('-');
+                        if (dateParts.length === 3) {
+                            const year = dateParts[2];
+                            years.add(year);
+                            const month = parseInt(dateParts[1], 10) - 1;
+                            const quarter = getQuarterFromMonth(month);
+                            quarters.add(quarter);
+                        }
+                    }
+                    if (item.grade) grades.add(item.grade);
+                });
+
+                // Populate Year dropdown
+                let yearOptions = '<option value="">All Years</option>';
+                Array.from(years).sort().forEach(year => {
+                    yearOptions += `<option value="${year}">${year}</option>`;
+                });
+                $('#yearFilter').html(yearOptions);
+
+                // Populate Quarter dropdown
+                let quarterOptions = '<option value="">All Quarters</option>';
+                Array.from(quarters).sort().forEach(quarter => {
+                    quarterOptions += `<option value="${quarter}">${quarter}</option>`;
+                });
+                $('#quarterFilter').html(quarterOptions);
+
+                // Populate Grade dropdown
+                let gradeOptions = '<option value="">All Grades</option>';
+                Array.from(grades).sort().forEach(grade => {
+                    gradeOptions += `<option value="${grade}">${grade}</option>`;
+                });
+                $('#gradeFilter').html(gradeOptions);
+            }
+
+            function filterInterviewHistory(dataTable) {
+                const year = $('#yearFilter').val();
+                const quarter = $('#quarterFilter').val();
+                const grade = $('#gradeFilter').val();
+                const status = $('#statusFilter').val();
+                
+                $.fn.dataTable.ext.search.push(
+                    function(settings, data, dataIndex) {
+                        if (settings.nTable.id !== 'historyTable') {
+                            return true;
+                        }
+                        
+                        const dateStr = data[0];
+                        const employeeGrade = data[3];
+                        const rowStatus = data[7];
+                        
+                        if (year || quarter) {
+                            const dateParts = dateStr.split('-');
+                            if (dateParts.length !== 3) return false;
+                            
+                            const day = parseInt(dateParts[0], 10);
+                            const month = parseInt(dateParts[1], 10) - 1;
+                            const rowYear = parseInt(dateParts[2], 10);
+                            
+                            if (year && rowYear !== parseInt(year)) return false;
+                            
+                            if (quarter) {
+                                const rowQuarter = getQuarterFromMonth(month);
+                                if (rowQuarter !== quarter) return false;
+                            }
+                        }
+                        
+                        if (grade && employeeGrade !== grade) return false;
+                        if (status && rowStatus !== status) return false;
+                        
+                        return true;
+                    }
+                );
+                
+                dataTable.draw();
+                $.fn.dataTable.ext.search.pop();
+            }
+            
+            function getQuarterFromMonth(month) {
+                if (month >= 3 && month <= 5) return 'Q1';
+                else if (month >= 6 && month <= 8) return 'Q2';
+                else if (month >= 9 && month <= 11) return 'Q3';
+                else return 'Q4';
+            }
+
+            // FIXED: Tab Management without page reloads
+            document.querySelectorAll('.sidebar-nav-item').forEach(tab => {
+                tab.addEventListener('click', function () {
+                    const target = this.getAttribute('data-bs-target');
+                    if (target) {
+                        localStorage.setItem('activeTab', target);
+                        
+                        // Clear table searches when switching tabs
+                        clearTableSearch('#historyTable');
+                        
+                        // If switching to history tab, refresh the data
+                        if (target === '#history') {
+                            setTimeout(() => {
+                                const historyDataTable = $('#historyTable').DataTable();
+                                loadHistoryData(historyDataTable);
+                            }, 100);
+                        }
+                    }
+                });
+            });
+
+           
+
+            document.querySelectorAll('.sidebar-nav-item').forEach(tab => {
+                tab.addEventListener('click', function () {
+                    const target = this.getAttribute('data-bs-target');
+                    if (target) {
+                        localStorage.setItem('activeTab', target);
+                    }
+                });
+            });
+</script>
+        
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+
+<script>
+
+
+function showUpdaterNotification(message, type = 'info') {
+        const toastEl = document.getElementById('updaterToast');
+        if (!toastEl) return;
+    
+        const toastMsg = document.getElementById('updaterToastMsg');
+        const toastHeader = toastEl.querySelector('.toast-header');
+        
+        // Reset previous styling
+        toastHeader.classList.remove('bg-success', 'bg-danger', 'bg-info', 'text-white');
+        
+        // Apply new styling based on the notification type
+        if (type === 'approved') {
+            toastHeader.classList.add('bg-success', 'text-white');
+            toastMsg.innerHTML = `<i class="fas fa-check-circle me-2"></i>${message}`;
+        } else if (type === 'rejected') {
+            toastHeader.classList.add('bg-danger', 'text-white');
+            toastMsg.innerHTML = `<i class="fas fa-times-circle me-2"></i>${message}`;
+        } else {
+            toastHeader.classList.add('bg-info', 'text-white');
+            toastMsg.innerHTML = `<i class="fas fa-info-circle me-2"></i>${message}`;
+        }
+        
+        const toast = new bootstrap.Toast(toastEl);
+        toast.show();
+    }
+    
+    // --- 2. Interview History Table Refresh Function ---
+    // This is the key function to automatically update the table without a page reload.
+    function refreshInterviewHistoryTable() {
+        // First, check if the history tab is active and if DataTable is initialized.
+        const historyTabPane = document.getElementById('history');
+        if (historyTabPane && $.fn.DataTable.isDataTable('#historyTable')) {
+            console.log("Refreshing Interview History table...");
+            
+            // Make an AJAX call to get the latest history data.
+            $.ajax({
+                url: "{{ url_for('ta.get_updater_history') }}", // This endpoint provides the data for the table
+                method: "POST",
+                success: function(response) {
+                    if (response.success) {
+                        const table = $('#historyTable').DataTable();
+                        
+                        // Clear the table, add the new data, and redraw it.
+                        table.clear();
+                        table.rows.add(response.entries);
+                        table.draw(false); // 'false' preserves the user's current page
+                        console.log("Interview History table updated successfully.");
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error refreshing interview history table:', error);
+                }
+            });
+        }
+    }
+    
+    // --- 3. Polling Function to Check for Updates ---
+    // Periodically asks the server if there are any new updates.
+    function checkForUpdaterNotifications() {
+        fetch('/talent-acquisition/updater/check-notifications')
+            .then(response => response.json())
+            .then(data => {
+                if (data.notifications && data.notifications.length > 0) {
+                    // If there are new notifications...
+                    data.notifications.forEach(notification => {
+                        // 1. Show the notification toast.
+                        showUpdaterNotification(notification.message, notification.type);
+                    });
+                    
+                    // 2. Refresh the history table to show the new status.
+                    refreshInterviewHistoryTable();
+                }
+            })
+            .catch(error => console.error('Error checking for notifications:', error));
+    }
+    
+    // --- 4. Start the Polling System ---
+    // When the page is fully loaded, start checking for notifications every 5 seconds.
+    document.addEventListener('DOMContentLoaded', function() {
+        // Check once on load.
+        checkForUpdaterNotifications();
+        
+        // Then check every 5 seconds.
+        setInterval(checkForUpdaterNotifications, 5000);
+    });
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const defaultTabId = '#assignPointsTab'; // Default active tab
+    const storageKey = 'activeTab'; // LocalStorage key
+    const sidebarLinks = document.querySelectorAll('.sidebar-nav-item');
+
+    // STEP 1: If first login, force default tab and store it
+    if (!sessionStorage.getItem('hasLoggedIn')) {
+        sessionStorage.setItem('hasLoggedIn', 'true');
+        localStorage.setItem(storageKey, defaultTabId);
+    }
+
+    // STEP 2: Restore the saved tab or default to the specified one
+    const activeTabId = localStorage.getItem(storageKey) || defaultTabId;
+
+    // STEP 3: Deactivate all tabs and tab panes initially
+    sidebarLinks.forEach(link => link.classList.remove('active'));
+    document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('show', 'active'));
+
+    // STEP 4: Activate the saved/ default tab
+    const activeLink = document.querySelector(`.sidebar-nav-item[data-bs-target="${activeTabId}"]`);
+    if (activeLink) {
+        activeLink.classList.add('active');
+        const target = activeLink.getAttribute('data-bs-target');
+        const tabPane = document.querySelector(target);
+
+        // Show the corresponding tab pane
+        if (tabPane) {
+            tabPane.classList.add('show', 'active');
+        }
+    }
+
+    // STEP 5: On tab click, update active tab and its pane
+    sidebarLinks.forEach(link => {
+        link.addEventListener('click', function () {
+            const newTarget = this.getAttribute('data-bs-target');
+            if (newTarget) {
+
+                // Remove active class from all links and panes
+                sidebarLinks.forEach(l => l.classList.remove('active'));
+                document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('show', 'active'));
+
+                // Activate the clicked link
+                this.classList.add('active');
+                const newPane = document.querySelector(newTarget);
+                if (newPane) {
+                    newPane.classList.add('show', 'active');
+                }
+
+                // Store the active tab in localStorage
+                localStorage.setItem(storageKey, newTarget);
+            }
+        });
+    });
+
+    // STEP 6: Clear saved tab on logout
+    const logoutLink = document.getElementById('logoutLink');
+    if (logoutLink) {
+        logoutLink.addEventListener('click', () => {
+            localStorage.removeItem(storageKey);
+            sessionStorage.removeItem('hasLoggedIn');
+        });
+    }
+});
+
+
+
+</script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const filterButtons = document.querySelectorAll('.status-filter');
+      const tableRows = document.querySelectorAll('#history-table-body tr');
+    
+      filterButtons.forEach(btn => {
+        btn.addEventListener('click', function() {
+          const status = this.getAttribute('data-status');
+          filterButtons.forEach(b => b.classList.remove('active'));
+          this.classList.add('active');
+          tableRows.forEach(row => {
+            if (status === 'all' || row.getAttribute('data-status') === status) {
+              row.style.display = '';
+            } else {
+              row.style.display = 'none';
+            }
+          });
+        });
+      });
+    });
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // Get all tab links
+    const tabLinks = document.querySelectorAll('.sidebar-nav-item');
+
+    tabLinks.forEach(link => {
+        link.addEventListener('click', function () {
+            const targetTab = this.getAttribute('data-bs-target');
+
+            if (targetTab === '#assignPointsTab') {
+                // Delay to allow tab transition to complete
+                setTimeout(() => {
+                    // Reset all input/select/textarea inside the tab
+                    const form = document.querySelector('#assignPointsTab form');
+                    if (form) {
+                        form.reset();
+                    }
+
+                    // Reset select dropdowns manually in case needed
+                    document.querySelectorAll('#assignPointsTab select').forEach(select => {
+                        select.selectedIndex = 0;
+                    });
+
+                    // Clear textarea explicitly
+                    const textareas = document.querySelectorAll('#assignPointsTab textarea');
+                    textareas.forEach(area => {
+                        area.value = '';
+                    });
+
+                    // If you're using chips or badges, clear them too
+                    const chipsContainer = document.querySelector('#assignPointsTab .chips-container');
+                    if (chipsContainer) {
+                        chipsContainer.innerHTML = '';
+                    }
+
+                }, 50);
+            }
+        });
+    });
+});
+
+
+
+
+/**
+ * Event Date Validation Script
+ * Prevents users from selecting future dates for interview event dates
+ * Author: TA Dashboard System
+ * Version: 1.0
+ */
+
+/**
+ * Enhanced Event Date Validation Script
+ * Fixes the form submission flow and validation issues
+ */
+
+(function() {
+    'use strict';
+
+    // Configuration
+    const CONFIG = {
+        eventDateInputIds: ['eventDate', 'event_date'],
+        errorMessageClass: 'invalid-feedback',
+        invalidInputClass: 'is-invalid',
+        errorMessageId: 'eventDateError',
+        errorMessage: 'Event date cannot be in the future.',
+        dateFormat: 'YYYY-MM-DD'
+    };
+
+    function parseDate(dateStr) {
+        if (!dateStr) return null;
+        
+        let parts;
+        // YYYY-MM-DD
+        parts = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+        if (parts) {
+            const year = parseInt(parts[1], 10);
+            const month = parseInt(parts[2], 10) - 1;
+            const day = parseInt(parts[3], 10);
+            const d = new Date(year, month, day);
+            if (d.getFullYear() === year && d.getMonth() === month && d.getDate() === day) {
+                return d;
+            }
+        }
+
+        // DD/MM/YYYY or DD-MM-YYYY
+        parts = dateStr.match(/^(\d{2})[./-](\d{2})[./-](\d{4})$/);
+        if (parts) {
+            const day = parseInt(parts[1], 10);
+            const month = parseInt(parts[2], 10) - 1;
+            const year = parseInt(parts[3], 10);
+            const d = new Date(year, month, day);
+            if (d.getFullYear() === year && d.getMonth() === month && d.getDate() === day) {
+                return d;
+            }
+        }
+        
+        return null;
+    }
+
+    /**
+     * Get today's date in YYYY-MM-DD format
+     */
+    function getTodayDate() {
+        const today = new Date();
+        return today.toISOString().split('T')[0];
+    }
+
+    /**
+     * Check if a date is in the future
+     */
+    function isDateInFuture(selectedDate) {
+        if (!selectedDate) return false;
+        
+        const today = new Date();
+        
+        // Reset time to start of day for accurate comparison
+        today.setHours(0, 0, 0, 0);
+        selectedDate.setHours(0, 0, 0, 0);
+        
+        return selectedDate > today;
+    }
+
+    /**
+     * Set maximum date attribute for date inputs
+     */
+    function setMaxDate(input) {
+        if (input && input.type === 'date') {
+            input.max = getTodayDate();
+            console.log(`Set max date for ${input.id || 'date input'}: ${input.max}`);
+        }
+    }
+
+    /**
+     * Show error message for invalid date
+     */
+    function showError(input, message) {
+        // Add invalid class
+        input.classList.add(CONFIG.invalidInputClass);
+        
+        // Remove existing error message
+        const existingError = input.parentNode.querySelector(`#${CONFIG.errorMessageId}`);
+        if (existingError) {
+            existingError.remove();
+        }
+        
+        // Create new error message
+        const errorDiv = document.createElement('div');
+        errorDiv.id = CONFIG.errorMessageId;
+        errorDiv.className = CONFIG.errorMessageClass;
+        errorDiv.style.display = 'block';
+        errorDiv.style.color = '#dc3545';
+        errorDiv.textContent = message || CONFIG.errorMessage;
+        
+        // Insert after the input
+        input.parentNode.appendChild(errorDiv);
+    }
+
+    /**
+     * Hide error message for valid date
+     */
+    function hideError(input) {
+        // Remove invalid class
+        input.classList.remove(CONFIG.invalidInputClass);
+        
+        // Remove error message
+        const errorMsg = input.parentNode.querySelector(`#${CONFIG.errorMessageId}`);
+        if (errorMsg) {
+            errorMsg.remove();
+        }
+    }
+
+    /**
+     * Validate date input
+     */
+    function validateDateInput(input) {
+        const dateValue = input.value;
+
+        if (input.validity.badInput) {
+            showError(input, 'Invalid date. Please enter a real date');
+            return false;
+        }
+        
+        if (!dateValue) {
+            hideError(input);
+            return true; // Empty is valid, let required attribute handle it
+        }
+        
+        const selectedDate = parseDate(dateValue);
+        // parseDate should work fine since value is YYYY-MM-DD
+        if (!selectedDate) {
+            // This case might happen if the format is unexpected, though unlikely for type="date"
+            showError(input, 'Invalid date format.');
+            return false;
+        }
+        
+        if (isDateInFuture(selectedDate)) {
+            showError(input, 'Event date cannot be in the future.');
+            return false;
+        } else {
+            hideError(input);
+            return true;
+        }
+    }
+
+    /**
+     * Validate all event date inputs
+     */
+    function validateAllEventDates() {
+        let allValid = true;
+        
+        CONFIG.eventDateInputIds.forEach(id => {
+            const input = document.getElementById(id);
+            if (input && input.value) {
+                if (!validateDateInput(input)) {
+                    allValid = false;
+                }
+            }
+        });
+        
+        return allValid;
+    }
+
+    /**
+     * Initialize date validation for a specific input
+     */
+    function initializeDateInput(input) {
+        if (!input) return;
+        
+        console.log(`Initializing date validation for: ${input.id || 'unnamed input'}`);
+        
+        // Set max date
+        setMaxDate(input);
+        
+        // Add change listener
+        input.addEventListener('change', function() {
+            validateDateInput(this);
+            updateSubmitButtonState();
+        });
+        
+        // Add input listener for real-time validation
+        input.addEventListener('input', function() {
+            validateDateInput(this);
+            updateSubmitButtonState();
+        });
+        
+        // Validate current value if exists
+        if (input.value) {
+            validateDateInput(input);
+        }
+    }
+
+    /**
+     * Update submit button state based on validation
+     */
+    function updateSubmitButtonState() {
+        const verifyBtn = document.getElementById('verify-assign-btn');
+        if (!verifyBtn) return;
+
+        // Check all required fields
+        const employeeId = document.getElementById('employee_id')?.value;
+        const interviews = document.getElementById('number_of_interviews')?.value;
+        const eventDate = document.getElementById('eventDate')?.value;
+        const notes = document.getElementById('notes')?.value;
+        const confirmed = document.getElementById('confirmed')?.checked;
+
+        // Check if all fields are filled and event date is valid
+        const allFieldsFilled = employeeId && interviews && eventDate && notes && confirmed;
+        const dateValid = validateAllEventDates();
+
+        verifyBtn.disabled = !(allFieldsFilled && dateValid);
+    }
+
+    /**
+     * Initialize all date inputs
+     */
+    function initializeAllDateInputs() {
+        CONFIG.eventDateInputIds.forEach(id => {
+            const input = document.getElementById(id);
+            if (input) {
+                initializeDateInput(input);
+            }
+        });
+    }
+
+    /**
+     * Override the existing verify button click handler
+     */
+    function enhanceVerifyButtonValidation() {
+        const verifyBtn = document.getElementById('verify-assign-btn');
+        if (!verifyBtn) return;
+
+        // Store the original onclick if it exists
+        const originalOnClick = verifyBtn.onclick;
+
+        verifyBtn.addEventListener('click', function(e) {
+            // First, validate the event date
+            if (!validateAllEventDates()) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                // Show specific error message
+                alert('Please enter a valid event date. Future dates are not allowed.');
+                
+                // Focus on the event date input
+                const eventDateInput = document.getElementById('eventDate');
+                if (eventDateInput) {
+                    eventDateInput.focus();
+                }
+                
+                return false;
+            }
+
+            // If validation passes, call the original handler
+            if (originalOnClick) {
+                return originalOnClick.call(this, e);
+            }
+        });
+    }
+
+    /**
+     * Add listeners to other form fields to update button state
+     */
+    function addFormFieldListeners() {
+        const fields = [
+            'employee_id',
+            'number_of_interviews', 
+            'notes',
+            'confirmed'
+        ];
+
+        fields.forEach(fieldId => {
+            const field = document.getElementById(fieldId);
+            if (field) {
+                const eventType = field.type === 'checkbox' ? 'change' : 'input';
+                field.addEventListener(eventType, updateSubmitButtonState);
+            }
+        });
+    }
+
+    /**
+     * Override the confirm assignment button in the modal
+     */
+    function enhanceModalConfirmButton() {
+        // Wait for modal to be shown, then attach handler
+        document.addEventListener('click', function(e) {
+            if (e.target && e.target.id === 'verify-assign-btn') {
+                setTimeout(() => {
+                    const confirmBtn = document.getElementById('confirm-assign-btn');
+                    if (confirmBtn && !confirmBtn.dataset.validationAdded) {
+                        confirmBtn.dataset.validationAdded = 'true';
+                        
+                        const originalOnClick = confirmBtn.onclick;
+                        confirmBtn.onclick = function(e) {
+                            // Final validation before form submission
+                            if (!validateAllEventDates()) {
+                                alert('Please correct the event date before submitting.');
+                                return false;
+                            }
+                            
+                            // Proceed with original handler
+                            if (originalOnClick) {
+                                return originalOnClick.call(this, e);
+                            }
+                        };
+                    }
+                }, 100);
+            }
+        });
+    }
+
+    /**
+     * Initialize everything
+     */
+    function init() {
+        console.log('Enhanced Event Date Validator: Initializing...');
+        
+        try {
+            initializeAllDateInputs();
+            addFormFieldListeners();
+            enhanceVerifyButtonValidation();
+            enhanceModalConfirmButton();
+            updateSubmitButtonState(); // Initial state update
+            
+            console.log('Enhanced Event Date Validator: Successfully initialized');
+        } catch (error) {
+            console.error('Enhanced Event Date Validator: Initialization failed', error);
+        }
+    }
+
+    // Public API
+    window.EnhancedEventDateValidator = {
+        init: init,
+        validate: validateAllEventDates,
+        validateInput: validateDateInput,
+        isDateInFuture: isDateInFuture,
+        getTodayDate: getTodayDate,
+        updateSubmitButtonState: updateSubmitButtonState
+    };
+
+    // Initialize when DOM is ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
+
+})();
+
+</script>
+<script>
+    // --- Function to Download the CSV Template ---
+    function downloadTemplate() {
+        // 1. Define CSV headers and sample rows
+        const headers = ['employee_id', 'number_of_interviews', 'notes', 'event_date'];
+        const sampleData = [
+            ['EMP101', '2', 'Conducted first round technical interview for a Senior Developer role.', '2024-10-15'],
+            ['EMP205', '1', 'Panel member for final round managerial interview.', '2024-10-18'],
+            ['EMP310', '3', 'Screened three candidates for the QA Engineer position.', '2024-11-02']
+        ];
+
+        // 2. Combine headers and data into a CSV formatted string
+        let csvContent = headers.join(',') + '\n';
+        sampleData.forEach(rowArray => {
+            // Enclose notes in quotes to handle commas within the text
+            const row = rowArray.map((item, index) => (index === 2 ? `"${item}"` : item));
+            csvContent += row.join(',') + '\n';
+        });
+
+        // 3. Create a Blob and trigger the download
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        if (link.download !== undefined) {
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', 'interview_points_template.csv');
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    }
+
+    // --- Functionality for the Modal Buttons ---
+    let confirmUploadBtn;
+    let confirmCheckbox;
+    document.addEventListener('DOMContentLoaded', function() {
+        const validateBtn = document.getElementById('validateCsvBtn');
+        const fileInput = document.getElementById('csv_file');
+        const validationResultsDiv = document.getElementById('csvValidationResults');
+        confirmUploadBtn = document.getElementById('verify-bulk-btn');
+        confirmCheckbox = document.getElementById('confirmBulkUpload');
+
+        validateBtn.addEventListener('click', async function() {
+            if (fileInput.files.length === 0) {
+                alert('Please select a CSV file to validate.');
+                return;
+            }
+
+            // Show a loading indicator (optional but good for UX)
+            validateBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Validating...';
+            validateBtn.disabled = true;
+
+            const formData = new FormData();
+            formData.append('csv_file', fileInput.files[0]);
+
+            try {
+                // This URL must match your Flask route
+                const response = await fetch('/talent-acquisition/validate-interview-csv', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Validation failed on the server.');
+                }
+                
+                // Update UI with validation results
+                displayValidationResults(data);
+
+            } catch (error) {
+                console.error('Validation Error:', error);
+                const errorsList = document.getElementById('errorsList');
+                errorsList.innerHTML = `<div class="alert alert-danger">An error occurred: ${error.message}</div>`;
+                validationResultsDiv.classList.remove('d-none');
+            } finally {
+                // Restore button state
+                validateBtn.innerHTML = '<i class="fas fa-check-circle me-2"></i>Validate CSV';
+                validateBtn.disabled = false;
+            }
+        });
+        
+        // Enable/disable the final upload button based on the checkbox and valid rows
+        confirmCheckbox.addEventListener('change', function() {
+            const validRows = parseInt(document.getElementById('validRowsCount').textContent, 10);
+            if (this.checked && validRows > 0) {
+                confirmUploadBtn.disabled = false;
+            } else {
+                confirmUploadBtn.disabled = true;
+            }
+        });
+    });
+    
+
+    function displayValidationResults(data) {
+        // Populate summary cards
+        document.getElementById('totalRowsCount').textContent = data.total_rows || 0;
+        document.getElementById('validRowsCount').textContent = data.valid_rows || 0;
+        document.getElementById('invalidRowsCount').textContent = data.invalid_rows || 0;
+        document.getElementById('totalPointsCount').textContent = data.summary.total_points || 0;
+        
+        // Populate Issues List
+        const errorsList = document.getElementById('errorsList');
+        errorsList.innerHTML = ''; // Clear previous results
+        if (data.errors && data.errors.length > 0) {
+            const ul = document.createElement('ul');
+            ul.classList.add('list-unstyled', 'mb-0');
+            data.errors.forEach(err => {
+                const li = document.createElement('li');
+                li.classList.add('text-danger');
+                li.innerHTML = `<i class="fas fa-times-circle me-2"></i>${err}`;
+                ul.appendChild(li);
+            });
+            errorsList.appendChild(ul);
+        } else {
+            errorsList.innerHTML = '<p class="text-success mb-0"><i class="fas fa-check-circle me-2"></i>No issues found.</p>';
+        }
+
+        // Populate Summaries
+        const departmentSummary = document.getElementById('departmentSummary');
+        departmentSummary.innerHTML = '';
+        for (const [dept, count] of Object.entries(data.summary.departments)) {
+            departmentSummary.innerHTML += `<p class="mb-1">${dept}: <strong>${count}</strong> interviews</p>`;
+        }
+
+        const gradeSummary = document.getElementById('gradeSummary');
+        gradeSummary.innerHTML = '';
+        for (const [grade, count] of Object.entries(data.summary.grades)) {
+            gradeSummary.innerHTML += `<p class="mb-1">${grade}: <strong>${count}</strong> interviews</p>`;
+        }
+        
+        // Show the results section
+        document.getElementById('csvValidationResults').classList.remove('d-none');
+        
+        // Reset checkbox and disable confirm button until re-checked
+        confirmCheckbox.checked = false;
+        confirmUploadBtn.disabled = true;
+    }
+</script>
+
+<script>
+    // Helper to clear DataTable search
+    function clearTableSearch(tableSelector) {
+        if ($.fn.DataTable.isDataTable(tableSelector)) {
+            $(tableSelector).DataTable().search('').draw();
+            $(`${tableSelector}_filter input`).val('');
+        }
+    }
+
+    // Listen for tab switches (sidebar and nav-tabs)
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('.sidebar-nav-item[data-bs-target], #taTabs button[data-bs-toggle="tab"]').forEach(tab => {
+            tab.addEventListener('click', function () {
+                // Clear history table's search box when switching tabs
+                clearTableSearch('#historyTable');
+            });
+        });
+    });
+
+    // Handle View Notes button clicks
+    $(document).on('click', '.view-notes-btn', function() {
+        const notes = $(this).data('notes') || '(No notes provided)';
+        $('#fullNotesText').text(notes);
+    });
+
+    
+</script>
+<script>
+    // Global socket variable for reuse
+    let globalSocket = null;
+    
+    // Cross-browser progress bar initialization
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize progress bars for cross-browser compatibility
+        function initializeProgressBars() {
+            const progressBars = document.querySelectorAll('.progress-bar');
+            progressBars.forEach(function(bar) {
+                // Ensure proper ARIA attributes
+                if (!bar.getAttribute('aria-valuenow')) {
+                    const width = bar.style.width;
+                    const value = width ? parseInt(width.replace('%', '')) : 0;
+                    bar.setAttribute('aria-valuenow', value);
+                }
+                
+                // Add browser-specific classes for styling
+                bar.classList.add('cross-browser-progress');
+                
+                // Force repaint for older browsers
+                if (bar.style.width) {
+                    const currentWidth = bar.style.width;
+                    bar.style.width = '0%';
+                    setTimeout(() => {
+                        bar.style.width = currentWidth;
+                    }, 10);
+                }
+            });
+        }
+        
+        // Initialize on page load
+        initializeProgressBars();
+        
+        // Re-initialize when modal is shown (for dynamically loaded content)
+        const csvModal = document.getElementById('csvDetailsModal');
+        if (csvModal) {
+            csvModal.addEventListener('shown.bs.modal', function() {
+                setTimeout(initializeProgressBars, 100);
+            });
+        }
+        
+        // Add responsive table wrapper for better mobile experience
+        const tables = document.querySelectorAll('.responsive-progress-table');
+        tables.forEach(function(table) {
+            if (!table.parentElement.classList.contains('table-responsive')) {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'table-responsive';
+                table.parentNode.insertBefore(wrapper, table);
+                wrapper.appendChild(table);
+            }
+        });
+    });
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize Socket.IO connection
+        if (typeof io !== 'undefined') {
+            try {
+                globalSocket = io({
+                    reconnection: true,
+                    reconnectionDelay: 1000,
+                    reconnectionAttempts: 5,
+                    transports: ['websocket', 'polling']
+                });
+
+                // Connection status logging
+                globalSocket.on('connect', function() {
+                    console.log('SocketIO connected successfully');
+                });
+
+                globalSocket.on('disconnect', function() {
+                    console.warn('SocketIO disconnected');
+                });
+
+                globalSocket.on('connect_error', function(error) {
+                    console.error('SocketIO connection error:', error);
+                });
+
+                // Listen for the custom event 'updater_history_updated' from the server
+                globalSocket.on('updater_history_updated', function(data) {
+                    console.log('Real-time update received: Refreshing interview history.', data);
+                    
+                    // Check if the refresh function exists before calling it
+                    if (typeof refreshInterviewHistoryTable === 'function') {
+                        refreshInterviewHistoryTable();
+                        
+                        // Show a brief notification to the user
+                        showUpdaterNotification('Interview history updated', 'info');
+                    } else {
+                        console.error('refreshInterviewHistoryTable function not found!');
+                    }
+                });
+
+                // Also listen for general refresh events
+                globalSocket.on('refresh_validator_dashboard', function(data) {
+                    console.log('Validator dashboard refresh signal received', data);
+                    // If on updater dashboard, refresh history
+                    if (typeof refreshInterviewHistoryTable === 'function') {
+                        refreshInterviewHistoryTable();
+                    }
+                });
+
+            } catch (error) {
+                console.error('Error initializing SocketIO:', error);
+            }
+        } else {
+            console.warn('Socket.IO client library not found. Real-time updates will not work.');
+            console.warn('Falling back to polling mechanism.');
+            
+            // Fallback: Poll for updates every 10 seconds
+            setInterval(function() {
+                if (typeof refreshInterviewHistoryTable === 'function') {
+                    refreshInterviewHistoryTable();
+                }
+            }, 10000);
+        }
+    });
+    
+    // Cleanup on page unload
+    window.addEventListener('beforeunload', function() {
+        if (globalSocket && globalSocket.connected) {
+            globalSocket.disconnect();
+        }
+    });
+</script>
+</body>
+</html>

@@ -1,0 +1,637 @@
+{% extends "base.html" %}
+
+{% block title %}Update User - HR Portal{% endblock %}
+
+{% block extra_css %}
+<style>
+    .search-card {
+        border-left: 4px solid #4e73df;
+    }
+    
+    .user-card {
+        border-left: 4px solid #1cc88a;
+    }
+    
+    .role-badge {
+        font-size: 0.9rem;
+        padding: 0.4rem 0.8rem;
+    }
+    
+    .form-section {
+        margin-bottom: 2rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid #e3e6f0;
+    }
+    
+    .form-section:last-child {
+        border-bottom: none;
+    }
+    
+    .dashboard-checkbox-group {
+        max-height: 200px;
+        overflow-y: auto;
+        border: 1px solid #ced4da;
+        border-radius: 0.25rem;
+        padding: 0.5rem;
+    }
+    
+    .dashboard-checkbox-group .form-check {
+        margin-bottom: 0.5rem;
+    }
+    
+    .active-status-switch {
+        transform: scale(1.2);
+    }
+    
+    .required-field::after {
+        content: " *";
+        color: red;
+    }
+    
+    .info-badge {
+        background-color: #e7f3ff;
+        border-left: 3px solid #2196F3;
+        padding: 8px 12px;
+        border-radius: 4px;
+        font-size: 0.85rem;
+        margin-top: 5px;
+    }
+    
+    .info-badge i {
+        color: #2196F3;
+    }
+    
+    .assignment-note {
+        background-color: #fff3cd;
+        border-left: 3px solid #ffc107;
+        padding: 10px;
+        border-radius: 4px;
+        margin-top: 10px;
+        font-size: 0.9rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid pt-4">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="mb-0">Update User</h3>
+        <a href="{{ url_for('hr_analytics.pbs_analytics') }}" class="btn btn-outline-primary">
+            <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+        </a>
+    </div>
+
+    <!-- Search Form -->
+    <div class="card mb-4 search-card shadow-sm">
+        <div class="card-header bg-light d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="fas fa-search me-2"></i>User Search</h5>
+            <span class="badge bg-primary">Search by Email or ID</span>
+        </div>
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('hr_registration.update_user') }}">
+                <div class="input-group">
+                    <span class="input-group-text"><i class="fas fa-user-search"></i></span>
+                    <input type="text" 
+                           name="search_query" 
+                           class="form-control" 
+                           placeholder="Enter Email Address or Employee ID" 
+                           value="{{ request.args.get('search_query', '') }}"
+                           required>
+                    <button type="submit" name="search" class="btn btn-primary">
+                        <i class="fas fa-search me-2"></i>Search User
+                    </button>
+                </div>
+                <small class="form-text text-muted mt-2">
+                    <i class="fas fa-info-circle me-1"></i>
+                    Search for any employee, manager, or DP to update their information
+                </small>
+            </form>
+        </div>
+    </div>
+
+    {% if show_form and user %}
+    <!-- Update User Form -->
+    <div class="card user-card shadow-sm">
+        <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">
+                <i class="fas fa-user-edit me-2"></i>Update User: {{ user.name }}
+            </h5>
+            <span class="badge role-badge {% if user.role == 'Manager' %}bg-warning text-dark{% elif user.role == 'DP' %}bg-info{% elif user.role == 'HR' %}bg-danger{% else %}bg-light text-dark{% endif %}">
+                {{ user.role }}
+            </span>
+        </div>
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('hr_registration.update_user') }}" id="updateUserForm">
+                <input type="hidden" name="update_user" value="1">
+                <input type="hidden" name="user_id" value="{{ user._id }}">
+
+                <!-- Basic Information Section -->
+                <div class="form-section">
+                    <h6 class="text-primary mb-3">
+                        <i class="fas fa-user me-2"></i>Basic Information
+                    </h6>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label required-field">Name</label>
+                            <input type="text" 
+                                   name="name" 
+                                   class="form-control" 
+                                   value="{{ user.name }}" 
+                                   required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label required-field">Email</label>
+                            <input type="email" 
+                                   name="email" 
+                                   class="form-control" 
+                                   value="{{ user.email }}" 
+                                   required>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label required-field">Phone</label>
+                            <input type="text" 
+                                   name="phone" 
+                                   class="form-control" 
+                                   value="{{ user.phone if user.phone else '' }}"
+                                   required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label required-field">Employee ID</label>
+                            <input type="text" 
+                                   name="employee_id" 
+                                   class="form-control" 
+                                   value="{{ user.employee_id }}" 
+                                   required>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Role & Grade Section -->
+                <div class="form-section">
+                    <h6 class="text-primary mb-3">
+                        <i class="fas fa-id-badge me-2"></i>Role & Position Information
+                    </h6>
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label required-field">Role</label>
+                            <select name="role" class="form-select" id="roleSelect" required>
+                                <option value="Employee" {% if user.role == 'Employee' %}selected{% endif %}>Employee</option>
+                                <option value="Manager" {% if user.role == 'Manager' %}selected{% endif %}>Manager</option>
+                                <option value="DP" {% if user.role == 'DP' %}selected{% endif %}>DP</option>
+                                <option value="HR" {% if user.role == 'HR' %}selected{% endif %}>HR</option>
+                                <option value="Central" {% if user.role == 'Central' %}selected{% endif %}>Central</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label required-field">Grade</label>
+                            <select name="grade" class="form-select" required>
+                                <option value="">-- Select Grade --</option>
+                                {% for g in grades %}
+                                <option value="{{ g }}" {% if user.grade == g %}selected{% endif %}>{{ g }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label required-field">Employee Level</label>
+                            <select name="employee_level" class="form-select" required>
+                                <option value="">-- Select Employee Level --</option>
+                                {% for level in employee_levels %}
+                                <option value="{{ level }}" {% if user.employee_level == level %}selected{% endif %}>{{ level }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Manager Level (shown only for Managers) -->
+                    <div class="row mb-3" id="managerLevelRow" style="{% if user.role != 'Manager' %}display: none;{% endif %}">
+                        <div class="col-md-6">
+                            <label class="form-label required-field">Manager Level</label>
+                            <select name="manager_level" class="form-select" id="managerLevelSelect">
+                                <option value="">-- Select Manager Level --</option>
+                                {% for level in manager_levels %}
+                                <option value="{{ level }}" {% if user.manager_level == level %}selected{% endif %}>{{ level }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Department & Location Section -->
+                <div class="form-section">
+                    <h6 class="text-primary mb-3">
+                        <i class="fas fa-building me-2"></i>Department & Location
+                    </h6>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label required-field">Department</label>
+                            <select name="department" class="form-select" required>
+                                <option value="">-- Select Department --</option>
+                                {% for dept in departments %}
+                                <option value="{{ dept }}" {% if user.department == dept %}selected{% endif %}>{{ dept }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label required-field">Location</label>
+                            <select name="location" class="form-select" required>
+                                <option value="">-- Select Location --</option>
+                                {% for loc in locations %}
+                                <option value="{{ loc }}" {% if user.location == loc %}selected{% endif %}>{{ loc }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Employment Status Section -->
+                <div class="form-section">
+                    <h6 class="text-primary mb-3">
+                        <i class="fas fa-calendar-alt me-2"></i>Employment Status & Dates
+                    </h6>
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label required-field">Joining Date</label>
+                            <input type="date" 
+                                   name="joining_date" 
+                                   class="form-control" 
+                                   value="{{ user.joining_date.strftime('%Y-%m-%d') if user.joining_date else '' }}" 
+                                   required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Exit Date (Optional)</label>
+                            <input type="date" 
+                                   name="exit_date" 
+                                   class="form-control" 
+                                   value="{{ user.exit_date.strftime('%Y-%m-%d') if user.exit_date else '' }}">
+                            <small class="form-text text-muted">Leave blank if employee is still active</small>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Active Status</label>
+                            <div class="form-check form-switch mt-2">
+                                <input class="form-check-input active-status-switch" 
+                                       type="checkbox" 
+                                       name="is_active" 
+                                       id="isActive" 
+                                       {% if user.is_active != False %}checked{% endif %}>
+                                <label class="form-check-label" for="isActive">
+                                    <span id="activeStatusText" class="{% if user.is_active != False %}text-success{% else %}text-danger{% endif %}">
+                                        {% if user.is_active != False %}Active{% else %}Inactive{% endif %}
+                                    </span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Assignment Section -->
+                <div class="form-section">
+                    <h6 class="text-primary mb-3">
+                        <i class="fas fa-user-tie me-2"></i>Manager & DP Assignment
+                    </h6>
+                    
+                    <!-- Manager Assignment Note -->
+                    <div class="assignment-note mb-3">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Note:</strong> Only users with <strong>PM dashboard access</strong> appear in the Manager dropdown. 
+                        To change PM assignments, update the user's dashboard access first.
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">
+                                <i class="fas fa-user-tie me-2"></i>Assign Manager
+                            </label>
+                            <select name="manager_id" class="form-select" id="managerSelect">
+                                <option value="">-- No Manager Assigned --</option>
+                                {% for manager in managers %}
+                                <option value="{{ manager._id }}" {% if user.manager_id == manager._id %}selected{% endif %}>
+                                    {{ manager.name }} ({{ manager.email }})
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <div class="info-badge">
+                                <i class="fas fa-shield-alt me-1"></i>
+                                <strong>PM Dashboard Access Required:</strong> Only users with "pm" in dashboard access
+                                {% if managers|length == 0 %}
+                                <div class="text-danger mt-1">
+                                    <i class="fas fa-exclamation-triangle me-1"></i>
+                                    No users with PM access found. Enable PM dashboard access for managers.
+                                </div>
+                                {% else %}
+                                <div class="text-success mt-1">
+                                    <i class="fas fa-check-circle me-1"></i>
+                                    {{ managers|length }} manager(s) available with PM access
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label class="form-label">
+                                <i class="fas fa-user-cog me-2"></i>Assign DP
+                            </label>
+                            <select name="dp_id" class="form-select" id="dpSelect">
+                                <option value="">-- No DP Assigned --</option>
+                                {% for dp in dps %}
+                                <option value="{{ dp._id }}" {% if user.dp_id == dp._id %}selected{% endif %}>
+                                    {{ dp.name }} ({{ dp.email }})
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <div class="info-badge">
+                                <i class="fas fa-shield-alt me-1"></i>
+                                <strong>DP Dashboard Access Required:</strong> Only users with "dp" in dashboard access
+                                {% if dps|length == 0 %}
+                                <div class="text-danger mt-1">
+                                    <i class="fas fa-exclamation-triangle me-1"></i>
+                                    No users with DP access found. Enable DP dashboard access for DPs.
+                                </div>
+                                {% else %}
+                                <div class="text-success mt-1">
+                                    <i class="fas fa-check-circle me-1"></i>
+                                    {{ dps|length }} DP(s) available with DP access
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dashboard Access Section -->
+                <div class="form-section">
+                    <div class="card bg-light">
+                        <div class="card-header">
+                            <h6 class="mb-0">
+                                <i class="fas fa-chart-pie me-2"></i>Dashboard Access
+                            </h6>
+                            <small class="text-muted">Select which dashboards this user can access (employee_db is mandatory)</small>
+                        </div>
+                        <div class="card-body">
+                            <div class="alert alert-info mb-3">
+                                <i class="fas fa-lightbulb me-2"></i>
+                                <strong>Dashboard Access Configuration:</strong>
+                                <ul class="mb-0 mt-2">
+                                    <li><strong>PM:</strong> Enables user to appear in Manager assignment dropdowns and receive PM category requests</li>
+                                    <li><strong>DP:</strong> Enables user to appear in DP assignment dropdowns and access DP-specific features</li>
+                                    <li><strong>Employee DB:</strong> Required for all users (cannot be disabled)</li>
+                                </ul>
+                            </div>
+                            <div class="dashboard-checkbox-group">
+                                {% for dashboard in dashboard_access_options %}
+                                <div class="form-check">
+                                    <input class="form-check-input" 
+                                           type="checkbox" 
+                                           name="dashboard_access[]" 
+                                           value="{{ dashboard }}" 
+                                           id="dashboard_{{ dashboard }}"
+                                           {% if dashboard in (user.dashboard_access or []) or dashboard == 'employee_db' %}checked{% endif %}
+                                           {% if dashboard == 'employee_db' %}disabled{% endif %}>
+                                    <label class="form-check-label" for="dashboard_{{ dashboard }}">
+                                        {{ dashboard|replace('_', ' ')|title }}
+                                        {% if dashboard == 'employee_db' %}
+                                            <span class="badge bg-secondary ms-2">Required</span>
+                                        {% elif dashboard == 'pm' %}
+                                            <span class="badge bg-primary ms-2">Manager Access</span>
+                                        {% elif dashboard == 'dp' %}
+                                            <span class="badge bg-info ms-2">DP Access</span>
+                                        {% endif %}
+                                    </label>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Password Reset Section -->
+                <div class="form-section">
+                    <h6 class="text-primary mb-3">
+                        <i class="fas fa-key me-2"></i>Password Reset
+                    </h6>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">New Password (Optional)</label>
+                            <div class="input-group">
+                                <input type="password" 
+                                       name="password" 
+                                       id="password" 
+                                       class="form-control" 
+                                       placeholder="Enter new password">
+                                <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                            <small class="form-text text-muted">
+                                <i class="fas fa-info-circle"></i> Leave blank to keep current password. User will be required to change on next login if password is reset.
+                            </small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="d-flex justify-content-between align-items-center mt-4">
+                    <a href="{{ url_for('hr_registration.update_user') }}" class="btn btn-secondary">
+                        <i class="fas fa-times me-2"></i>Cancel
+                    </a>
+                    <button type="submit" class="btn btn-success" id="submitBtn">
+                        <i class="fas fa-save me-2"></i>Update User
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    {% elif request.method == 'POST' and not user %}
+    <!-- No User Found Message -->
+    <div class="alert alert-warning" role="alert">
+        <h5 class="alert-heading"><i class="fas fa-exclamation-triangle me-2"></i>No User Found</h5>
+        <p>No user was found with the provided email or employee ID. Please check your input and try again.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // ========================================
+    // Password Visibility Toggle
+    // ========================================
+    const togglePassword = document.getElementById('togglePassword');
+    const passwordInput = document.getElementById('password');
+    
+    if (togglePassword && passwordInput) {
+        togglePassword.addEventListener('click', function() {
+            const icon = this.querySelector('i');
+            
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                passwordInput.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        });
+    }
+
+    // ========================================
+    // Dynamic Form Sections Based on Role
+    // ========================================
+    const roleSelect = document.getElementById('roleSelect');
+    const managerLevelRow = document.getElementById('managerLevelRow');
+    const managerLevelSelect = document.getElementById('managerLevelSelect');
+    
+    if (roleSelect) {
+        roleSelect.addEventListener('change', function() {
+            const selectedRole = this.value;
+            
+            // Show/hide manager level field
+            if (selectedRole === 'Manager') {
+                managerLevelRow.style.display = '';
+                managerLevelSelect.required = true;
+            } else {
+                managerLevelRow.style.display = 'none';
+                managerLevelSelect.required = false;
+                managerLevelSelect.value = '';
+            }
+        });
+        
+        // Trigger change on load to set initial state
+        roleSelect.dispatchEvent(new Event('change'));
+    }
+
+    // ========================================
+    // Active Status Toggle
+    // ========================================
+    const isActiveToggle = document.getElementById('isActive');
+    if (isActiveToggle) {
+        isActiveToggle.addEventListener('change', function() {
+            const statusText = document.getElementById('activeStatusText');
+            statusText.textContent = this.checked ? 'Active' : 'Inactive';
+            statusText.className = this.checked ? 'text-success' : 'text-danger';
+        });
+    }
+
+    // ========================================
+    // Ensure employee_db is always checked
+    // ========================================
+    const employeeDbCheckbox = document.getElementById('dashboard_employee_db');
+    if (employeeDbCheckbox) {
+        employeeDbCheckbox.checked = true;
+        employeeDbCheckbox.addEventListener('click', function(e) {
+            if (!this.checked) {
+                this.checked = true;
+                e.preventDefault();
+            }
+        });
+    }
+
+    // ========================================
+    // Dashboard Access Change Detection
+    // ========================================
+    const pmCheckbox = document.getElementById('dashboard_pm');
+    const dpCheckbox = document.getElementById('dashboard_dp');
+    const managerSelect = document.getElementById('managerSelect');
+    const dpSelect = document.getElementById('dpSelect');
+    
+    // Warn when removing PM access if user is assigned as manager
+    if (pmCheckbox && managerSelect) {
+        pmCheckbox.addEventListener('change', function() {
+            if (!this.checked) {
+                // Check if this user is assigned as a manager to others
+                const hasManagerAssignments = {{ 'true' if user and user.get('_id') else 'false' }};
+                if (hasManagerAssignments) {
+                    const confirmRemove = confirm(
+                        'Warning: This user may be assigned as a manager to other employees. ' +
+                        'Removing PM dashboard access will prevent them from appearing in manager assignment dropdowns.\n\n' +
+                        'Are you sure you want to continue?'
+                    );
+                    if (!confirmRemove) {
+                        this.checked = true;
+                    }
+                }
+            }
+        });
+    }
+    
+    // Warn when removing DP access if user is assigned as DP
+    if (dpCheckbox && dpSelect) {
+        dpCheckbox.addEventListener('change', function() {
+            if (!this.checked) {
+                // Check if this user is assigned as a DP to others
+                const hasDpAssignments = {{ 'true' if user and user.get('_id') else 'false' }};
+                if (hasDpAssignments) {
+                    const confirmRemove = confirm(
+                        'Warning: This user may be assigned as a DP to other employees. ' +
+                        'Removing DP dashboard access will prevent them from appearing in DP assignment dropdowns.\n\n' +
+                        'Are you sure you want to continue?'
+                    );
+                    if (!confirmRemove) {
+                        this.checked = true;
+                    }
+                }
+            }
+        });
+    }
+
+    // ========================================
+    // Form Validation Enhancement
+    // ========================================
+    const updateForm = document.getElementById('updateUserForm');
+    
+    if (updateForm) {
+        updateForm.addEventListener('submit', function(e) {
+            const role = roleSelect.value;
+            
+            // Validate manager level for Manager role
+            if (role === 'Manager' && !managerLevelSelect.value) {
+                e.preventDefault();
+                alert('Manager Level is required for Manager role.');
+                managerLevelSelect.focus();
+                return false;
+            }
+            
+            // Show loading state
+            const submitBtn = document.getElementById('submitBtn');
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Updating...';
+            }
+        });
+    }
+
+    // ========================================
+    // Real-time Dashboard Access Feedback
+    // ========================================
+    const dashboardCheckboxes = document.querySelectorAll('input[name="dashboard_access[]"]');
+    
+    dashboardCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            updateDashboardAccessSummary();
+        });
+    });
+    
+    function updateDashboardAccessSummary() {
+        const checked = Array.from(dashboardCheckboxes)
+            .filter(cb => cb.checked)
+            .map(cb => cb.value);
+        
+        const hasPm = checked.includes('pm');
+        const hasDp = checked.includes('dp');
+        
+        // Dashboard Access Updated: {total: checked.length, hasPM: hasPm,
+            hasDP: hasDp,
+            accesses: checked
+        });
+    }
+    
+    // Initial summary
+    updateDashboardAccessSummary();
+});
+</script>
+{% endblock %}

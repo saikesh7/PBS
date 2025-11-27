@@ -1,0 +1,1211 @@
+{% extends "base.html" %}
+
+{% block title %}PBS Analytics - HR Portal{% endblock %}
+{% block page_title %}Points Based System Analytics{% endblock %}
+
+{% block extra_css %}
+<style>
+    .analytics-card {
+        border-radius: 8px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        margin-bottom: 20px;
+        transition: transform 0.2s;
+    }
+    .analytics-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+    .card-header {
+        background-color: #002060 !important;
+    }
+    .card-stat {
+        font-size: 2rem;
+        font-weight: bold;
+    }
+    .stat-label {
+        color: #6c757d;
+        font-size: 0.9rem;
+        font-weight: 500;
+        text-transform: uppercase;
+    }
+    .chart-container {
+        height: 400px;
+        position: relative;
+        padding: 15px 0;
+    }
+    .top-performers-table th {
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        background-color: #f8f9fc;
+    }
+    .filter-panel {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 25px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    .filter-panel label {
+        color: white;
+        font-weight: 500;
+        margin-bottom: 8px;
+    }
+    .filter-panel .form-control {
+        border: none;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .metric-card {
+        border-left: 4px solid #4e73df;
+        background: white;
+    }
+    .metric-card.purple { border-left-color: #6f42c1; }
+    .metric-card.green { border-left-color: #1cc88a; }
+    .metric-card.yellow { border-left-color: #f6c23e; }
+    .metric-card.orange { border-left-color: #fd7e14; }
+    
+    .no-data-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 300px;
+        padding: 40px 20px;
+        color: #6c757d;
+    }
+    .no-data-icon {
+        font-size: 4rem;
+        margin-bottom: 20px;
+        opacity: 0.3;
+    }
+    .no-data-message {
+        font-size: 1.2rem;
+        font-weight: 600;
+        margin-bottom: 10px;
+    }
+    .no-data-subtext {
+        font-size: 0.9rem;
+        color: #adb5bd;
+    }
+    
+    .updating-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.5);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+    }
+    .updating-overlay.show {
+        display: flex;
+    }
+    .spinner-content {
+        background: white;
+        padding: 30px 50px;
+        border-radius: 10px;
+        text-align: center;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+    }
+    .spinner-content .spinner-border {
+        width: 3rem;
+        height: 3rem;
+    }
+    
+    .table-wrapper {
+        max-height: 400px;
+        overflow-y: auto;
+        margin-top: 20px;
+    }
+    
+    .date-range-display {
+        background: rgba(255,255,255,0.2);
+        padding: 10px 15px;
+        border-radius: 5px;
+        color: white;
+        margin-top: 10px;
+        font-size: 0.9rem;
+    }
+    
+    .btn-filter-action {
+        padding: 10px 25px;
+        font-weight: 500;
+        border: none;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+    
+    .metric-icon {
+        font-size: 2.5rem;
+        opacity: 0.8;
+    }
+    
+    @media print {
+        .filter-panel, .btn, .no-print {
+            display: none !important;
+        }
+        .analytics-card {
+            break-inside: avoid;
+            page-break-inside: avoid;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- Dashboard Header -->
+<div class="card mb-4" style="background: linear-gradient(135deg, #002060 0%, #0066cc 100%); border: none; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
+    <div class="card-body py-3">
+        <div class="d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center">
+                <div class="me-3" style="font-size: 2rem; color: white;">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <div>
+                    <h4 class="mb-1 text-white fw-bold">HR Dashboard</h4>
+                    <div class="d-flex gap-2">
+                        <span class="badge bg-primary px-3 py-2" style="font-size: 0.9rem;">{{ display_quarter if display_quarter is defined else 'Q1 2025-26' }}</span>
+                        <span class="badge bg-secondary px-3 py-2" style="font-size: 0.9rem;">{{ display_month if display_month is defined else 'NOV 2025' }}</span>
+                    </div>
+                </div>
+            </div>
+            <div class="text-end text-white">
+                <div class="d-flex align-items-center justify-content-end">
+                    <i class="fas fa-award me-2" style="color: gold; font-size: 1.5rem;"></i>
+                    <div>
+                        <h6 class="mb-0 fw-bold">POINTS BASED SYSTEM</h6>
+                        <small class="text-white-50">Analytics Dashboard</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Loading Overlay -->
+<div class="updating-overlay" id="loadingOverlay">
+    <div class="spinner-content">
+        <div class="spinner-border text-primary mb-3" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <div class="fw-bold">Updating Analytics Data...</div>
+        <small class="text-muted">Please wait while we process your request</small>
+    </div>
+</div>
+
+<!-- Filter Panel -->
+<div class="filter-panel">
+    <form method="POST" id="filterForm">
+        <div class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label">
+                    <i class="fas fa-calendar-alt me-2"></i>Start Date
+                </label>
+                <input type="date" name="start_date" class="form-control" value="{{ start_date }}" id="startDateInput">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">
+                    <i class="fas fa-calendar-check me-2"></i>End Date
+                </label>
+                <input type="date" name="end_date" class="form-control" value="{{ end_date }}" id="endDateInput">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">
+                    <i class="fas fa-map-marker-alt me-2"></i>Location
+                </label>
+                <select name="location_filter" class="form-control" id="locationFilter">
+                    <option value="">All Locations</option>
+                    <option value="US" {% if location_filter == 'US' %}selected{% endif %}>US</option>
+                    <option value="Non-US" {% if location_filter == 'Non-US' %}selected{% endif %}>Non-US</option>
+                </select>
+            </div>
+            <div class="col-md-4 d-flex align-items-end">
+                <button type="submit" class="btn btn-light btn-filter-action flex-fill me-2" id="updateAnalytics">
+                    <i class="fas fa-sync-alt me-2"></i>Update Analytics
+                </button>
+                <button type="button" class="btn btn-outline-light btn-filter-action flex-fill" id="resetFilters">
+                    <i class="fas fa-undo me-2"></i>Reset
+                </button>
+            </div>
+        </div>
+        
+        {% if start_date or end_date or location_filter %}
+        <div class="date-range-display mt-3">
+            <i class="fas fa-info-circle me-2"></i>
+            <strong>Current Filter:</strong>
+            {% if start_date and end_date %}
+                From {{ start_date }} to {{ end_date }}
+            {% elif start_date %}
+                From {{ start_date }} onwards
+            {% elif end_date %}
+                Up to {{ end_date }}
+            {% endif %}
+            {% if location_filter %}
+                | Location: <strong>{{ location_filter }}</strong>
+            {% endif %}
+        </div>
+        {% endif %}
+    </form>
+</div>
+
+<!-- Summary Cards Row -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-3">
+        <div class="card analytics-card metric-card h-100">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col">
+                        <div class="stat-label">Total Points</div>
+                        <div class="card-stat text-primary" id="totalPointsCard">
+                            {{ summary_for_selected_period.total_points if summary_for_selected_period else 0 }}
+                        </div>
+                        <small class="text-muted">Points awarded in period</small>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-award metric-icon text-primary"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-3">
+        <div class="card analytics-card metric-card purple h-100">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col">
+                        <div class="stat-label">Total Activities</div>
+                        <div class="card-stat" style="color: #6f42c1;" id="totalActivitiesCard">
+                            {{ summary_for_selected_period.total_count if summary_for_selected_period else 0 }}
+                        </div>
+                        <small class="text-muted">Activity count in period</small>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-tasks metric-icon" style="color: #6f42c1;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-3">
+        <div class="card analytics-card metric-card green h-100">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col">
+                        <div class="stat-label">Most Active Grade</div>
+                        <div class="card-stat" style="color: #1cc88a;" id="mostActiveGradeCard">
+                            {{ most_active_grade_name | default('N/A') }}
+                        </div>
+                        <small class="text-muted">Highest participation</small>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-user-graduate metric-icon" style="color: #1cc88a;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-3">
+        <div class="card analytics-card metric-card yellow h-100">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col">
+                        <div class="stat-label">Avg Participation</div>
+                        <div class="card-stat" style="color: #f6c23e;" id="avgParticipationRateCard">
+                            {{ "%.1f"|format(avg_participation_rate_value|default(0)) }}%
+                        </div>
+                        <small class="text-muted">Average participation rate</small>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-percentage metric-icon" style="color: #f6c23e;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Utilization Data Card (if available) -->
+{% if utilization_data %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="alert alert-info border-left-info">
+            <div class="row align-items-center">
+                <div class="col-auto">
+                    <i class="fas fa-chart-line fa-2x"></i>
+                </div>
+                <div class="col">
+                    <h6 class="mb-1"><strong>{{ utilization_data.category }}</strong></h6>
+                    <p class="mb-0">
+                        <strong>{{ utilization_data.participants }}</strong> out of 
+                        <strong>{{ utilization_data.total_eligible }}</strong> eligible employees participated 
+                        (<strong>{{ "%.1f"|format(utilization_data.rate) }}%</strong> participation rate)
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="row">
+    <!-- Quarterly Performance Comparison -->
+    <div class="col-lg-6 mb-4">
+        <div class="card analytics-card h-100">
+            <div class="card-header bg-primary text-white py-3">
+                <h6 class="m-0 font-weight-bold">
+                    <i class="fas fa-chart-bar me-2"></i>Quarterly Performance Comparison
+                </h6>
+            </div>
+            <div class="card-body">
+                {% if quarterly_data and quarterly_data|length > 0 %}
+                    <div class="chart-container">
+                        <canvas id="quarterlyComparisonChart"></canvas>
+                    </div>
+                    
+                    <div class="table-wrapper">
+                        <table class="table table-bordered table-hover table-sm">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Quarter</th>
+                                    <th class="text-end">Total Points</th>
+                                    <th class="text-end">Activities</th>
+                                    <th class="text-end">Avg Points</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for quarter in quarterly_data %}
+                                    <tr>
+                                        <td><strong>{{ quarter.period }}</strong></td>
+                                        <td class="text-end">
+                                            <span class="badge bg-primary">{{ quarter.total_points }}</span>
+                                        </td>
+                                        <td class="text-end">{{ quarter.total_count }}</td>
+                                        <td class="text-end">
+                                            {% if quarter.total_count > 0 %}
+                                                {{ "%.1f"|format(quarter.total_points / quarter.total_count) }}
+                                            {% else %}
+                                                0
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="no-data-container">
+                        <i class="fas fa-chart-bar no-data-icon"></i>
+                        <div class="no-data-message">No Quarterly Data Available</div>
+                        <div class="no-data-subtext">Performance data for recent quarters is not available</div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Activity Participation Rate -->
+    <div class="col-lg-6 mb-4">
+        <div class="card analytics-card h-100">
+            <div class="card-header bg-success text-white py-3">
+                <h6 class="m-0 font-weight-bold">
+                    <i class="fas fa-users me-2"></i>Activity Participation Rate
+                </h6>
+            </div>
+            <div class="card-body">
+                {% if activity_participation and activity_participation|length > 0 %}
+                    <div class="chart-container">
+                        <canvas id="activityParticipationChart"></canvas>
+                    </div>
+                    
+                    <div class="table-wrapper">
+                        <table class="table table-bordered table-hover table-sm">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Activity Category</th>
+                                    <th class="text-end">Participants</th>
+                                    <th class="text-end">Eligible</th>
+                                    <th class="text-end">Rate</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for activity in activity_participation %}
+                                    <tr>
+                                        <td><strong>{{ activity.category }}</strong></td>
+                                        <td class="text-end">{{ activity.participants }}</td>
+                                        <td class="text-end">{{ activity.total }}</td>
+                                        <td class="text-end">
+                                            <span class="badge {% if activity.rate >= 75 %}bg-success{% elif activity.rate >= 50 %}bg-warning{% else %}bg-danger{% endif %}">
+                                                {{ "%.1f"|format(activity.rate) }}%
+                                            </span>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="no-data-container">
+                        <i class="fas fa-users no-data-icon"></i>
+                        <div class="no-data-message">No Participation Data Available</div>
+                        <div class="no-data-subtext">Participation data for the selected period is not available</div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Grade Participation -->
+    <div class="col-lg-6 mb-4">
+        <div class="card analytics-card h-100">
+            <div class="card-header bg-info text-white py-3">
+                <h6 class="m-0 font-weight-bold">
+                    <i class="fas fa-user-graduate me-2"></i>Employee Participation by Grade
+                </h6>
+            </div>
+            <div class="card-body">
+                {% if grade_participation and grade_participation|length > 0 %}
+                    <div class="chart-container" style="height: 500px;">
+                        <canvas id="gradeParticipationChart"></canvas>
+                    </div>
+                    
+                    <div class="table-wrapper">
+                        <table class="table table-bordered table-hover table-sm">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Category</th>
+                                    {% set grade_list = ["A1", "B1", "B2", "C1", "C2", "D1", "D2"] %}
+                                    {% for grade in grade_list %}
+                                        <th class="text-end">{{ grade }}</th>
+                                    {% endfor %}
+                                    <th class="text-end">Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for category in grade_participation.keys() %}
+                                    <tr>
+                                        <td><strong>{{ category }}</strong></td>
+                                        {% set row_total = namespace(value=0) %}
+                                        {% for grade in grade_list %}
+                                            {% set count = grade_participation[category][grade] if grade in grade_participation[category] else 0 %}
+                                            {% set row_total.value = row_total.value + count %}
+                                            <td class="text-end">{{ count if count > 0 else '-' }}</td>
+                                        {% endfor %}
+                                        <td class="text-end"><strong>{{ row_total.value }}</strong></td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="no-data-container">
+                        <i class="fas fa-user-graduate no-data-icon"></i>
+                        <div class="no-data-message">No Grade Participation Data</div>
+                        <div class="no-data-subtext">Grade-wise participation data is not available for the selected period</div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Grade Participation Percentage -->
+    <div class="col-lg-6 mb-4">
+        <div class="card analytics-card h-100">
+            <div class="card-header bg-warning text-dark py-3">
+                <h6 class="m-0 font-weight-bold" style="color: #f8f9fc;">
+                    <i class="fas fa-chart-pie me-2"></i>Grade-wise Participation Percentage
+                </h6>
+            </div>
+            <div class="card-body">
+                {% if grade_participation_percent and grade_participation_percent|length > 0 %}
+                    <div class="chart-container" style="height: 500px;">
+                        <canvas id="gradeParticipationPercentChart"></canvas>
+                    </div>
+                    
+                    <div class="table-wrapper">
+                        <table class="table table-bordered table-hover table-sm" id="participationPercentTable">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Category</th>
+                                    {% for grade in grade_participation_percent.keys() %}
+                                        <th class="text-end">{{ grade }} (%)</th>
+                                    {% endfor %}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Populated by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="no-data-container">
+                        <i class="fas fa-chart-pie no-data-icon"></i>
+                        <div class="no-data-message">No Participation Percentage Data</div>
+                        <div class="no-data-subtext">Grade-wise participation percentage is not available for the selected period</div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Top Performers -->
+<div class="card analytics-card mb-4">
+    <div class="card-header bg-gradient-primary text-white d-flex justify-content-between align-items-center py-3">
+        <h6 class="m-0 font-weight-bold">
+            <i class="fas fa-trophy me-2"></i>Top Performers by Grade & Location
+        </h6>
+        
+        <div class="btn-group no-print">
+            <button type="button" class="btn btn-sm btn-light" id="filterUS">
+                <i class="fas fa-flag-usa me-1"></i>US
+            </button>
+            <button type="button" class="btn btn-sm btn-light" id="filterNonUS">
+                <i class="fas fa-globe me-1"></i>Non-US
+            </button>
+            <button type="button" class="btn btn-sm btn-warning" id="filterAll">
+                <i class="fas fa-users me-1"></i>All
+            </button>
+        </div>
+    </div>
+    <div class="card-body">
+        {% if top_performers and top_performers|length > 0 %}
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover top-performers-table table-sm" id="topPerformersTable">
+                    <thead class="table-light">
+                        <tr>
+                            <th width="80">Rank</th>
+                            <th>Name</th>
+                            <th>Employee ID</th>
+                            <th>Grade</th>
+                            <th>Location</th>
+                            <th class="text-end" width="120">Total Points</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for employee in top_performers %}
+                            <tr data-grade="{{ employee.grade }}" data-location="{{ employee.us_non_us }}">
+                                <td class="text-center">
+                                    {% if loop.index <= 3 %}
+                                        <span class="badge {% if loop.index == 1 %}bg-warning{% elif loop.index == 2 %}bg-secondary{% else %}bg-info{% endif %}" style="font-size: 1rem;">
+                                            {{ loop.index }}
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-light text-dark">{{ loop.index }}</span>
+                                    {% endif %}
+                                </td>
+                                <td><strong>{{ employee.name }}</strong></td>
+                                <td>{{ employee.employee_id }}</td>
+                                <td><span class="badge bg-primary">{{ employee.grade }}</span></td>
+                                <td>
+                                    {% if employee.us_non_us == 'US' %}
+                                        <i class="fas fa-flag-usa me-1"></i>
+                                    {% else %}
+                                        <i class="fas fa-globe me-1"></i>
+                                    {% endif %}
+                                    {{ employee.us_non_us }}
+                                </td>
+                                <td class="text-end">
+                                    <span class="badge bg-success" style="font-size: 0.9rem;">
+                                        {{ employee.total_points }}
+                                    </span>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="mt-3">
+                <button class="btn btn-outline-primary btn-sm no-print" onclick="window.print()">
+                    <i class="fas fa-print me-2"></i>Print Report
+                </button>
+            </div>
+        {% else %}
+            <div class="no-data-container">
+                <i class="fas fa-trophy no-data-icon"></i>
+                <div class="no-data-message">No Top Performers Data Available</div>
+                <div class="no-data-subtext">Top performers data is not available for the selected period</div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('PBS Analytics page loaded');
+    
+    // ========================================
+    // COLOR PALETTE
+    // ========================================
+    const colors = [
+        '#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b',
+        '#6f42c1', '#fd7e14', '#20c9a6', '#5a5c69', '#858796'
+    ];
+    
+    const chartColors = {
+        blue: '#4e73df',
+        green: '#1cc88a',
+        cyan: '#36b9cc',
+        yellow: '#f6c23e',
+        red: '#e74a3b',
+        purple: '#6f42c1',
+        orange: '#fd7e14',
+        teal: '#20c9a6',
+        gray: '#5a5c69'
+    };
+    
+    // ========================================
+    // CHART RENDERING FUNCTIONS
+    // ========================================
+    
+    function renderQuarterlyChart() {
+        const quarterlyDataElement = document.getElementById('quarterlyComparisonChart');
+        if (!quarterlyDataElement) return;
+        
+        const quarterlyData = {{ quarterly_data|tojson }};
+        
+        if (quarterlyData && quarterlyData.length > 0) {
+            const filteredData = quarterlyData.filter(q => q.total_points > 0 || q.total_count > 0);
+            
+            if (filteredData.length > 0) {
+                const quarterlyLabels = filteredData.map(q => q.period);
+                const quarterlyPoints = filteredData.map(q => q.total_points);
+                const quarterlyActivities = filteredData.map(q => q.total_count);
+                
+                const quarterlyCtx = quarterlyDataElement.getContext('2d');
+                new Chart(quarterlyCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: quarterlyLabels,
+                        datasets: [
+                            {
+                                label: 'Total Points',
+                                data: quarterlyPoints,
+                                backgroundColor: chartColors.blue,
+                                borderColor: chartColors.blue,
+                                borderWidth: 2,
+                                yAxisID: 'y'
+                            },
+                            {
+                                label: 'Total Activities',
+                                data: quarterlyActivities,
+                                backgroundColor: chartColors.green,
+                                borderColor: chartColors.green,
+                                borderWidth: 2,
+                                type: 'line',
+                                yAxisID: 'y1'
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: {
+                            mode: 'index',
+                            intersect: false
+                        },
+                        scales: {
+                            y: {
+                                type: 'linear',
+                                display: true,
+                                position: 'left',
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: 'Total Points'
+                                }
+                            },
+                            y1: {
+                                type: 'linear',
+                                display: true,
+                                position: 'right',
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: 'Total Activities'
+                                },
+                                grid: {
+                                    drawOnChartArea: false
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: 'top'
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        let label = context.dataset.label || '';
+                                        if (label) {
+                                            label += ': ';
+                                        }
+                                        label += context.parsed.y.toLocaleString();
+                                        return label;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+    }
+    
+    function renderActivityParticipationChart() {
+        const activityChartElement = document.getElementById('activityParticipationChart');
+        if (!activityChartElement) return;
+        
+        const activityData = {{ activity_participation|tojson }};
+        
+        if (activityData && activityData.length > 0) {
+            const filteredActivities = activityData.filter(a => a.participants > 0);
+            
+            if (filteredActivities.length > 0) {
+                const activityLabels = filteredActivities.map(a => a.category);
+                const activityRates = filteredActivities.map(a => a.rate);
+                
+                const activityCtx = activityChartElement.getContext('2d');
+                new Chart(activityCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: activityLabels,
+                        datasets: [{
+                            label: 'Participation Rate (%)',
+                            data: activityRates,
+                            backgroundColor: activityLabels.map((_, i) => colors[i % colors.length]),
+                            borderColor: activityLabels.map((_, i) => colors[i % colors.length]),
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        indexAxis: 'y',
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            x: {
+                                beginAtZero: true,
+                                max: 100,
+                                title: {
+                                    display: true,
+                                    text: 'Participation Rate (%)'
+                                }
+                            },
+                            y: {
+                                ticks: {
+                                    autoSkip: false
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return context.parsed.x.toFixed(1) + '%';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+    }
+    
+    function renderGradeParticipationChart() {
+        const gradeChartElement = document.getElementById('gradeParticipationChart');
+        if (!gradeChartElement) return;
+        
+        const gradeData = {{ grade_participation|tojson }};
+        
+        if (gradeData && Object.keys(gradeData).length > 0) {
+            const filteredCategories = Object.keys(gradeData).filter(category => {
+                const totalParticipants = Object.values(gradeData[category]).reduce((sum, count) => sum + count, 0);
+                return totalParticipants > 0;
+            });
+
+            if (filteredCategories.length > 0) {
+                const grades = ["A1", "B1", "B2", "C1", "C2", "D1", "D2"];
+                
+                const gradeDatasets = grades.map((grade, index) => {
+                    return {
+                        label: grade,
+                        data: filteredCategories.map(category => gradeData[category][grade] || 0),
+                        backgroundColor: colors[index % colors.length],
+                        borderColor: colors[index % colors.length],
+                        borderWidth: 1
+                    };
+                });
+                
+                const gradeCtx = gradeChartElement.getContext('2d');
+                new Chart(gradeCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: filteredCategories,
+                        datasets: gradeDatasets
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            x: {
+                                stacked: true,
+                                ticks: {
+                                    autoSkip: false,
+                                    maxRotation: 90,
+                                    minRotation: 45
+                                }
+                            },
+                            y: {
+                                stacked: true,
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: 'Number of Participants'
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: 'bottom'
+                            },
+                            tooltip: {
+                                mode: 'index',
+                                intersect: false
+                            }
+                        }
+                    }
+                });
+            }
+        }
+    }
+    
+    function renderGradeParticipationPercentChart() {
+        const gradePercentChartElement = document.getElementById('gradeParticipationPercentChart');
+        if (!gradePercentChartElement) return;
+        
+        const gradePercentData = {{ grade_participation_percent|tojson }};
+        
+        if (gradePercentData && Object.keys(gradePercentData).length > 0) {
+            const allCategories = new Set();
+            const gradesWithData = [];
+            
+            Object.entries(gradePercentData).forEach(([grade, gradeData]) => {
+                if (Object.keys(gradeData).length > 0) {
+                    gradesWithData.push(grade);
+                    Object.keys(gradeData).forEach(category => {
+                        allCategories.add(category);
+                    });
+                }
+            });
+            
+            if (allCategories.size > 0 && gradesWithData.length > 0) {
+                const categoryArray = Array.from(allCategories);
+                
+                const gradePercentDatasets = gradesWithData.map((grade, index) => {
+                    const gradeValues = categoryArray.map(category => {
+                        if (gradePercentData[grade] && gradePercentData[grade][category]) {
+                            const value = typeof gradePercentData[grade][category] === 'object' 
+                                ? gradePercentData[grade][category].percentage 
+                                : parseFloat(gradePercentData[grade][category]);
+                            return isNaN(value) ? 0 : value;
+                        }
+                        return 0;
+                    });
+                    
+                    return {
+                        label: 'Grade ' + grade,
+                        data: gradeValues,
+                        backgroundColor: `${colors[index % colors.length]}33`,
+                        borderColor: colors[index % colors.length],
+                        borderWidth: 2,
+                        pointBackgroundColor: colors[index % colors.length],
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: colors[index % colors.length],
+                        pointRadius: 4,
+                        pointHoverRadius: 6
+                    };
+                });
+                
+                const gradePercentCtx = gradePercentChartElement.getContext('2d');
+                new Chart(gradePercentCtx, {
+                    type: 'radar',
+                    data: {
+                        labels: categoryArray,
+                        datasets: gradePercentDatasets
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            r: {
+                                angleLines: {
+                                    display: true,
+                                    color: 'rgba(0, 0, 0, 0.1)'
+                                },
+                                grid: {
+                                    color: 'rgba(0, 0, 0, 0.1)'
+                                },
+                                suggestedMin: 0,
+                                suggestedMax: 100,
+                                ticks: {
+                                    stepSize: 20,
+                                    callback: function(value) {
+                                        return value + '%';
+                                    }
+                                },
+                                pointLabels: {
+                                    font: {
+                                        size: 11
+                                    }
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: 'bottom'
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return context.dataset.label + ': ' + context.parsed.r.toFixed(1) + '%';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+                
+                // Populate table
+                populateParticipationPercentTable(gradePercentData, categoryArray, gradesWithData);
+            }
+        }
+    }
+    
+    function populateParticipationPercentTable(data, categories, grades) {
+        const table = document.getElementById('participationPercentTable');
+        if (!table) return;
+        
+        const tbody = table.querySelector('tbody');
+        if (!tbody) return;
+        
+        tbody.innerHTML = '';
+        
+        categories.forEach(category => {
+            const row = document.createElement('tr');
+            
+            const categoryCell = document.createElement('td');
+            categoryCell.innerHTML = '<strong>' + category + '</strong>';
+            row.appendChild(categoryCell);
+            
+            grades.forEach(grade => {
+                const gradeCell = document.createElement('td');
+                gradeCell.className = 'text-end';
+                
+                let value = 0;
+                if (data[grade] && data[grade][category] !== undefined) {
+                    if (typeof data[grade][category] === 'object' && data[grade][category].percentage !== undefined) {
+                        value = data[grade][category].percentage;
+                    } else {
+                        value = parseFloat(data[grade][category]);
+                        if (isNaN(value)) value = 0;
+                    }
+                }
+                
+                gradeCell.innerHTML = '<span class="badge ' + 
+                    (value >= 75 ? 'bg-success' : value >= 50 ? 'bg-warning' : 'bg-danger') + 
+                    '">' + value.toFixed(1) + '%</span>';
+                row.appendChild(gradeCell);
+            });
+            
+            tbody.appendChild(row);
+        });
+    }
+    
+    // ========================================
+    // TOP PERFORMERS FILTERING
+    // ========================================
+    
+    const filterUS = document.getElementById('filterUS');
+    const filterNonUS = document.getElementById('filterNonUS');
+    const filterAll = document.getElementById('filterAll');
+    const topPerformersTable = document.getElementById('topPerformersTable');
+    
+    if (filterUS && filterNonUS && filterAll && topPerformersTable) {
+        const tableRows = topPerformersTable.querySelectorAll('tbody tr');
+        
+        function updateButtonStates(activeButton) {
+            [filterUS, filterNonUS, filterAll].forEach(btn => {
+                btn.classList.remove('btn-warning');
+                btn.classList.add('btn-light');
+            });
+            activeButton.classList.add('btn-warning');
+            activeButton.classList.remove('btn-light');
+        }
+        
+        filterUS.addEventListener('click', function() {
+            tableRows.forEach(row => {
+                row.style.display = row.dataset.location === 'US' ? '' : 'none';
+            });
+            updateButtonStates(this);
+            updateRankNumbers();
+        });
+        
+        filterNonUS.addEventListener('click', function() {
+            tableRows.forEach(row => {
+                row.style.display = row.dataset.location === 'Non-US' ? '' : 'none';
+            });
+            updateButtonStates(this);
+            updateRankNumbers();
+        });
+        
+        filterAll.addEventListener('click', function() {
+            tableRows.forEach(row => {
+                row.style.display = '';
+            });
+            updateButtonStates(this);
+            updateRankNumbers();
+        });
+        
+        function updateRankNumbers() {
+            let rank = 1;
+            tableRows.forEach(row => {
+                if (row.style.display !== 'none') {
+                    const rankCell = row.querySelector('td:first-child');
+                    const badge = rankCell.querySelector('.badge');
+                    if (badge) {
+                        badge.textContent = rank;
+                        
+                        // Update badge color based on rank
+                        badge.className = 'badge ';
+                        if (rank === 1) {
+                            badge.classList.add('bg-warning');
+                        } else if (rank === 2) {
+                            badge.classList.add('bg-secondary');
+                        } else if (rank === 3) {
+                            badge.classList.add('bg-info');
+                        } else {
+                            badge.classList.add('bg-light', 'text-dark');
+                        }
+                        
+                        badge.style.fontSize = '1rem';
+                    }
+                    rank++;
+                }
+            });
+        }
+    }
+    
+    // ========================================
+    // FORM HANDLING
+    // ========================================
+    
+    const filterForm = document.getElementById('filterForm');
+    const updateBtn = document.getElementById('updateAnalytics');
+    const resetBtn = document.getElementById('resetFilters');
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    
+    if (filterForm) {
+        filterForm.addEventListener('submit', function(e) {
+            // Validate dates
+            const startDate = document.getElementById('startDateInput').value;
+            const endDate = document.getElementById('endDateInput').value;
+            
+            if (startDate && endDate && new Date(startDate) > new Date(endDate)) {
+                e.preventDefault();
+                alert('Start date cannot be after end date. Please select valid dates.');
+                return false;
+            }
+            
+            if (loadingOverlay) {
+                loadingOverlay.classList.add('show');
+            }
+            if (updateBtn) {
+                updateBtn.disabled = true;
+                updateBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Updating...';
+            }
+        });
+    }
+    
+    if (resetBtn) {
+        resetBtn.addEventListener('click', function() {
+            const startDateInput = document.getElementById('startDateInput');
+            const endDateInput = document.getElementById('endDateInput');
+            
+            if (startDateInput) startDateInput.value = '';
+            if (endDateInput) endDateInput.value = '';
+            
+            if (loadingOverlay) {
+                loadingOverlay.classList.add('show');
+            }
+            
+            this.disabled = true;
+            this.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Resetting...';
+            
+            if (filterForm) {
+                filterForm.submit();
+            }
+        });
+    }
+    
+    // Clean URL after redirect
+    if (window.location.search.length > 0) {
+        window.history.replaceState({}, document.title, window.location.pathname);
+    }
+    
+    // ========================================
+    // INITIALIZE ALL CHARTS
+    // ========================================
+    
+    try {
+        renderQuarterlyChart();
+        console.log('Quarterly chart rendered');
+    } catch (error) {
+        console.error('Error rendering quarterly chart:', error);
+    }
+    
+    try {
+        renderActivityParticipationChart();
+        console.log('Activity participation chart rendered');
+    } catch (error) {
+        console.error('Error rendering activity chart:', error);
+    }
+    
+    try {
+        renderGradeParticipationChart();
+        console.log('Grade participation chart rendered');
+    } catch (error) {
+        console.error('Error rendering grade chart:', error);
+    }
+    
+    try {
+        renderGradeParticipationPercentChart();
+        console.log('Grade participation percent chart rendered');
+    } catch (error) {
+        console.error('Error rendering grade percent chart:', error);
+    }
+    
+    console.log('All charts initialization complete');
+});
+</script>
+
+{% endblock %}

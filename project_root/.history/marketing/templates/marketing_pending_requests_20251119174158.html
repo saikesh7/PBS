@@ -1,0 +1,613 @@
+{% extends "marketing_base.html" %}
+
+{% block title %}Pending Requests - Marketing Dashboard{% endblock %}
+{% block topbar_title %}Pending Requests{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Card styling */
+    .card {
+        border: none;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        margin-bottom: 0;
+    }
+    
+    .card-header {
+        background: rgb(0, 32, 96);
+        color: white;
+        padding: 12px 20px;
+        border-radius: 8px 8px 0 0 !important;
+        border: none;
+        font-size: 14px;
+        font-weight: 600;
+    }
+    
+    .card-body {
+        padding: 0;
+    }
+    
+    
+    /* Table styling - Match PM/Arch style */
+    .table-responsive {
+        overflow-x: auto;
+        overflow-y: visible;
+        max-width: 100%;
+        margin-bottom: 0;
+    }
+    
+    /* Ensure DataTables wrapper doesn't scroll */
+    .dataTables_wrapper {
+        overflow: visible;
+    }
+    
+    .dataTables_wrapper .table-responsive {
+        margin-bottom: 0;
+    }
+    
+    .table-responsive::-webkit-scrollbar {
+        height: 8px;
+    }
+    
+    .table-responsive::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 4px;
+    }
+    
+    .table-responsive::-webkit-scrollbar-thumb {
+        background: #888;
+        border-radius: 4px;
+    }
+    
+    .table-responsive::-webkit-scrollbar-thumb:hover {
+        background: #555;
+    }
+    
+    #pendingTable {
+        margin-bottom: 0 !important;
+        width: 100%;
+        min-width: 1200px;
+    }
+    
+    #pendingTable thead th {
+        background-color: #f8f9fc;
+        color: #5a5c69;
+        font-weight: 600;
+        font-size: 13px;
+        padding: 12px 15px;
+        border-bottom: 1px solid #e3e6f0;
+        white-space: nowrap;
+        vertical-align: middle;
+        text-align: center;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+    
+    #pendingTable thead th:nth-child(1) {
+        min-width: 180px;
+        width: 180px;
+    }
+    
+    #pendingTable thead th:nth-child(3) {
+        min-width: 250px;
+    }
+    
+    #pendingTable thead th:nth-child(4) {
+        min-width: 100px;
+        width: 100px;
+    }
+    
+    /* Date column - Requested On */
+    #pendingTable thead th:nth-child(5) {
+        min-width: 130px;
+        width: 130px;
+    }
+    
+    #pendingTable tbody td {
+        padding: 12px 15px;
+        vertical-align: middle;
+        font-size: 14px;
+        border-bottom: 1px solid #e3e6f0;
+        text-align: center;
+    }
+    
+    #pendingTable tbody td:nth-child(1) {
+        min-width: 180px;
+        width: 180px;
+    }
+    
+    #pendingTable tbody td:nth-child(3) {
+        min-width: 250px;
+    }
+    
+    #pendingTable tbody td:nth-child(4) {
+        min-width: 100px;
+        width: 100px;
+    }
+    
+    /* Date column - Requested On */
+    #pendingTable tbody td:nth-child(5) {
+        min-width: 130px;
+        width: 130px;
+    }
+    
+    #pendingTable tbody tr:hover {
+        background-color: #f8f9fc;
+    }
+    
+    #pendingTable tbody tr:last-child td {
+        border-bottom: none;
+    }
+    
+    /* Actions column - keep buttons side by side */
+    #pendingTable td:last-child {
+        white-space: nowrap;
+        width: 1%;
+    }
+    
+    /* DataTables controls */
+    .dataTables_wrapper .dataTables_length {
+        float: left;
+        margin: 15px 0 15px 20px;
+    }
+    
+    .dataTables_wrapper .dataTables_filter {
+        float: right;
+        margin: 15px 20px 15px 0;
+    }
+    
+    .dataTables_wrapper .dataTables_filter input {
+        border: 1px solid #d1d3e2;
+        border-radius: 4px;
+        padding: 6px 12px;
+        margin-left: 8px;
+        font-size: 14px;
+    }
+    
+    .dataTables_wrapper .dataTables_length select {
+        border: 1px solid #d1d3e2;
+        border-radius: 4px;
+        padding: 6px 30px 6px 12px;
+        margin: 0 8px;
+        font-size: 14px;
+    }
+    
+    .dataTables_wrapper .dataTables_info {
+        padding: 15px 20px;
+        font-size: 14px;
+        color: #858796;
+        background: white;
+    }
+    
+    .dataTables_wrapper .dataTables_paginate {
+        padding: 15px 20px;
+        background: white;
+    }
+    
+    /* Keep pagination row outside scroll */
+    .pagination-row {
+        background: white;
+        margin: 0 !important;
+        padding: 15px 20px !important;
+        border-top: 1px solid #e3e6f0;
+        display: flex !important;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .pagination-row .col-sm-6 {
+        flex: 0 0 auto;
+        width: auto;
+    }
+    
+    .dataTables_wrapper .dataTables_paginate .paginate_button {
+        padding: 6px 12px;
+        margin: 0 2px;
+        border: 1px solid #d1d3e2;
+        border-radius: 4px;
+        background: white;
+        color: #4e73df;
+        font-size: 14px;
+    }
+    
+    .dataTables_wrapper .dataTables_paginate .paginate_button.current {
+        background: #4e73df;
+        color: white !important;
+        border-color: #4e73df;
+    }
+    
+    .dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+        background: #4e73df;
+        color: white !important;
+        border-color: #4e73df;
+    }
+    
+    /* Button styling */
+    .btn-sm {
+        padding: 6px 12px;
+        font-size: 13px;
+        border-radius: 4px;
+    }
+    
+    .btn-success {
+        background-color: #1cc88a;
+        border-color: #1cc88a;
+    }
+    
+    .btn-success:hover {
+        background-color: #17a673;
+        border-color: #17a673;
+    }
+    
+    .btn-danger {
+        background-color: #e74a3b;
+        border-color: #e74a3b;
+    }
+    
+    .btn-danger:hover {
+        background-color: #d52a1a;
+        border-color: #d52a1a;
+    }
+    
+    .btn-info {
+        background-color: #36b9cc;
+        border-color: #36b9cc;
+    }
+    
+    .btn-info:hover {
+        background-color: #2c9faf;
+        border-color: #2c9faf;
+    }
+    
+    .btn-primary {
+        background-color: #4e73df;
+        border-color: #4e73df;
+    }
+    
+    .btn-primary:hover {
+        background-color: #2e59d9;
+        border-color: #2e59d9;
+    }
+    
+    /* Badge styling */
+    .badge {
+        padding: 6px 12px;
+        font-size: 13px;
+        font-weight: 500;
+        border-radius: 4px;
+    }
+    
+    /* Modal styling */
+    .modal-header {
+        background: rgb(0, 32, 96);
+        color: white;
+        border-bottom: none;
+    }
+    
+    .modal-header .btn-close {
+        filter: brightness(0) invert(1);
+    }
+    
+    .modal-header.bg-success {
+        background: #1cc88a !important;
+    }
+    
+    .modal-header.bg-danger {
+        background: #e74a3b !important;
+    }
+    
+    .notes-content {
+        background-color: #f8f9fc;
+        padding: 15px;
+        border-radius: 4px;
+        border-left: 4px solid #4e73df;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+        max-height: 400px;
+        overflow-y: auto;
+        font-size: 14px;
+    }
+    
+    .notes-label {
+        font-weight: 600;
+        color: #5a5c69;
+        margin-bottom: 8px;
+        display: block;
+        font-size: 14px;
+    }
+    
+    /* Alert styling */
+    .alert {
+        border-radius: 4px;
+        border: none;
+        font-size: 14px;
+    }
+    
+    .alert-info {
+        background-color: #d1ecf1;
+        color: #0c5460;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-3">
+    <!-- Pending Requests Section -->
+    <div class="card">
+        <div class="card-header d-flex align-items-center justify-content-between">
+            <div>
+                <i class="fas fa-clock me-2"></i>
+                <span>Pending Marketing Category Requests</span>
+            </div>
+            <span class="badge bg-warning text-dark" style="font-size: 14px; padding: 8px 15px;">{{ pending_count }} Request{{ 's' if pending_count != 1 else '' }}</span>
+        </div>
+        <div class="card-body">
+            {% if pending_requests %}
+            <div class="table-responsive">
+                <table class="table table-hover" id="pendingTable">
+                    <thead>
+                        <tr>
+                            <th>Employee</th>
+                            <th>Grade</th>
+                            <th>Category</th>
+                            <th>Points</th>
+                            <th>Requested On</th>
+                            <th>Notes</th>
+                            <th>Attachment</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for req in pending_requests %}
+                        <tr>
+                            <td><strong>{{ req.employee_name }}</strong></td>
+                            <td>{{ req.employee_grade }}</td>
+                            <td>{{ req.category_name }}</td>
+                            <td><strong>{{ req.points }}</strong></td>
+                            <td>{{ req.request_date.strftime('%d-%m-%Y') if req.request_date else 'N/A' }}</td>
+                            <td class="text-center">
+                                {% if req.notes %}
+                                <button class="btn btn-sm btn-info btn-view-notes" 
+                                        data-notes="{{ req.notes | e }}"
+                                        data-employee="{{ req.employee_name }}">
+                                    <i class="fas fa-eye"></i> View
+                                </button>
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                {% if req.has_attachment %}
+                                <a href="{{ url_for('marketing_dashboard.get_attachment', request_id=req.id) }}" 
+                                   class="btn btn-sm btn-primary" download>
+                                    <i class="fas fa-download"></i> Download
+                                </a>
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="d-flex flex-nowrap gap-1">
+                                    <button class="btn btn-sm btn-success btn-approve" 
+                                            data-request-id="{{ req.id }}"
+                                            data-employee="{{ req.employee_name }}"
+                                            data-points="{{ req.points }}">
+                                        <i class="fas fa-check"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-danger btn-reject" 
+                                            data-request-id="{{ req.id }}"
+                                            data-employee="{{ req.employee_name }}"
+                                            data-points="{{ req.points }}">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                </div>
+            </div>
+            {% else %}
+            <div class="alert alert-info mb-0 text-center">
+                <i class="fas fa-info-circle me-2"></i>No pending requests at this time.
+            </div>
+            {% endif %}
+    </div>
+</div>
+
+<!-- View Notes Modal -->
+<div class="modal fade" id="notesModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-file-alt me-2"></i>Submission Notes
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <span class="notes-label">Employee:</span>
+                    <span id="modalEmployeeName" class="fw-bold" style="color: var(--marketing-primary);"></span>
+                </div>
+                <div>
+                    <span class="notes-label">Notes:</span>
+                    <div class="notes-content" id="modalNotesContent"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>Close
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Approve Modal -->
+<div class="modal fade" id="approveModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-success">
+                <h5 class="modal-title">
+                    <i class="fas fa-check-circle me-2"></i>Approve Request
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to approve this request?</p>
+                <div class="alert alert-info">
+                    <strong>Employee:</strong> <span id="approveEmployee"></span><br>
+                    <strong>Points:</strong> <span id="approvePoints"></span>
+                </div>
+                <form id="approveForm" method="POST">
+                    <div class="mb-3">
+                        <label class="form-label">Feedback <span class="text-danger">*</span></label>
+                        <textarea class="form-control" name="notes" rows="3" 
+                                placeholder="Add any comments or feedback..." 
+                                required
+                                minlength="3"></textarea>
+                        <div class="invalid-feedback">
+                            Please provide feedback (minimum 3 characters)
+                        </div>
+                    </div>
+                    <input type="hidden" name="action" value="approve">
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>Cancel
+                </button>
+                <button type="button" class="btn btn-success" id="confirmApprove">
+                    <i class="fas fa-check me-1"></i>Approve
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Reject Modal -->
+<div class="modal fade" id="rejectModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger">
+                <h5 class="modal-title">
+                    <i class="fas fa-times-circle me-2"></i>Reject Request
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to reject this request?</p>
+                <div class="alert alert-warning">
+                    <strong>Employee:</strong> <span id="rejectEmployee"></span><br>
+                    <strong>Points:</strong> <span id="rejectPoints"></span>
+                </div>
+                <form id="rejectForm" method="POST">
+                    <div class="mb-3">
+                        <label class="form-label">Reason for Rejection <span class="text-danger">*</span></label>
+                        <textarea class="form-control" name="notes" rows="3" required
+                                  placeholder="Please provide a reason for rejection..."></textarea>
+                    </div>
+                    <input type="hidden" name="action" value="reject">
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>Cancel
+                </button>
+                <button type="button" class="btn btn-danger" id="confirmReject">
+                    <i class="fas fa-times me-1"></i>Reject
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Initialize pending requests table
+    {% if pending_requests %}
+    var table = $('#pendingTable').DataTable({
+        order: [[4, 'desc']], // Sort by Requested On date, newest first
+        pageLength: 10,
+        lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "All"]],
+        language: {
+            search: "Search:",
+            lengthMenu: "Show _MENU_ entries",
+            info: "Showing _START_ to _END_ of _TOTAL_ entries",
+            infoEmpty: "No entries",
+            paginate: {
+                previous: "Previous",
+                next: "Next"
+            }
+        },
+        dom: '<"row"<"col-sm-6"l><"col-sm-6"f>>rt<"row pagination-row"<"col-sm-6"i><"col-sm-6"p>>'
+    });
+    
+    // Move pagination outside the scrollable area
+    $('.table-responsive').after($('.pagination-row'));
+    {% endif %}
+    
+    // View Notes
+    $(document).on('click', '.btn-view-notes', function() {
+        var notes = $(this).data('notes');
+        var employee = $(this).data('employee');
+        
+        $('#modalEmployeeName').text(employee);
+        $('#modalNotesContent').text(notes);
+        $('#notesModal').modal('show');
+    });
+    
+    // Approve Request
+    var currentRequestId = null;
+    $(document).on('click', '.btn-approve', function() {
+        currentRequestId = $(this).data('request-id');
+        var employee = $(this).data('employee');
+        var points = $(this).data('points');
+        
+        $('#approveEmployee').text(employee);
+        $('#approvePoints').text(points);
+        $('#approveForm')[0].reset();
+        $('#approveModal').modal('show');
+    });
+    
+    $('#confirmApprove').on('click', function() {
+        if (currentRequestId) {
+            $('#approveForm').attr('action', '/marketing/process-request/' + currentRequestId);
+            $('#approveForm').submit();
+        }
+    });
+    
+    // Reject Request
+    $(document).on('click', '.btn-reject', function() {
+        currentRequestId = $(this).data('request-id');
+        var employee = $(this).data('employee');
+        var points = $(this).data('points');
+        
+        $('#rejectEmployee').text(employee);
+        $('#rejectPoints').text(points);
+        $('#rejectForm')[0].reset();
+        $('#rejectModal').modal('show');
+    });
+    
+    $('#confirmReject').on('click', function() {
+        var notes = $('#rejectForm textarea[name="notes"]').val().trim();
+        if (!notes) {
+            alert('Please provide a reason for rejection');
+            return;
+        }
+        
+        if (currentRequestId) {
+            $('#rejectForm').attr('action', '/marketing/process-request/' + currentRequestId);
+            $('#rejectForm').submit();
+        }
+    }); 
+});
+</script>
+{% endblock %}

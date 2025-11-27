@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reward Configuration</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('central.static', filename='central.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Sidebar -->
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <img src="https://www.prowesssoft.com/wp-content/uploads/2023/06/Prowess_soft_logo1.png" alt="Prowess Soft Logo" class="sidebar-logo">
+        </div>
+        <div class="pt-2 pb-2 ps-3 pe-3 text-white">
+            <div>Dashboard</div>
+        </div>
+        <div class="sidebar-nav">
+            <a href="/central/dashboard#all" class="sidebar-nav-item">
+                <div><i class="fas fa-users"></i><span>All Employees</span></div>
+            </a>
+            <a href="/central/dashboard#exportable" class="sidebar-nav-item">
+                <div><i class="fas fa-file-export"></i><span>Export Data</span></div>
+            </a>
+            <div class="sidebar-divider"></div>
+            <a href="/central/config" class="sidebar-nav-item active">
+                <div><i class="fas fa-cog"></i><span>Configure Rewards</span></div>
+            </a>
+            <a href="/central/leaderboard" class="sidebar-nav-item ">
+                <div><i class="fas fa-trophy"></i><span>Leaderboard</span></div>
+            </a>
+           
+            <a href="#" class="sidebar-nav-item" data-bs-toggle="modal" data-bs-target="#helpModal">
+                <div><i class="fas fa-question-circle"></i><span>Help</span></div>
+            </a>
+            
+            <div class="sidebar-divider"></div>
+            
+            <!-- Dashboard Switcher -->
+            <div class="px-3 py-2">
+                <small class="text-white-50 text-uppercase" style="font-size: 11px;">
+                    <i class="fas fa-th-large me-1"></i> Switch Dashboard
+                </small>
+            </div>
+            
+            <!-- ALWAYS show Employee View as first option -->
+            <a href="{{ url_for('employee_dashboard.dashboard') }}" class="sidebar-nav-item">
+                <div><i class="fas fa-user"></i><span>Employee View</span></div>
+            </a>
+            
+            <!-- Show other dashboards if user has access -->
+            {% if user and user.dashboard_access %}
+                {% set dashboard_list = user.dashboard_access if user.dashboard_access is iterable and user.dashboard_access is not string else [user.dashboard_access] %}
+                
+                {% for dashboard in dashboard_list %}
+                    {# Don't show current dashboard (central) in switcher #}
+                    {% if dashboard == 'pmo_up' %}
+                    <a href="{{ url_for('pmo.updater_dashboard') }}" class="sidebar-nav-item">
+                        <div><i class="fas fa-tasks"></i><span>PMO Updater</span></div>
+                    </a>
+                    {% elif dashboard == 'pmo_va' %}
+                    <a href="{{ url_for('pmo.validator_dashboard') }}" class="sidebar-nav-item">
+                        <div><i class="fas fa-clipboard-check"></i><span>PMO Validator</span></div>
+                    </a>
+                    {% elif dashboard == 'pm_arch' or dashboard == 'pmarch' %}
+                    <a href="{{ url_for('pm_arch.dashboard') }}" class="sidebar-nav-item">
+                        <div><i class="fas fa-drafting-compass"></i><span>PM/Arch Dashboard</span></div>
+                    </a>
+                    {% elif dashboard == 'pm' %}
+                    <a href="{{ url_for('pm.dashboard') }}" class="sidebar-nav-item">
+                        <div><i class="fas fa-project-diagram"></i><span>PM Dashboard</span></div>
+                    </a>
+                    {% elif dashboard == 'ta_up' %}
+                    <a href="{{ url_for('ta.updater_dashboard') }}" class="sidebar-nav-item">
+                        <div><i class="fas fa-user-plus"></i><span>TA Updater</span></div>
+                    </a>
+                    {% elif dashboard == 'ta_va' %}
+                    <a href="{{ url_for('ta.validator_dashboard') }}" class="sidebar-nav-item">
+                        <div><i class="fas fa-user-check"></i><span>TA Validator</span></div>
+                    </a>
+                    {% elif dashboard == 'ld' %}
+                    <a href="{{ url_for('ld.dashboard') }}" class="sidebar-nav-item">
+                        <div><i class="fas fa-graduation-cap"></i><span>L&D Dashboard</span></div>
+                    </a>
+                    {% elif dashboard == 'ld_up' %}
+                    <a href="{{ url_for('ld.updater_dashboard') }}" class="sidebar-nav-item">
+                        <div><i class="fas fa-user-edit"></i><span>L&D Updater</span></div>
+                    </a>
+                    {% elif dashboard == 'ld_va' %}
+                    <a href="{{ url_for('ld.validator_dashboard') }}" class="sidebar-nav-item">
+                        <div><i class="fas fa-book-reader"></i><span>L&D Validator</span></div>
+                    </a>
+                    {% elif dashboard == 'hr_up' %}
+                    <a href="{{ url_for('hr_roles.updater_dashboard') }}" class="sidebar-nav-item">
+                        <div><i class="fas fa-user-edit"></i><span>HR Updater</span></div>
+                    </a>
+                    {% elif dashboard == 'hr_va' %}
+                    <a href="{{ url_for('hr_roles.validator_dashboard') }}" class="sidebar-nav-item">
+                        <div><i class="fas fa-user-check"></i><span>HR Validator</span></div>
+                    </a>
+                    {% elif dashboard == 'hr' %}
+                    <a href="{{ url_for('hr_analytics.pbs_analytics') }}" class="sidebar-nav-item">
+                        <div><i class="fas fa-chart-line"></i><span>HR Analytics</span></div>
+                    </a>
+                    {% elif dashboard == 'marketing' %}
+                    <a href="{{ url_for('marketing_dashboard.dashboard') }}" class="sidebar-nav-item">
+                        <div><i class="fas fa-bullhorn"></i><span>Marketing Dashboard</span></div>
+                    </a>
+                    {% elif dashboard == 'presales' %}
+                    <a href="{{ url_for('presales.dashboard') }}" class="sidebar-nav-item">
+                        <div><i class="fas fa-handshake"></i><span>Presales Dashboard</span></div>
+                    </a>
+                    {% elif dashboard == 'dp' %}
+                    <a href="{{ url_for('dp.dashboard') }}" class="sidebar-nav-item">
+                        <div><i class="fas fa-hands-helping"></i><span>DP Dashboard</span></div>
+                    </a>
+                    {% endif %}
+                {% endfor %}
+            {% endif %}
+            
+            <div class="sidebar-divider"></div>
+            <a href="{{ url_for('auth.logout') }}" class="sidebar-nav-item">
+                <div><i class="fas fa-sign-out-alt"></i><span>Logout</span></div>
+            </a>
+        </div>
+    </div>
+
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- Topbar -->
+    <div class="topbar">
+        <div class="topbar-left">
+            <button class="sidebar-toggle d-lg-none" id="sidebarToggle">
+                <i class="fas fa-bars"></i>
+            </button>
+            <div class="topbar-icon"><i class="fas fa-cog"></i></div>
+            <div class="topbar-info">
+                <div class="topbar-title">Reward Configuration</div>
+                <div class="topbar-subtitle">
+                    <span class="topbar-badge bg-primary">Admin View</span>
+                </div>
+            </div>
+        </div>
+        <div class="topbar-center">
+            <h6 class="topbar-heading">
+                <i class="fas fa-award me-2" style="color: gold;"></i>
+                <span>POINTS BASED SYSTEM</span>
+            </h6>
+        </div>
+        <div class="topbar-right">
+            <div class="user-info">
+                <div class="user-avatar"><i class="fas fa-user-circle"></i></div>
+                <div class="user-details">
+                    <div class="user-name">{{ user.name }}</div>
+                    <div class="user-role">Central Admin</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="content-wrapper">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="container-fluid mb-3">
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show">
+                            <i class="fas fa-{{ 'exclamation-circle' if category == 'error' else 'check-circle' if category == 'success' else 'info-circle' }}"></i>
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <div class="dashboard-header">
+            <h4 class="mb-0">
+                <i class="fas fa-sliders-h me-2"></i>Reward System Configuration
+            </h4>
+            <div>
+                <a href="{{ url_for('central.dashboard') }}#all" class="btn btn-outline-primary">
+                    <i class="fas fa-arrow-left"></i> Back
+                </a>
+            </div>
+        </div>
+
+        <!-- Overview Card -->
+        <div class="card mb-4 border-0 shadow-sm">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4 text-center border-end">
+                        <i class="fas fa-bullseye fa-3x text-primary mb-2"></i>
+                        <h4 class="mb-0">{{ config.grade_targets|length }}</h4>
+                        <p class="text-muted mb-0">Grade Targets</p>
+                    </div>
+                    <div class="col-md-4 text-center border-end">
+                        <i class="fas fa-trophy fa-3x text-warning mb-2"></i>
+                        <h4 class="mb-0">{{ config.milestones|length }}</h4>
+                        <p class="text-muted mb-0">Active Milestones</p>
+                    </div>
+                    <div class="col-md-4 text-center">
+                        <i class="fas fa-chart-line fa-3x text-success mb-2"></i>
+                        <h4 class="mb-0">{{ config.utilization_threshold }}%</h4>
+                        <p class="text-muted mb-0">Utilization Threshold</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Grade Targets Section -->
+        <div class="card mb-4 border-0 shadow-sm">
+            <div class="card-header yellow-header">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <i class="fas fa-bullseye me-2"></i>
+                        <span>Quarterly Point Targets by Grade</span>
+                    </div>
+                    <button class="btn btn-sm btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#gradeTargetsForm">
+                        <i class="fas fa-edit"></i> Edit Targets
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-7">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Grade</th>
+                                        <th>Quarterly Target</th>
+                                        <th>Yearly Target</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for grade, target in config.grade_targets.items()|sort %}
+                                    <tr>
+                                        <td><span class="badge bg-primary">{{ grade }}</span></td>
+                                        <td><strong>{{ "{:,}".format(target) }}</strong> points</td>
+                                        <td><strong>{{ "{:,}".format(target * 4) }}</strong> points</td>
+                                        <td><span class="badge bg-success"><i class="fas fa-check-circle"></i> Active</span></td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="col-md-5">
+                        <div class="card border-info mb-3">
+                            <div class="card-header bg-info text-white">
+                                <h6 class="mb-0"><i class="fas fa-chart-pie"></i> Utilization Requirements</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="text-center mb-3">
+                                    <h2 class="text-info mb-0">{{ config.utilization_threshold }}%</h2>
+                                    <small class="text-muted">Minimum Billable Utilization</small>
+                                </div>
+                                <p class="small text-muted mb-2">
+                                    <i class="fas fa-info-circle"></i> Employees (except Grade A1) must maintain this average billable utilization throughout the quarter.
+                                </p>
+                                <div class="alert alert-warning small mb-0">
+                                    <i class="fas fa-exclamation-triangle"></i> <strong>Note:</strong> Grade A1 is exempt from utilization requirements.
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card border-warning">
+                            <div class="card-header bg-warning text-dark">
+                                <h6 class="mb-0"><i class="fas fa-gift"></i> Bonus Points Limit</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="text-center mb-3">
+                                    <h2 class="text-warning mb-0">{{ "{:,}".format(config.yearly_bonus_limit) }}</h2>
+                                    <small class="text-muted">Maximum Bonus Points per Year</small>
+                                </div>
+                                <p class="small text-muted mb-0">
+                                    <i class="fas fa-info-circle"></i> Each employee can earn a maximum of this many bonus points in a single fiscal year.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Edit Form -->
+                <div class="collapse mt-4" id="gradeTargetsForm">
+                    <div class="card border-primary">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0"><i class="fas fa-edit"></i> Edit Grade Targets and Limits</h5>
+                        </div>
+                        <div class="card-body">
+                            <form method="POST" action="{{ url_for('central.reward_config') }}">
+                                <div class="row">
+                                    <div class="col-md-8">
+                                        <h6 class="mb-3"><i class="fas fa-layer-group"></i> Grade Targets</h6>
+                                        <div class="row">
+                                            {% for grade in ["A1", "B1", "B2", "C1", "C2", "D1", "D2"] %}
+                                            <div class="col-md-6 mb-3">
+                                                <label for="target_{{ grade }}" class="form-label">
+                                                    <span class="badge bg-primary">{{ grade }}</span> Quarterly Target
+                                                </label>
+                                                <div class="input-group">
+                                                    <input type="number" class="form-control" id="target_{{ grade }}" name="target_{{ grade }}" min="0" step="1" value="{{ config.grade_targets.get(grade, 0) }}" required>
+                                                    <span class="input-group-text">points</span>
+                                                </div>
+                                                <small class="text-muted">Yearly: {{ config.grade_targets.get(grade, 0) * 4 }} points</small>
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+
+                                    <div class="col-md-4">
+                                        <h6 class="mb-3"><i class="fas fa-sliders-h"></i> System Limits</h6>
+                                        
+                                        <div class="mb-3">
+                                            <label for="utilization_threshold" class="form-label">
+                                                <i class="fas fa-chart-pie"></i> Utilization Threshold
+                                            </label>
+                                            <div class="input-group">
+                                                <input type="number" class="form-control" id="utilization_threshold" name="utilization_threshold" min="1" max="100" step="1" value="{{ config.utilization_threshold }}" required>
+                                                <span class="input-group-text">%</span>
+                                            </div>
+                                            <small class="text-muted">Minimum billable utilization for eligibility</small>
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label for="yearly_bonus_limit" class="form-label">
+                                                <i class="fas fa-gift"></i> Yearly Bonus Limit
+                                            </label>
+                                            <div class="input-group">
+                                                <input type="number" class="form-control" id="yearly_bonus_limit" name="yearly_bonus_limit" min="0" step="100" value="{{ config.yearly_bonus_limit }}" required>
+                                                <span class="input-group-text">points</span>
+                                            </div>
+                                            <small class="text-muted">Maximum bonus points per employee per year</small>
+                                        </div>
+
+                                        <div class="alert alert-info small">
+                                            <i class="fas fa-lightbulb"></i> Changes will apply immediately to all bonus calculations.
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <hr>
+
+                                <div class="text-end">
+                                    <button type="button" class="btn btn-secondary" data-bs-toggle="collapse" data-bs-target="#gradeTargetsForm">
+                                        <i class="fas fa-times"></i> Cancel
+                                    </button>
+                                    <button type="submit" class="btn btn-primary" name="save_targets" value="1">
+                                        <i class="fas fa-save"></i> Save Changes
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Milestones Section -->
+        <div class="card mb-4 border-0 shadow-sm">
+            <div class="card-header yellow-header">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <i class="fas fa-trophy me-2"></i>
+                        <span>Bonus Milestones Configuration</span>
+                    </div>
+                    <button class="btn btn-sm btn-success" type="button" data-bs-toggle="collapse" data-bs-target="#addMilestoneForm">
+                        <i class="fas fa-plus"></i> Add Milestone
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info border-info">
+                    <div class="d-flex align-items-start">
+                        <i class="fas fa-info-circle fa-2x me-3"></i>
+                        <div>
+                            <h6 class="alert-heading">How Milestones Work</h6>
+                            <p class="mb-0">
+                                Milestones are evaluated <strong>cumulatively</strong> based on yearly progress. When an employee achieves a milestone percentage, they receive ALL milestone bonuses up to and including that level for the current quarter.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Add Milestone Form -->
+                <div class="collapse mb-4" id="addMilestoneForm">
+                    <div class="card border-success">
+                        <div class="card-header bg-success text-white">
+                            <h5 class="mb-0"><i class="fas fa-plus-circle"></i> Add New Milestone</h5>
+                        </div>
+                        <div class="card-body">
+                            <form method="POST" action="{{ url_for('central.reward_config') }}">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="new_milestone_name" class="form-label">
+                                                <i class="fas fa-tag"></i> Milestone Name
+                                            </label>
+                                            <input type="text" class="form-control" id="new_milestone_name" name="new_milestone_name" placeholder="e.g., Milestone 5" required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="new_milestone_description" class="form-label">
+                                                <i class="fas fa-align-left"></i> Description
+                                            </label>
+                                            <input type="text" class="form-control" id="new_milestone_description" name="new_milestone_description" placeholder="e.g., 150% of Yearly target" required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="new_milestone_percentage" class="form-label">
+                                                <i class="fas fa-percentage"></i> Achievement Percentage
+                                            </label>
+                                            <div class="input-group">
+                                                <input type="number" class="form-control" id="new_milestone_percentage" name="new_milestone_percentage" min="1" max="200" placeholder="100" required>
+                                                <span class="input-group-text">%</span>
+                                            </div>
+                                            <small class="text-muted">Percentage of yearly target required</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">
+                                            <i class="fas fa-gift"></i> Bonus Points by Quarter
+                                        </label>
+                                        <div class="row">
+                                            {% for q in ['q1', 'q2', 'q3', 'q4'] %}
+                                            <div class="col-6 mb-2">
+                                                <label for="new_bonus_{{ q }}" class="form-label small">{{ q.upper() }} Bonus:</label>
+                                                <div class="input-group">
+                                                    <input type="number" class="form-control" id="new_bonus_{{ q }}" name="new_bonus_{{ q }}" min="0" step="100" value="0">
+                                                    <span class="input-group-text">pts</span>
+                                                </div>
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                        <small class="text-muted">
+                                            <i class="fas fa-info-circle"></i> Later quarters typically have lower bonuses.
+                                        </small>
+                                    </div>
+                                </div>
+
+                                <hr>
+
+                                <div class="text-end">
+                                    <button type="button" class="btn btn-secondary" data-bs-toggle="collapse" data-bs-target="#addMilestoneForm">
+                                        <i class="fas fa-times"></i> Cancel
+                                    </button>
+                                    <button type="submit" class="btn btn-success" name="add_milestone" value="1">
+                                        <i class="fas fa-plus"></i> Add Milestone
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Existing Milestones -->
+                <div class="row">
+                    {% for milestone in config.milestones|sort(attribute='percentage', reverse=true) %}
+                    <div class="col-md-6 col-lg-4 mb-3">
+                        <div class="card h-100 border-primary shadow-sm">
+                            <div class="card-header bg-gradient-primary text-white">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h6 class="mb-0"><i class="fas fa-trophy"></i> {{ milestone.name }}</h6>
+                                    <button class="btn btn-sm btn-light edit-milestone-btn" 
+                                        data-bs-toggle="modal" data-bs-target="#editMilestoneModal" 
+                                        data-milestone="{{ loop.index0 }}"
+                                        data-name="{{ milestone.name }}" 
+                                        data-description="{{ milestone.description }}"
+                                        data-percentage="{{ milestone.percentage }}"
+                                        data-bonus-q1="{{ milestone.bonus_points.Q1 }}"
+                                        data-bonus-q2="{{ milestone.bonus_points.Q2 }}"
+                                        data-bonus-q3="{{ milestone.bonus_points.Q3 }}"
+                                        data-bonus-q4="{{ milestone.bonus_points.Q4 }}">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <p class="text-muted small mb-3">{{ milestone.description }}</p>
+                                
+                                <div class="text-center mb-3">
+                                    <div class="badge bg-primary p-3">
+                                        <h3 class="mb-0">{{ milestone.percentage }}%</h3>
+                                        <small>of yearly target</small>
+                                    </div>
+                                </div>
+
+                                <div class="row g-2">
+                                    {% for q in ['Q1', 'Q2', 'Q3', 'Q4'] %}
+                                    <div class="col-6">
+                                        <div class="border rounded p-2 text-center">
+                                            <span class="badge bg-info mb-1">{{ q }}</span>
+                                            <div class="fw-bold">{{ "{:,}".format(milestone.bonus_points[q]) }}</div>
+                                            <small class="text-muted">points</small>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <div class="mt-4 pt-3 border-top">
+                    <div class="text-muted small">
+                        <i class="fas fa-clock"></i> Last updated: <strong>{{ config.last_updated.strftime('%d-%m-%Y %H:%M:%S') }}</strong>
+                        {% if updater %} by <strong>{{ updater.name }}</strong>{% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Milestone Modal -->
+    <div class="modal fade" id="editMilestoneModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title"><i class="fas fa-edit"></i> Edit Milestone</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <form method="POST" action="{{ url_for('central.reward_config') }}">
+                    <div class="modal-body">
+                        <input type="hidden" id="milestone_idx" name="milestone_idx">
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="milestone_name" class="form-label">
+                                        <i class="fas fa-tag"></i> Milestone Name
+                                    </label>
+                                    <input type="text" class="form-control" id="milestone_name" name="milestone_name" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="milestone_description" class="form-label">
+                                        <i class="fas fa-align-left"></i> Description
+                                    </label>
+                                    <input type="text" class="form-control" id="milestone_description" name="milestone_description" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="milestone_percentage" class="form-label">
+                                        <i class="fas fa-percentage"></i> Achievement Percentage
+                                    </label>
+                                    <div class="input-group">
+                                        <input type="number" class="form-control" id="milestone_percentage" name="milestone_percentage" min="1" max="200" required>
+                                        <span class="input-group-text">%</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">
+                                    <i class="fas fa-gift"></i> Bonus Points by Quarter
+                                </label>
+                                <div class="row">
+                                    {% for q in ['q1', 'q2', 'q3', 'q4'] %}
+                                    <div class="col-6 mb-2">
+                                        <label for="bonus_{{ q }}" class="form-label small">{{ q.upper() }}:</label>
+                                        <div class="input-group">
+                                            <input type="number" class="form-control" id="bonus_{{ q }}" name="bonus_{{ q }}" min="0" step="100">
+                                            <span class="input-group-text">pts</span>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="fas fa-times"></i> Cancel
+                        </button>
+                        <button type="submit" class="btn btn-primary" name="save_milestone" value="1">
+                            <i class="fas fa-save"></i> Save Changes
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Help Modal -->
+    <div class="modal fade" id="helpModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-info text-white">
+                    <h5 class="modal-title"><i class="fas fa-question-circle"></i> Configuration Help</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <h5><i class="fas fa-bullseye text-primary"></i> Grade Targets</h5>
+                    <ul>
+                        <li><strong>Quarterly Targets:</strong> Points each grade must achieve per quarter for bonus eligibility.</li>
+                        <li><strong>Yearly Targets:</strong> Automatically calculated as 4× quarterly target.</li>
+                    </ul>
+
+                    <hr>
+
+                    <h5><i class="fas fa-chart-pie text-info"></i> Utilization Threshold</h5>
+                    <p>Minimum billable utilization percentage required for bonus eligibility. Applies to all grades except A1.</p>
+
+                    <hr>
+
+                    <h5><i class="fas fa-gift text-warning"></i> Yearly Bonus Limit</h5>
+                    <p>Maximum bonus points an employee can earn in a single fiscal year.</p>
+
+                    <hr>
+
+                    <h5><i class="fas fa-trophy text-warning"></i> Bonus Milestones</h5>
+                    <p>Configure achievement milestones and bonus rewards. When an employee reaches a milestone, they receive <strong>cumulative bonus points</strong> for all achieved milestones in the current quarter.</p>
+                    <div class="alert alert-success">
+                        <strong>Example:</strong> If an employee achieves 75% of yearly target in Q2:
+                        <ul class="mb-0">
+                            <li>Milestone 1 (25%) bonus for Q2</li>
+                            <li>Milestone 2 (50%) bonus for Q2</li>
+                            <li>Milestone 3 (75%) bonus for Q2</li>
+                            <li><strong>Total = sum of all three bonuses</strong></li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times"></i> Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            if (history.scrollRestoration) history.scrollRestoration = 'manual';
+            window.scrollTo(0, 0);
+
+            // Sidebar toggle
+            const sidebar = document.getElementById('sidebar');
+            const toggle = document.getElementById('sidebarToggle');
+            const overlay = document.getElementById('sidebarOverlay');
+
+            toggle?.addEventListener('click', () => {
+                sidebar.classList.toggle('show');
+                overlay.classList.toggle('show');
+                const icon = toggle.querySelector('i');
+                icon.className = sidebar.classList.contains('show') ? 'fas fa-times' : 'fas fa-bars';
+            });
+
+            overlay?.addEventListener('click', () => {
+                sidebar.classList.remove('show');
+                overlay.classList.remove('show');
+                const icon = toggle?.querySelector('i');
+                if (icon) icon.className = 'fas fa-bars';
+            });
+
+            // Edit milestone modal population
+            document.querySelectorAll('.edit-milestone-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    document.getElementById('milestone_idx').value = this.getAttribute('data-milestone');
+                    document.getElementById('milestone_name').value = this.getAttribute('data-name');
+                    document.getElementById('milestone_description').value = this.getAttribute('data-description');
+                    document.getElementById('milestone_percentage').value = this.getAttribute('data-percentage');
+                    document.getElementById('bonus_q1').value = this.getAttribute('data-bonus-q1');
+                    document.getElementById('bonus_q2').value = this.getAttribute('data-bonus-q2');
+                    document.getElementById('bonus_q3').value = this.getAttribute('data-bonus-q3');
+                    document.getElementById('bonus_q4').value = this.getAttribute('data-bonus-q4');
+                });
+            });
+
+            // Auto-dismiss alerts
+            setTimeout(() => {
+                document.querySelectorAll('.alert').forEach(alert => {
+                    new bootstrap.Alert(alert).close();
+                });
+            }, 5000);
+        });
+    </script>
+</body>
+</html>

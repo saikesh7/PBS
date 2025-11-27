@@ -1,0 +1,650 @@
+{% extends "base_dp.html" %}
+
+{% block title %}DP Dashboard - Points System{% endblock %}
+
+{% block extra_css %}
+<style>
+    .dashboard-card {
+        transition: transform 0.2s;
+    }
+    
+    .dashboard-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    
+    .quarter-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .points-display {
+        font-size: 2.5rem;
+        font-weight: bold;
+    }
+    
+    .total-points-card {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        color: white;
+        border-radius: 10px;
+        padding: 30px;
+        text-align: center;
+    }
+    
+    /* Mobile-only responsive styles */
+    @media (max-width: 768px) {
+        .points-display {
+            font-size: 1.8rem;
+        }
+        
+        .total-points-card {
+            padding: 20px;
+        }
+        
+        .quarter-card {
+            padding: 15px;
+        }
+        
+        .modal-dialog.modal-xl {
+            margin: 0.5rem;
+            max-width: calc(100% - 1rem);
+        }
+        
+        .card-title {
+            font-size: 1rem;
+        }
+        
+        .card-text {
+            font-size: 0.85rem;
+        }
+    }
+    
+    @media (max-width: 576px) {
+        .points-display {
+            font-size: 1.5rem;
+        }
+        
+        .total-points-card {
+            padding: 15px;
+        }
+        
+        .quarter-card {
+            padding: 10px;
+        }
+        
+        .card-title {
+            font-size: 0.9rem;
+        }
+        
+        .card-text {
+            font-size: 0.8rem;
+        }
+        
+        /* Modal adjustments for small screens */
+        .modal-body h6 {
+            font-size: 0.85rem;
+        }
+        
+        .modal-body p {
+            font-size: 0.8rem;
+        }
+        
+        .modal-body h2 {
+            font-size: 2rem !important;
+        }
+        
+        .modal-body .col-md-3 {
+            margin-bottom: 0.5rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid pt-4">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="mb-0">
+           
+        </h3>
+        <span class="badge" style="background-color: #1a2942; color: white;">Fiscal Year {{ fiscal_year }}-{{ fiscal_year + 1 }}</span>
+    </div>
+
+    <!-- Welcome Section -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h5 class="mb-1">Welcome, DP!</h5>
+            <p class="text-muted mb-0">Current Quarter: <strong>{{ current_quarter }}</strong></p>
+        </div>
+    </div>
+    
+    <!-- Summary Cards -->
+    <div class="row mb-4 g-3">
+        <!-- Total Points Card -->
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 15px;">
+                <div class="card-body p-3">
+                    <div class="text-center text-white">
+                        <div class="mb-2">
+                            <i class="fas fa-star fa-2x"></i>
+                        </div>
+                        <h6 class="mb-2" style="opacity: 0.9; font-size: 0.85rem;">Total Points of All Employees</h6>
+                        <h2 class="mb-0" style="font-weight: bold;">{{ total_points_all_employees }}</h2>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Total Pending Points Card -->
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); border-radius: 15px;">
+                <div class="card-body p-3">
+                    <div class="text-center text-white">
+                        <div class="mb-2">
+                            <i class="fas fa-clock fa-2x"></i>
+                        </div>
+                        <h6 class="mb-2" style="opacity: 0.9; font-size: 0.85rem;">Total Pending Points</h6>
+                        <h2 class="mb-0" style="font-weight: bold;">{{ total_pending_points }}</h2>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Total Employees Card -->
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); border-radius: 15px;">
+                <div class="card-body p-3">
+                    <div class="text-center text-white">
+                        <div class="mb-2">
+                            <i class="fas fa-users fa-2x"></i>
+                        </div>
+                        <h6 class="mb-2" style="opacity: 0.9; font-size: 0.85rem;">Total Employees Assigned</h6>
+                        <h2 class="mb-0" style="font-weight: bold;">{{ employees_data|length }}</h2>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Total Departments Card -->
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); border-radius: 15px;">
+                <div class="card-body p-3">
+                    <div class="text-center text-white">
+                        <div class="mb-2">
+                            <i class="fas fa-building fa-2x"></i>
+                        </div>
+                        <h6 class="mb-2" style="opacity: 0.9; font-size: 0.85rem;">Departments Covered</h6>
+                        <h2 class="mb-0" style="font-weight: bold;">{{ unique_departments|length }}</h2>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters Card -->
+    {% if employees_data %}
+    <div class="card mb-4">
+        <div class="card-header" style="background-color: #1e3a5f; color: white;">
+            <h6 class="mb-0"><i class="fas fa-filter me-2"></i>Filters</h6>
+        </div>
+        <div class="card-body" style="background-color: #f8f9fa;">
+            <div class="row g-3 align-items-end">
+                <!-- Fiscal Year Filter -->
+                <div class="col-md-2">
+                    <label class="form-label mb-1 small" style="font-weight: 500;">
+                        <i class="fas fa-calendar-alt me-1"></i>Fiscal Year
+                    </label>
+                    <input type="text" class="form-control" id="filterYear" placeholder="Current: {{ fiscal_year }}" value="{{ fiscal_year }}">
+                </div>
+                
+                <!-- Quarter Filter -->
+                <div class="col-md-2">
+                    <label class="form-label mb-1 small" style="font-weight: 500;">
+                        <i class="fas fa-calendar-week me-1"></i>Quarter
+                    </label>
+                    <select class="form-select" id="filterQuarter">
+                        <option value="">All Quarters</option>
+                        <option value="1">Q1</option>
+                        <option value="2">Q2</option>
+                        <option value="3">Q3</option>
+                        <option value="4">Q4</option>
+                    </select>
+                </div>
+                
+                <!-- Department Filter -->
+                <div class="col-md-2">
+                    <label class="form-label mb-1 small" style="font-weight: 500;">
+                        <i class="fas fa-building me-1"></i>Department
+                    </label>
+                    <select class="form-select" id="filterDepartment">
+                        <option value="">All Departments</option>
+                        {% for dept in unique_departments %}
+                        <option value="{{ dept }}">{{ dept }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <!-- Grade Filter -->
+                <div class="col-md-2">
+                    <label class="form-label mb-1 small" style="font-weight: 500;">
+                        <i class="fas fa-graduation-cap me-1"></i>Grade
+                    </label>
+                    <select class="form-select" id="filterGrade">
+                        <option value="">All Grades</option>
+                        <option value="A1">A1</option>
+                        <option value="B1">B1</option>
+                        <option value="B2">B2</option>
+                        <option value="C1">C1</option>
+                        <option value="C2">C2</option>
+                        <option value="D1">D1</option>
+                        <option value="D2">D2</option>
+                    </select>
+                </div>
+                
+                <!-- Employee ID/Email Search -->
+                <div class="col-md-2">
+                    <label class="form-label mb-1 small" style="font-weight: 500;">
+                        <i class="fas fa-search me-1"></i>Employee ID / Email
+                    </label>
+                    <input type="text" class="form-control" id="filterSearch" placeholder="Search...">
+                </div>
+                
+                <!-- Buttons -->
+                <div class="col-md-2">
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-primary flex-fill" id="applyFilters">
+                            <i class="fas fa-check-circle me-1"></i>Apply
+                        </button>
+                        <button class="btn btn-secondary flex-fill" id="resetFilters">
+                            <i class="fas fa-redo me-1"></i>Reset
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Employees Table -->
+    {% if employees_data %}
+    <div class="card dashboard-card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">
+                <i class="fas fa-users me-2"></i>Assigned Employees - Points Summary
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped table-hover" id="employeesTable">
+                    <thead>
+                        <tr>
+                            <th>Employee Name</th>
+                            <th class="hide-mobile">Employee ID</th>
+                            <th class="hide-mobile">Email</th>
+                            <th class="hide-mobile">Department</th>
+                            <th>Q1</th>
+                            <th>Q2</th>
+                            <th>Q3</th>
+                            <th>Q4</th>
+                            <th>Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for emp_data in employees_data %}
+                        <tr style="cursor: pointer;" 
+                            onclick="showEmployeeDetails('{{ emp_data.employee._id }}')"
+                            data-grade="{{ emp_data.employee.grade|lower }}">
+                            <td><strong><a href="#" onclick="event.preventDefault();" style="text-decoration: none; color: inherit;">{{ emp_data.employee.name }}</a></strong></td>
+                            <td class="hide-mobile">{{ emp_data.employee.employee_id }}</td>
+                            <td class="hide-mobile">{{ emp_data.employee.email }}</td>
+                            <td class="hide-mobile">{{ emp_data.employee.department }}</td>
+                            <td>{{ emp_data.quarterly_points.get('Q1', 0) }}</td>
+                            <td>{{ emp_data.quarterly_points.get('Q2', 0) }}</td>
+                            <td>{{ emp_data.quarterly_points.get('Q3', 0) }}</td>
+                            <td>{{ emp_data.quarterly_points.get('Q4', 0) }}</td>
+                            <td><strong>{{ emp_data.total_points }}</strong></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="alert alert-info">
+        <i class="fas fa-info-circle me-2"></i>
+        No employees are currently assigned to you as their DP.
+    </div>
+    {% endif %}
+
+    <!-- Milestone Bonus Points Table -->
+    <div class="card dashboard-card">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">
+                <i class="fas fa-trophy me-2"></i>Milestone Bonus Points per Quarter
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th>Milestone</th>
+                            <th>Description</th>
+                            <th>Qtr1 Bonus</th>
+                            <th>Qtr2 Bonus</th>
+                            <th>Qtr3 Bonus</th>
+                            <th>Qtr4 Bonus</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Milestone 1</td>
+                            <td>100% of Qtr target</td>
+                            <td>1000</td>
+                            <td>1000</td>
+                            <td>1000</td>
+                            <td>1000</td>
+                        </tr>
+                        <tr>
+                            <td>Milestone 2</td>
+                            <td>50% of Yearly target</td>
+                            <td>2000</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                        </tr>
+                        <tr>
+                            <td>Milestone 3</td>
+                            <td>75% of Yearly target</td>
+                            <td>3000</td>
+                            <td>2000</td>
+                            <td>0</td>
+                            <td>0</td>
+                        </tr>
+                        <tr>
+                            <td>Milestone 4</td>
+                            <td>100% of Yearly target</td>
+                            <td>4000</td>
+                            <td>3000</td>
+                            <td>2000</td>
+                            <td>0</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Employee Details Modal -->
+<div class="modal fade" id="employeeDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-user me-2"></i>Employee Points Details
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="employeeDetailsContent">
+                <div class="text-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+function showEmployeeDetails(employeeId) {
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById('employeeDetailsModal'));
+    modal.show();
+    
+    // Fetch employee details
+    fetch(`/dp/employee-details/${employeeId}`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.error) {
+                throw new Error(data.error);
+            }
+            displayEmployeeDetails(data);
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            document.getElementById('employeeDetailsContent').innerHTML = 
+                `<div class="alert alert-danger">Error loading employee details: ${error.message}</div>`;
+        });
+}
+
+function displayEmployeeDetails(data) {
+    const content = `
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h6 class="text-primary">Employee Information</h6>
+                        <p><strong>Name:</strong> ${data.employee.name}</p>
+                        <p><strong>Employee ID:</strong> ${data.employee.employee_id}</p>
+                        <p><strong>Email:</strong> ${data.employee.email}</p>
+                        <p><strong>Department:</strong> ${data.employee.department}</p>
+                        <p><strong>Grade:</strong> ${data.employee.grade}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card text-white" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                    <div class="card-body text-center">
+                        <h6>Total Points (FY ${data.fiscal_year}-${data.fiscal_year + 1})</h6>
+                        <h2 style="font-size: 3rem; font-weight: bold;">${data.total_points}</h2>
+                        <p class="mb-0">Points earned this fiscal year</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <h6 class="text-primary mb-3">Points by Category</h6>
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Category</th>
+                        <th>Points</th>
+                        <th>Count</th>
+                        <th>Event Date</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${data.points_by_category.map(item => `
+                        <tr>
+                            <td>${item.category_name}</td>
+                            <td><strong>${item.points}</strong></td>
+                            <td>${item.count}</td>
+                            <td>${item.event_date}</td>
+                            <td><span class="badge bg-success">${item.status}</span></td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        </div>
+        
+        <h6 class="text-primary mb-3 mt-4">Quarterly Breakdown</h6>
+        <div class="row">
+            ${['Q1', 'Q2', 'Q3', 'Q4'].map(q => `
+                <div class="col-md-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <h6>${q}</h6>
+                            <h4>${data.quarterly_points[q] || 0}</h4>
+                            <small class="text-muted">Points</small>
+                        </div>
+                    </div>
+                </div>
+            `).join('')}
+        </div>
+    `;
+    
+    document.getElementById('employeeDetailsContent').innerHTML = content;
+}
+
+// Filter functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const filterYear = document.getElementById('filterYear');
+    const filterQuarter = document.getElementById('filterQuarter');
+    const filterDepartment = document.getElementById('filterDepartment');
+    const filterGrade = document.getElementById('filterGrade');
+    const filterSearch = document.getElementById('filterSearch');
+    const applyBtn = document.getElementById('applyFilters');
+    const resetBtn = document.getElementById('resetFilters');
+    const tableRows = document.querySelectorAll('#employeesTable tbody tr');
+    
+    function applyFilters() {
+        const yearValue = filterYear?.value || '';
+        const quarterValue = filterQuarter?.value || '';
+        const departmentValue = filterDepartment?.value.toLowerCase() || '';
+        const gradeValue = filterGrade?.value.toLowerCase() || '';
+        const searchValue = filterSearch?.value.toLowerCase() || '';
+        
+        console.log('Apply Filters clicked');
+        console.log('Year value:', yearValue);
+        
+        // If year is specified, always reload page with year parameter
+        if (yearValue && yearValue.trim() !== '' && yearValue !== '{{ fiscal_year }}') {
+            // Handle both formats: "2024" or "2024-2025"
+            let selectedYear;
+            if (yearValue.includes('-')) {
+                selectedYear = parseInt(yearValue.split('-')[0]);
+            } else {
+                selectedYear = parseInt(yearValue);
+            }
+            
+            console.log('Selected year:', selectedYear);
+            
+            if (isNaN(selectedYear)) {
+                alert('Please enter a valid year (e.g., 2024 or 2024-2025)');
+                return;
+            }
+            
+            // Reload page with year parameter
+            const url = new URL(window.location.href);
+            url.searchParams.set('year', selectedYear);
+            console.log('Reloading to:', url.toString());
+            window.location.href = url.toString();
+            return;
+        }
+        
+        console.log('Applying client-side filters');
+        
+        // Client-side filtering for other filters
+        tableRows.forEach(row => {
+            const employeeId = row.cells[1]?.textContent.toLowerCase() || '';
+            const email = row.cells[2]?.textContent.toLowerCase() || '';
+            const department = row.cells[3]?.textContent.toLowerCase() || '';
+            const grade = row.getAttribute('data-grade')?.toLowerCase() || '';
+            
+            let showRow = true;
+            
+            // Department filter
+            if (departmentValue && !department.includes(departmentValue)) {
+                showRow = false;
+            }
+            
+            // Grade filter
+            if (gradeValue && grade !== gradeValue) {
+                showRow = false;
+            }
+            
+            // Search filter (Employee ID or Email)
+            if (searchValue && !employeeId.includes(searchValue) && !email.includes(searchValue)) {
+                showRow = false;
+            }
+            
+            // Quarter filter
+            if (quarterValue) {
+                const quarterIndex = parseInt(quarterValue) + 3;
+                const quarterPoints = parseInt(row.cells[quarterIndex]?.textContent || '0');
+                if (quarterPoints === 0) {
+                    showRow = false;
+                }
+            }
+            
+            row.style.display = showRow ? '' : 'none';
+        });
+        
+        updateQuarterColumns(quarterValue);
+    }
+    
+    function updateQuarterColumns(quarterValue) {
+        const table = document.querySelector('#employeesTable');
+        if (!table) return;
+        
+        const headerCells = table.querySelectorAll('thead th');
+        const bodyRows = table.querySelectorAll('tbody tr');
+        
+        for (let i = 4; i <= 7; i++) {
+            const quarterNum = i - 3;
+            const shouldShow = !quarterValue || quarterValue == quarterNum;
+            
+            if (headerCells[i]) {
+                headerCells[i].style.display = shouldShow ? '' : 'none';
+            }
+            
+            bodyRows.forEach(row => {
+                if (row.cells[i]) {
+                    row.cells[i].style.display = shouldShow ? '' : 'none';
+                }
+            });
+        }
+    }
+    
+    if (applyBtn) {
+        applyBtn.addEventListener('click', applyFilters);
+    }
+    
+    // Allow Enter key in year and search boxes
+    [filterYear, filterSearch].forEach(input => {
+        if (input) {
+            input.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    applyFilters();
+                }
+            });
+        }
+    });
+    
+    if (resetBtn) {
+        resetBtn.addEventListener('click', function() {
+            if (filterYear) filterYear.value = '{{ fiscal_year }}';
+            if (filterQuarter) filterQuarter.value = '';
+            if (filterDepartment) filterDepartment.value = '';
+            if (filterGrade) filterGrade.value = '';
+            if (filterSearch) filterSearch.value = '';
+            
+            // Show all rows
+            tableRows.forEach(row => {
+                row.style.display = '';
+            });
+            
+            // Show all quarter columns
+            updateQuarterColumns('');
+        });
+    }
+});
+
+</script>
+{% endblock %}

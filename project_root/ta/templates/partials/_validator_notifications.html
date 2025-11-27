@@ -1,0 +1,37 @@
+<!-- Notification Popup -->
+<div id="newRequestPopup" class="new-request-popup">
+    <div class="popup-header">
+        <span><i class="fas fa-bell"></i> New Validation Request!</span>
+        <span class="popup-close" onclick="closeNotificationPopup()">&times;</span>
+    </div>
+    <div class="popup-body" id="popupBody">
+        <!-- Dynamic content -->
+    </div>
+    <div class="popup-footer">
+        <button class="btn btn-warning btn-sm" onclick="goToPendingTab()">
+            <i class="fas fa-arrow-right"></i> Review Requests
+        </button>
+    </div>
+</div>
+
+<!-- Refresh Indicator -->
+<div class="refresh-indicator" id="refreshIndicator">
+    <div class="spinner-border spinner-border-sm"></div>
+    <span>Checking for updates...</span>
+</div>
+
+<style>
+.refresh-indicator {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 8px 15px;
+    border-radius: 20px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    display: none;
+    align-items: center;
+    gap: 8px;
+    z-index: 1000;
+}
+</style>
