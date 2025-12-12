@@ -1,0 +1,2326 @@
+{% extends "pmo_base.html" %}
+
+{% block title %}PMO Updater Dashboard{% endblock %}
+{% block dashboard_title %}PMO Updater Dashboard{% endblock %}
+
+{% block extra_css %}
+<!-- Select2 CSS for searchable dropdowns -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
+
+<!-- Prevent flash of wrong tab on page load -->
+<script>
+    // This runs IMMEDIATELY before page renders to prevent flash
+    (function() {
+        // Dashboard Switch Detection Logic
+        const DASHBOARD_KEY = 'current_dashboard';
+        const CURRENT_DASHBOARD = 'pmo_updater';
+        
+        // Check if we're coming from a different dashboard
+        const lastDashboard = sessionStorage.getItem(DASHBOARD_KEY);
+        const isDashboardSwitch = lastDashboard && lastDashboard !== CURRENT_DASHBOARD;
+        
+        // Update current dashboard in sessionStorage
+        sessionStorage.setItem(DASHBOARD_KEY, CURRENT_DASHBOARD);
+        
+        // Determine which tab to show
+        let activeTab;
+        if (isDashboardSwitch) {
+            // Coming from different dashboard → go to Overview
+            activeTab = 'overview';
+            localStorage.setItem('pmo_updater_current_tab', 'overview');
+        } else {
+            // Same dashboard (page reload) → restore saved tab
+            activeTab = localStorage.getItem('pmo_updater_current_tab') || 'overview';
+        }
+        
+        if (activeTab && activeTab !== 'overview') {
+            // Add CSS to hide overview tab and show saved tab
+            document.write('<style id="tab-preload-style">');
+            document.write('#overview-tab { display: none !important; }');
+            document.write('#' + activeTab + '-tab { display: block !important; }');
+            document.write('.sidebar-nav-item.tab-link { opacity: 0.6; }');
+            document.write('.sidebar-nav-item.tab-link[data-tab="' + activeTab + '"] { opacity: 1; background-color: rgba(78, 115, 223, 0.2); border-left: 4px solid #4e73df; }');
+            document.write('</style>');
+        }
+    })();
+</script>
+{% endblock %}
+
+{% block sidebar_nav %}
+<!-- Updater Navigation Items -->
+<a href="javascript:void(0);" class="sidebar-nav-item tab-link active" data-tab="overview">
+    <div>
+        <i class="fas fa-tachometer-alt"></i>
+        <span>Dashboard</span>
+    </div>
+</a>
+
+<a href="javascript:void(0);" class="sidebar-nav-item tab-link" data-tab="single-request">
+    <div>
+        <i class="fas fa-plus-circle"></i>
+        <span>Assign Reward</span>
+    </div>
+</a>
+
+<a href="javascript:void(0);" class="sidebar-nav-item tab-link" data-tab="bulk-upload">
+    <div>
+        <i class="fas fa-upload"></i>
+        <span>Bulk Upload</span>
+    </div>
+</a>
+
+<a href="javascript:void(0);" class="sidebar-nav-item tab-link" data-tab="utilization-upload">
+    <div>
+        <i class="fas fa-chart-line"></i>
+        <span>Utilization Upload</span>
+    </div>
+</a>
+
+<a href="javascript:void(0);" class="sidebar-nav-item tab-link" data-tab="history">
+    <div>
+        <i class="fas fa-history"></i>
+        <span>History</span>
+    </div>
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Overview Tab (Dashboard Summary) -->
+    <div class="tab-content-section active" id="overview-tab">
+        <!-- Stats Cards Row -->
+        <div class="row mb-4">
+            <div class="col-xl-3 col-md-6 mb-3">
+                <div class="card border-left-primary shadow h-100">
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col">
+                                <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Total Submitted</div>
+                                <div class="h5 mb-0 font-weight-bold">{{ history|length if history else 0 }}</div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-paper-plane fa-2x text-primary" style="opacity: 0.3;"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-xl-3 col-md-6 mb-3">
+                <div class="card border-left-success shadow h-100">
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col">
+                                <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Approved</div>
+                                <div class="h5 mb-0 font-weight-bold">{{ history|selectattr('status', 'equalto', 'Approved')|list|length if history else 0 }}</div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-check-circle fa-2x text-success" style="opacity: 0.3;"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-xl-3 col-md-6 mb-3">
+                <div class="card border-left-danger shadow h-100">
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col">
+                                <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">Rejected</div>
+                                <div class="h5 mb-0 font-weight-bold">{{ history|selectattr('status', 'equalto', 'Rejected')|list|length if history else 0 }}</div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-times-circle fa-2x text-danger" style="opacity: 0.3;"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-xl-3 col-md-6 mb-3">
+                <div class="card border-left-warning shadow h-100">
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col">
+                                <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Pending</div>
+                                <div class="h5 mb-0 font-weight-bold">{{ history|selectattr('status', 'equalto', 'Pending')|list|length if history else 0 }}</div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-clock fa-2x text-warning" style="opacity: 0.3;"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Activity & Category Breakdown -->
+        <div class="row mb-4">
+            <!-- Recent Activity Timeline -->
+            <div class="col-lg-8 mb-4">
+                <div class="card shadow-sm h-100">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0"><i class="fas fa-clock me-2"></i>Recent Activity</h5>
+                    </div>
+                    <div class="card-body">
+                        {% if history %}
+                        <div class="timeline">
+                            {% for item in history[:10] %}
+                            <div class="timeline-item mb-3 pb-3 border-bottom" data-request-id="{{ item._id }}">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div class="flex-grow-1">
+                                        <div class="d-flex align-items-center mb-1">
+                                            <span class="badge bg-{{ 'success' if item.status == 'Approved' else 'danger' if item.status == 'Rejected' else 'warning' }} me-2">
+                                                {{ item.status }}
+                                            </span>
+                                            <strong>{{ item.employee_name }}</strong>
+                                        </div>
+                                        <div class="text-muted small">
+                                            <i class="fas fa-tag me-1"></i>{{ item.category_name }}
+                                            <span class="mx-2">•</span>
+                                            {% if item.utilization_value %}
+                                                <i class="fas fa-chart-line me-1"></i>{{ (item.utilization_value * 100)|round(1) }}%
+                                            {% else %}
+                                                <i class="fas fa-coins me-1"></i>{{ item.points }} points
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="text-end text-muted small">
+                                        {{ item.request_date.strftime('%d %b') }}
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="text-center text-muted py-4">
+                            <i class="fas fa-inbox fa-3x mb-3 d-block opacity-25"></i>
+                            <p>No activity yet. Start assigning rewards!</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Category Breakdown -->
+            <div class="col-lg-4 mb-4">
+                <div class="card shadow-sm h-100">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0"><i class="fas fa-chart-pie me-2"></i>Categories</h5>
+                    </div>
+                    <div class="card-body">
+                        {% if pmo_categories %}
+                        <div class="list-group list-group-flush">
+                            {% for category in pmo_categories[:5] %}
+                            <div class="list-group-item px-0 d-flex justify-content-between align-items-center">
+                                <div>
+                                    <i class="fas fa-tag text-primary me-2"></i>
+                                    <span class="small">{{ category.name }}</span>
+                                </div>
+                                <span class="badge bg-primary rounded-pill">
+                                    {{ history|selectattr('category_name', 'equalto', category.name)|list|length }}
+                                </span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="text-center text-muted py-4">
+                            <i class="fas fa-tags fa-3x mb-3 d-block opacity-25"></i>
+                            <p class="small">No categories available</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Single Request Tab -->
+    <div class="tab-content-section" id="single-request-tab">
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card shadow-sm modern-form-card">
+                    <div class="card-header modern-form-header">
+                        <i class="fas fa-trophy me-2"></i> Assign New Reward
+                    </div>
+                    <div class="card-body p-4">
+                        <form method="POST" action="{{ url_for('pmo.updater_dashboard') }}" id="singleRequestForm">
+                            <input type="hidden" name="action_type" value="assign_reward">
+                            
+                            <!-- Row 1: Department and Grade -->
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="department" class="form-label">Department</label>
+                                    <select class="form-select modern-input" id="department" name="department">
+                                        <option value="">Select department</option>
+                                        <option value="all">All Departments</option>
+                                        {% for dept in departments.keys() %}
+                                        {% if dept and dept.strip() %}
+                                        <option value="{{ dept }}">{{ dept }}</option>
+                                        {% endif %}
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <label for="grade" class="form-label">Grade</label>
+                                    <select class="form-select modern-input" id="grade" name="grade" disabled>
+                                        <option value="">Select department first</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <!-- Row 2: Employee and Award Category -->
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="employee_id" class="form-label">Employee</label>
+                                    <select class="form-select modern-input" id="employee_id" name="employee_id" required disabled>
+                                        <option value="">Select grade first</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <label for="category_id" class="form-label">Award Category</label>
+                                    <select class="form-select modern-input" id="category_id" name="category_id" required>
+                                        <option value="">Select category</option>
+                                        {% for category in pmo_categories %}
+                                        <option value="{{ category._id }}" 
+                                                data-points="{{ category.points_per_unit.base if category.points_per_unit is mapping else category.points_per_unit }}"
+                                                data-name="{{ category.name }}"
+                                                data-category-name="{{ category.name|lower }}">
+                                            {% set cat_lower = category.name|lower %}
+                                            {% if 'utilization' in cat_lower or 'utlization' in cat_lower or 'billable' in cat_lower or 'util' in cat_lower %}
+                                                {{ category.name }}
+                                            {% else %}
+                                                {{ category.name }} ({{ category.points_per_unit.base if category.points_per_unit is mapping else category.points_per_unit }} pts)
+                                            {% endif %}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <!-- Row 3: Event Date, Utilization (conditional), and Notes/Reason -->
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="event_date" class="form-label">Event Date <span class="text-danger">*</span></label>
+                                    <input type="date" class="form-control modern-input" id="event_date" name="event_date" 
+                                           placeholder="dd-mm-yyyy" required>
+                                </div>
+                                
+                                <!-- Utilization Percentage (Hidden by default, shown only for utilization category) -->
+                                <div class="col-md-6" id="utilizationCol" style="display: none;">
+                                    <label for="utilization" class="form-label">Utilization Percentage <span class="text-danger">*</span></label>
+                                    <div class="input-group">
+                                        <input type="text" class="form-control modern-input" id="utilization" name="utilization" 
+                                               placeholder="e.g., 88%, 0.88, or 88">
+                                        <span class="input-group-text"><i class="fas fa-percent"></i></span>
+                                    </div>
+                                    <small class="text-muted">Enter utilization value (e.g., 88 or 88% or 0.88)</small>
+                                </div>
+                                
+                                <!-- Notes/Reason (Hidden when utilization is shown) -->
+                                <div class="col-md-6" id="notesCol">
+                                    <label for="notes" class="form-label">Notes/Reason <span class="text-danger">*</span></label>
+                                    <textarea class="form-control modern-input" id="notes" name="notes" rows="1" 
+                                              placeholder="Enter reason for this award" required></textarea>
+                                </div>
+                            </div>
+                            
+                            <!-- Row 4: Notes/Reason (Shown in full width when utilization is selected) -->
+                            <div class="row mb-3" id="notesFullRow" style="display: none;">
+                                <div class="col-md-12">
+                                    <label for="notes_full" class="form-label">Notes/Reason <span class="text-danger">*</span></label>
+                                    <textarea class="form-control modern-input" id="notes_full" name="notes_full" rows="2" 
+                                              placeholder="Enter reason for this award"></textarea>
+                                </div>
+                            </div>
+                            
+                            <!-- Row 4: Validator -->
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="validator_id" class="form-label">Validator <span class="text-danger">*</span></label>
+                                    <select class="form-select modern-input" id="validator_id" name="validator_id" required>
+                                        <option value="">Select validator</option>
+                                        {% for validator in pmo_validators %}
+                                        <option value="{{ validator._id }}">
+                                            {{ validator.name }} - {{ validator.employee_id }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                    {% if not pmo_validators %}
+                                    <small class="text-danger">No validators available</small>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <!-- Checkbox for policy compliance -->
+                            <div class="row mb-4">
+                                <div class="col-12">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="policy_confirm">
+                                        <label class="form-check-label" for="policy_confirm">
+                                            I confirm this award complies with all reward policies
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Submit Button -->
+                            <div class="text-end">
+                                <button type="submit" class="btn btn-light btn-lg modern-submit-btn" id="submitBtn" disabled>
+                                    <i class="fas fa-check-circle me-2"></i> Review & Assign
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bulk Upload Tab -->
+    <div class="tab-content-section" id="bulk-upload-tab">
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card shadow-sm border-0">
+                    <div class="card-header text-white" style="background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);">
+                        <h5 class="mb-0">
+                            <i class="fas fa-file-upload"></i> Bulk Upload Rewards
+                        </h5>
+                    </div>
+                    <div class="card-body" style="background-color: #f8f9fa;">
+                        <div class="alert alert-info border-0" style="background-color: #e7f3ff; border-left: 4px solid #0d6efd !important;">
+                            <div class="d-flex">
+                                <div class="me-3">
+                                    <i class="fas fa-info-circle" style="font-size: 1.5rem; color: #0d6efd;"></i>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <h6 class="fw-bold mb-2" style="color: #0d6efd;">CSV Format Instructions</h6>
+                                    <p class="mb-2">Upload a CSV with the following columns:</p>
+                                    <ul class="mb-2" style="line-height: 1.8;">
+                                        <li><strong>employee_id</strong> - Employee ID (required)</li>
+                                        <li><strong>validator_employee_id</strong> - Validator's Employee ID who will approve this request (required)</li>
+                                        <li><strong>event_date</strong> - The date of the event/achievement (required, format: DD-MM-YYYY)</li>
+                                        <li>
+                                            <strong>category_code</strong> - Award category code (required)
+                                            <div id="validCategoriesDiv" style="margin-top: 8px; padding: 12px; background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-left: 4px solid #0d6efd; border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                                                <div style="display: flex; align-items: center; margin-bottom: 8px;">
+                                                    <i class="fas fa-tags" style="color: #0d6efd; margin-right: 8px; font-size: 1.1rem;"></i>
+                                                    <strong style="color: #0d6efd; font-size: 0.95rem;">Valid Category Codes:</strong>
+                                                </div>
+                                                <div id="validCategoriesList" style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px;">
+                                                    <span class="badge bg-secondary" style="font-size: 0.85rem; padding: 6px 10px;">
+                                                        <i class="fas fa-spinner fa-spin"></i> Loading...
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li><strong>notes</strong> - Notes (required)</li>
+                                        <li><strong>department</strong> - Department</li>
+                                    </ul>
+                                    <p class="mb-0"><strong>Note:</strong> Use this tab to upload rewards. For Utilization/Billable data, use the "Utilization Upload" tab.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="text-end mb-3">
+                            <a href="{{ url_for('pmo.download_bulk_template') }}" class="btn btn-outline-primary">
+                                <i class="fas fa-download"></i> Download Template
+                            </a>
+                        </div>
+
+                        <form id="bulkUploadForm" enctype="multipart/form-data">
+                            <div class="mb-3">
+                                <label for="bulk_csv_file" class="form-label fw-bold">CSV File</label>
+                                <input type="file" class="form-control" id="bulk_csv_file" name="csv_file" accept=".csv" required>
+                            </div>
+                            
+                            <div class="d-flex justify-content-between">
+                                <button type="button" class="btn text-white" style="background-color: #17a2b8;" id="validateBulkButton" onclick="validateBulkUpload()">
+                                    <i class="fas fa-search"></i> Validate CSV
+                                </button>
+                                <button type="button" class="btn text-white" style="background-color: #6c757d;" id="reviewBulkButton" disabled>
+                                    <i class="fas fa-check-circle"></i> Review & Upload
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Utilization Upload Tab -->
+    <div class="tab-content-section" id="utilization-upload-tab">
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card shadow-sm border-0">
+                    <div class="card-header text-white" style="background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);">
+                        <h5 class="mb-0">
+                            <i class="fas fa-chart-line"></i> Utilization Upload
+                        </h5>
+                    </div>
+                    <div class="card-body" style="background-color: #f8f9fa;">
+                        <div class="alert alert-info border-0" style="background-color: #e7f3ff; border-left: 4px solid #0d6efd !important;">
+                            <div class="d-flex">
+                                <div class="me-3">
+                                    <i class="fas fa-info-circle" style="font-size: 1.5rem; color: #0d6efd;"></i>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <h6 class="fw-bold mb-2" style="color: #0d6efd;">CSV Format Instructions</h6>
+                                    <p class="mb-2">Upload a CSV with the following columns:</p>
+                                    <ul class="mb-2" style="line-height: 1.8;">
+                                        <li><strong>employee_id</strong> - Employee ID (required)</li>
+                                        <li><strong>validator_employee_id</strong> - Validator's Employee ID who will approve this request (required)</li>
+                                        <li><strong>event_date</strong> - The date of the utilization period (required, format: DD-MM-YYYY)</li>
+                                        <li><strong>category_code</strong> - Must be 'utilization' (required)</li>
+                                        <li><strong>department</strong> - Department (optional)</li>
+                                        <li><strong>utilization</strong> - Utilization value (required). Can be a percentage (e.g., 88%), decimal (e.g., 0.88), or number (e.g., 88)</li>
+                                        <li><strong>notes</strong> - Notes</li>
+                                    </ul>
+                                    <p class="mb-0"><strong>Note:</strong> This tab is specifically for uploading Utilization/Billable data to enable bonus accrual for employees. This does not assign points but sets the utilization threshold status.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="text-end mb-3">
+                            <a href="{{ url_for('pmo.download_utilization_template') }}" class="btn btn-outline-primary">
+                                <i class="fas fa-download"></i> Download Template
+                            </a>
+                        </div>
+
+                        <form id="utilizationUploadForm" enctype="multipart/form-data">
+                            <div class="mb-3">
+                                <label for="util_csv_file" class="form-label fw-bold">CSV File</label>
+                                <input type="file" class="form-control" id="util_csv_file" name="csv_file" accept=".csv" required>
+                            </div>
+                            
+                            <div class="d-flex justify-content-between">
+                                <button type="button" class="btn text-white" style="background-color: #17a2b8;" id="validateUtilButton" onclick="validateUtilizationUpload()">
+                                    <i class="fas fa-search"></i> Validate CSV
+                                </button>
+                                <button type="button" class="btn text-white" style="background-color: #6c757d;" id="reviewUtilButton" disabled>
+                                    <i class="fas fa-check-circle"></i> Review & Upload
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- History Tab -->
+    <div class="tab-content-section" id="history-tab">
+        <div class="card shadow-sm border-0">
+            <div class="card-header" style="background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);">
+                <h5 class="mb-0 text-white">
+                    <i class="fas fa-history"></i> Action History
+                </h5>
+            </div>
+            <div class="card-body p-0">
+                <!-- Sub-tabs -->
+                <ul class="nav nav-tabs border-0 history-nav-tabs" style="background-color: #f8f9fa; padding: 10px 20px 0 20px;">
+                    <li class="nav-item">
+                        <a class="nav-link active" id="rewards-history-tab-link" href="#" onclick="switchHistoryTab('rewards'); return false;">
+                            <i class="fas fa-award"></i> Rewards History
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" id="utilization-history-tab-link" href="#" onclick="switchHistoryTab('utilization'); return false;">
+                            <i class="fas fa-chart-line"></i> Utilization History
+                        </a>
+                    </li>
+                </ul>
+
+                <!-- Rewards History -->
+                <div class="history-tab-pane active" id="rewards-history-pane">
+                    <div class="p-4">
+                        <div class="row mb-3 g-2">
+                            <div class="col-md-2 col-sm-6">
+                                <label class="form-label small text-muted mb-1">Year</label>
+                                <select class="form-select form-select-sm" id="rewardsYearFilter">
+                                    <option value="">All</option>
+                                    {% set years = [] %}
+                                    {% for h in history %}
+                                    {% if not h.utilization_value and h.request_date %}
+                                    {% set year = h.request_date.year %}
+                                    {% if year not in years %}
+                                    {% set _ = years.append(year) %}
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endfor %}
+                                    {% for year in years|sort(reverse=True) %}
+                                    <option value="{{ year }}">{{ year }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-2 col-sm-6">
+                                <label class="form-label small text-muted mb-1">Quarter</label>
+                                <select class="form-select form-select-sm" id="rewardsQuarterFilter">
+                                    <option value="">All</option>
+                                    {% set quarters = [] %}
+                                    {% for h in history %}
+                                    {% if not h.utilization_value and h.request_date %}
+                                    {% set month = h.request_date.month %}
+                                    {% set quarter = 'Q1' if month in [4,5,6] else 'Q2' if month in [7,8,9] else 'Q3' if month in [10,11,12] else 'Q4' if month in [1,2,3] else '' %}
+                                    {% if quarter and quarter not in quarters %}
+                                    {% set _ = quarters.append(quarter) %}
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endfor %}
+                                    {% for q in ['Q1', 'Q2', 'Q3', 'Q4'] %}
+                                    {% if q in quarters %}
+                                    <option value="{{ q }}">{{ q }}</option>
+                                    {% endif %}
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-2 col-sm-6">
+                                <label class="form-label small text-muted mb-1">Category</label>
+                                <select class="form-select form-select-sm" id="rewardsCategoryFilter">
+                                    <option value="">All</option>
+                                    {% set categories = [] %}
+                                    {% for h in history %}
+                                    {% if not h.utilization_value and h.category_name %}
+                                    {% if h.category_name not in categories %}
+                                    {% set _ = categories.append(h.category_name) %}
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endfor %}
+                                    {% for cat in categories|sort %}
+                                    <option value="{{ cat }}">{{ cat }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-2 col-sm-6">
+                                <label class="form-label small text-muted mb-1">Department</label>
+                                <select class="form-select form-select-sm" id="rewardsDepartmentFilter">
+                                    <option value="">All</option>
+                                    {% set depts = [] %}
+                                    {% for h in history %}
+                                    {% if not h.utilization_value and h.employee_department %}
+                                    {% if h.employee_department not in depts %}
+                                    {% set _ = depts.append(h.employee_department) %}
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endfor %}
+                                    {% for dept in depts|sort %}
+                                    <option value="{{ dept }}">{{ dept }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-2 col-sm-6">
+                                <label class="form-label small text-muted mb-1">Status</label>
+                                <select class="form-select form-select-sm" id="rewardsStatusFilter">
+                                    <option value="">All</option>
+                                    {% set statuses = [] %}
+                                    {% for h in history %}
+                                    {% if not h.utilization_value and h.status %}
+                                    {% if h.status not in statuses %}
+                                    {% set _ = statuses.append(h.status) %}
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endfor %}
+                                    {% for status in statuses|sort %}
+                                    <option value="{{ status }}">{{ status }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-2 col-sm-12 d-flex align-items-end gap-1">
+                                <button class="btn btn-sm btn-primary" onclick="filterRewardsTable()" style="flex: 1;">
+                                    <i class="fas fa-filter"></i> Apply
+                                </button>
+                                <button class="btn btn-sm btn-outline-secondary" onclick="resetRewardsFilters()" style="flex: 1;">
+                                    <i class="fas fa-redo"></i> Reset
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3 align-items-center">
+                            <div class="col-md-3">
+                                <div class="d-flex align-items-center">
+                                    <span class="me-2 small">Show</span>
+                                    <select class="form-select form-select-sm" style="width: 80px;" id="rewardsPageSize" onchange="changeRewardsPageSize()">
+                                        <option value="10" selected>10</option>
+                                        <option value="25">25</option>
+                                        <option value="50">50</option>
+                                    </select>
+                                    <span class="ms-2 small">entries</span>
+                                </div>
+                            </div>
+                            <div class="col-md-6"></div>
+                            <div class="col-md-3">
+                                <input type="text" class="form-control form-control-sm" placeholder="Search..." id="rewardsSearchInput" onkeyup="filterRewardsTable()">
+                            </div>
+                        </div>
+
+                        <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                            <table class="table table-hover mb-0" style="font-size: 0.9rem;">
+                                <thead style="position: sticky; top: 0; z-index: 10; background-color: #f8f9fa;">
+                                    <tr style="border-bottom: 2px solid #dee2e6;">
+                                        <th style="width: 110px; padding: 12px 8px; font-weight: 600; color: #495057;">Event Date</th>
+                                        <th style="width: 90px; padding: 12px 8px; font-weight: 600; color: #495057;">Quarter</th>
+                                        <th style="width: 140px; padding: 12px 8px; font-weight: 600; color: #495057;">Employee</th>
+                                        <th style="width: 140px; padding: 12px 8px; font-weight: 600; color: #495057;">Category</th>
+                                        <th style="width: 100px; padding: 12px 8px; font-weight: 600; color: #495057;">Status</th>
+                                        <th style="width: 120px; padding: 12px 8px; font-weight: 600; color: #495057;">Submitted To</th>
+                                        <th style="width: 100px; padding: 12px 8px; font-weight: 600; color: #495057;">Notes</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="rewardsTableBody">
+                                    {% for h in history %}
+                                    {% if not h.utilization_value %}
+                                    {% set month = h.request_date.month if h.request_date else 0 %}
+                                    {% set quarter = 'Q1' if month in [4,5,6] else 'Q2' if month in [7,8,9] else 'Q3' if month in [10,11,12] else 'Q4' if month in [1,2,3] else '' %}
+                                    <tr class="rewards-row" 
+                                        data-request-id="{{ h.request_id }}"
+                                        data-year="{{ h.request_date.year if h.request_date else '' }}"
+                                        data-quarter="{{ quarter }}"
+                                        data-category="{{ h.category_name }}"
+                                        data-department="{{ h.employee_department if h.employee_department else '' }}"
+                                        data-employee="{{ h.employee_name|lower }}"
+                                        data-status="{{ h.status }}">
+                                        <td style="padding: 10px 8px;">{{ h.event_date.strftime('%d/%m/%Y') if h.event_date else 'N/A' }}</td>
+                                        <td style="padding: 10px 8px;"><span class="badge bg-info">{{ h.quarter if h.quarter else 'N/A' }}</span></td>
+                                        <td style="padding: 10px 8px;">{{ h.employee_name }}</td>
+                                        <td style="padding: 10px 8px;">{{ h.category_name }}</td>
+                                        <td style="padding: 10px 8px;">
+                                            <span class="badge" style="background-color: {{ '#ffc107' if h.status == 'Pending' else '#28a745' if h.status == 'Approved' else '#dc3545' }}; color: {{ '#000' if h.status == 'Pending' else '#fff' }}; font-weight: 600; padding: 4px 12px;">
+                                                {{ h.status }}
+                                            </span>
+                                        </td>
+                                        <td style="padding: 10px 8px;">{{ h.submitted_to if h.submitted_to else 'N/A' }}</td>
+                                        <td style="padding: 10px 8px;">
+                                            <button class="btn btn-sm btn-info view-notes-btn" style="padding: 4px 12px; white-space: nowrap;" 
+                                                    data-notes="{{ h.response_notes if h.response_notes else 'No action notes provided' }}" 
+                                                    title="View Validator Notes">
+                                                View
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    {% endif %}
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="d-flex justify-content-between align-items-center mt-3">
+                            <div class="small text-muted" id="rewardsInfo"></div>
+                            <nav>
+                                <ul class="pagination pagination-sm mb-0" id="rewardsPagination"></ul>
+                            </nav>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Utilization History -->
+                <div class="history-tab-pane" id="utilization-history-pane">
+                    <div class="p-4">
+                        <div class="row mb-3 g-2">
+                            <div class="col-md-2 col-sm-6">
+                                <label class="form-label small text-muted mb-1">Year</label>
+                                <select class="form-select form-select-sm" id="utilYearFilter">
+                                    <option value="">All</option>
+                                    {% set util_years = [] %}
+                                    {% for h in history %}
+                                    {% if h.utilization_value and h.request_date %}
+                                    {% set year = h.request_date.year %}
+                                    {% if year not in util_years %}
+                                    {% set _ = util_years.append(year) %}
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endfor %}
+                                    {% for year in util_years|sort(reverse=True) %}
+                                    <option value="{{ year }}">{{ year }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-2 col-sm-6">
+                                <label class="form-label small text-muted mb-1">Quarter</label>
+                                <select class="form-select form-select-sm" id="utilQuarterFilter">
+                                    <option value="">All</option>
+                                    {% set util_quarters = [] %}
+                                    {% for h in history %}
+                                    {% if h.utilization_value and h.request_date %}
+                                    {% set month = h.request_date.month %}
+                                    {% set quarter = 'Q1' if month in [4,5,6] else 'Q2' if month in [7,8,9] else 'Q3' if month in [10,11,12] else 'Q4' if month in [1,2,3] else '' %}
+                                    {% if quarter and quarter not in util_quarters %}
+                                    {% set _ = util_quarters.append(quarter) %}
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endfor %}
+                                    {% for q in ['Q1', 'Q2', 'Q3', 'Q4'] %}
+                                    {% if q in util_quarters %}
+                                    <option value="{{ q }}">{{ q }}</option>
+                                    {% endif %}
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-3 col-sm-6">
+                                <label class="form-label small text-muted mb-1">Department</label>
+                                <select class="form-select form-select-sm" id="utilDepartmentFilter">
+                                    <option value="">All</option>
+                                    {% set util_depts = [] %}
+                                    {% for h in history %}
+                                    {% if h.utilization_value and h.employee_department %}
+                                    {% if h.employee_department not in util_depts %}
+                                    {% set _ = util_depts.append(h.employee_department) %}
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endfor %}
+                                    {% for dept in util_depts|sort %}
+                                    <option value="{{ dept }}">{{ dept }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-3 col-sm-6">
+                                <label class="form-label small text-muted mb-1">Status</label>
+                                <select class="form-select form-select-sm" id="utilStatusFilter">
+                                    <option value="">All</option>
+                                    {% set util_statuses = [] %}
+                                    {% for h in history %}
+                                    {% if h.utilization_value and h.status %}
+                                    {% if h.status not in util_statuses %}
+                                    {% set _ = util_statuses.append(h.status) %}
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endfor %}
+                                    {% for status in util_statuses|sort %}
+                                    <option value="{{ status }}">{{ status }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-2 col-sm-12 d-flex align-items-end gap-1">
+                                <button class="btn btn-sm btn-primary" onclick="filterUtilizationTable()" style="flex: 1;">
+                                    <i class="fas fa-filter"></i> Apply
+                                </button>
+                                <button class="btn btn-sm btn-outline-secondary" onclick="resetUtilizationFilters()" style="flex: 1;">
+                                    <i class="fas fa-redo"></i> Reset
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3 align-items-center">
+                            <div class="col-md-3">
+                                <div class="d-flex align-items-center">
+                                    <span class="me-2 small">Show</span>
+                                    <select class="form-select form-select-sm" style="width: 80px;" id="utilPageSize" onchange="changeUtilPageSize()">
+                                        <option value="10" selected>10</option>
+                                        <option value="25">25</option>
+                                        <option value="50">50</option>
+                                    </select>
+                                    <span class="ms-2 small">entries</span>
+                                </div>
+                            </div>
+                            <div class="col-md-6"></div>
+                            <div class="col-md-3">
+                                <input type="text" class="form-control form-control-sm" placeholder="Search..." id="utilSearchInput" onkeyup="filterUtilizationTable()">
+                            </div>
+                        </div>
+
+                        <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                            <table class="table table-hover mb-0" style="font-size: 0.9rem;">
+                                <thead style="position: sticky; top: 0; z-index: 10; background-color: #f8f9fa;">
+                                    <tr style="border-bottom: 2px solid #dee2e6;">
+                                        <th style="width: 110px; padding: 12px 8px; font-weight: 600; color: #495057;">Event Date</th>
+                                        <th style="width: 90px; padding: 12px 8px; font-weight: 600; color: #495057;">Quarter</th>
+                                        <th style="width: 140px; padding: 12px 8px; font-weight: 600; color: #495057;">Employee</th>
+                                        <th style="width: 120px; padding: 12px 8px; font-weight: 600; color: #495057;">Utilization %</th>
+                                        <th style="width: 100px; padding: 12px 8px; font-weight: 600; color: #495057;">Status</th>
+                                        <th style="width: 120px; padding: 12px 8px; font-weight: 600; color: #495057;">Submitted To</th>
+                                        <th style="width: 100px; padding: 12px 8px; font-weight: 600; color: #495057;">Notes</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="utilizationTableBody">
+                                    {% for h in history %}
+                                    {% if h.utilization_value %}
+                                    {% set month = h.request_date.month if h.request_date else 0 %}
+                                    {% set quarter = 'Q1' if month in [4,5,6] else 'Q2' if month in [7,8,9] else 'Q3' if month in [10,11,12] else 'Q4' if month in [1,2,3] else '' %}
+                                    <tr class="util-row"
+                                        data-request-id="{{ h.request_id }}"
+                                        data-year="{{ h.request_date.year if h.request_date else '' }}"
+                                        data-quarter="{{ quarter }}"
+                                        data-category="{{ h.category_name }}"
+                                        data-department="{{ h.employee_department if h.employee_department else '' }}"
+                                        data-employee="{{ h.employee_name|lower }}"
+                                        data-status="{{ h.status }}">
+                                        <td style="padding: 10px 8px;">{{ h.event_date.strftime('%d/%m/%Y') if h.event_date else 'N/A' }}</td>
+                                        <td style="padding: 10px 8px;"><span class="badge bg-info">{{ h.quarter if h.quarter else 'N/A' }}</span></td>
+                                        <td style="padding: 10px 8px;">{{ h.employee_name }}</td>
+                                        <td style="padding: 10px 8px;" class="utilization-cell">{{ (h.utilization_value * 100)|int }}%</td>
+                                        <td style="padding: 10px 8px;">
+                                            <span class="badge" style="background-color: {{ '#ffc107' if h.status == 'Pending' else '#28a745' if h.status == 'Approved' else '#dc3545' }}; color: {{ '#000' if h.status == 'Pending' else '#fff' }}; font-weight: 600; padding: 4px 12px;">
+                                                {{ h.status }}
+                                            </span>
+                                        </td>
+                                        <td style="padding: 10px 8px;">{{ h.submitted_to if h.submitted_to else 'N/A' }}</td>
+                                        <td style="padding: 10px 8px;">
+                                            <button class="btn btn-sm btn-info view-notes-btn" style="padding: 4px 12px; white-space: nowrap;" 
+                                                    data-notes="{{ h.response_notes if h.response_notes else 'No action notes provided' }}" 
+                                                    title="View Validator Notes">
+                                                View
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    {% endif %}
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="d-flex justify-content-between align-items-center mt-3">
+                            <div class="small text-muted" id="utilInfo"></div>
+                            <nav>
+                                <ul class="pagination pagination-sm mb-0" id="utilPagination"></ul>
+                            </nav>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Notes Modal -->
+    <div class="modal fade" id="notesModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header" style="background-color: #1e3c72; color: white;">
+                    <h5 class="modal-title"><i class="fas fa-sticky-note"></i> Notes</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="modalNotes" class="p-3" style="background-color: #f8f9fa; border-radius: 4px; min-height: 100px; white-space: pre-wrap;"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .tab-content-section {
+        display: none;
+    }
+    .tab-content-section.active {
+        display: block;
+    }
+    .quick-action-btn {
+        padding: 2rem;
+        font-size: 1.1rem;
+    }
+    .border-left-primary {
+        border-left: 4px solid #4e73df;
+    }
+    .border-left-success {
+        border-left: 4px solid #1cc88a;
+    }
+    
+    /* History sub-tabs styling */
+    .history-tab-pane {
+        display: none;
+    }
+    .history-tab-pane.active {
+        display: block;
+    }
+    .history-nav-tabs .nav-link {
+        border: none;
+        border-bottom: 3px solid transparent;
+        color: #495057;
+        font-weight: 500;
+    }
+    .history-nav-tabs .nav-link.active {
+        background-color: transparent;
+        border-bottom: 3px solid #1e3c72;
+        color: #1e3c72;
+        font-weight: 600;
+    }
+    .history-nav-tabs .nav-link:hover {
+        border-bottom: 3px solid #2a5298;
+    }
+    
+    /* Modern Form Styling - Matching Image Design */
+    .modern-form-card {
+        border: none !important;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+    
+    .modern-form-header {
+        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        color: white;
+        font-weight: 600;
+        font-size: 1.1rem;
+        padding: 1rem 1.5rem;
+        border-radius: 5px 5px 0 0;
+        border-bottom: none;
+    }
+    
+    .modern-input {
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+        padding: 0.6rem 0.75rem;
+        font-size: 0.95rem;
+        transition: all 0.3s ease;
+        background-color: #fff;
+    }
+    
+    .modern-input:focus {
+        border-color: #4e73df;
+        box-shadow: 0 0 0 0.2rem rgba(78, 115, 223, 0.15);
+        outline: none;
+    }
+    
+    .form-label {
+        font-weight: 500;
+        color: #2c3e50;
+        margin-bottom: 0.5rem;
+        font-size: 0.95rem;
+    }
+    
+    .form-check-label {
+        font-size: 0.95rem;
+        color: #495057;
+        cursor: pointer;
+    }
+    
+    .form-check-input {
+        width: 1.2rem;
+        height: 1.2rem;
+        margin-top: 0.1rem;
+        cursor: pointer;
+    }
+    
+    .form-check-input:checked {
+        background-color: #4e73df;
+        border-color: #4e73df;
+    }
+    
+    .modern-submit-btn {
+        padding: 0.6rem 2rem;
+        font-weight: 500;
+        font-size: 1rem;
+        border-radius: 6px;
+        transition: all 0.3s ease;
+    }
+    
+    /* Disabled state - gray */
+    .modern-submit-btn:disabled {
+        background-color: #e9ecef !important;
+        color: #6c757d !important;
+        border: 1px solid #ced4da !important;
+        cursor: not-allowed;
+        opacity: 0.65;
+    }
+    
+    /* Enabled state - blue */
+    .modern-submit-btn:not(:disabled) {
+        background-color: #4e73df !important;
+        color: white !important;
+        border: 1px solid #4e73df !important;
+        cursor: pointer;
+    }
+    
+    .modern-submit-btn:not(:disabled):hover {
+        background-color: #2e59d9 !important;
+        border-color: #2653d4 !important;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(78, 115, 223, 0.4);
+    }
+    
+    .modern-submit-btn:not(:disabled):active {
+        transform: translateY(0);
+        background-color: #2653d4 !important;
+    }
+    
+    textarea.modern-input {
+        resize: vertical;
+        min-height: 42px;
+    }
+    
+    /* Select2 styling to match modern inputs */
+    .select2-container {
+        width: 100% !important;
+    }
+    
+    .select2-container--bootstrap-5 .select2-selection {
+        border: 1px solid #ced4da !important;
+        border-radius: 4px !important;
+        height: 42px !important;
+        min-height: 42px !important;
+        max-height: 42px !important;
+        background-color: #fff !important;
+        display: flex !important;
+        align-items: center !important;
+    }
+    
+    .select2-container--bootstrap-5 .select2-selection--single {
+        height: 42px !important;
+        min-height: 42px !important;
+        max-height: 42px !important;
+    }
+    
+    .select2-container--bootstrap-5 .select2-selection--single .select2-selection__rendered {
+        padding: 0 0.75rem !important;
+        line-height: 42px !important;
+        height: 42px !important;
+        color: #495057 !important;
+        display: block !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        white-space: nowrap !important;
+    }
+    
+    .select2-container--bootstrap-5 .select2-selection--single .select2-selection__placeholder {
+        color: #6c757d !important;
+    }
+    
+    .select2-container--bootstrap-5 .select2-selection--single .select2-selection__arrow {
+        height: 40px !important;
+        top: 1px !important;
+        right: 1px !important;
+        width: 30px !important;
+    }
+    
+    .select2-container--bootstrap-5.select2-container--focus .select2-selection,
+    .select2-container--bootstrap-5.select2-container--open .select2-selection {
+        border-color: #4e73df !important;
+        box-shadow: 0 0 0 0.2rem rgba(78, 115, 223, 0.15) !important;
+        height: 42px !important;
+    }
+    
+    .select2-container--bootstrap-5 .select2-dropdown {
+        border: 1px solid #ced4da !important;
+        border-radius: 4px !important;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1) !important;
+        margin-top: 2px !important;
+    }
+    
+    .select2-container--bootstrap-5 .select2-results__option {
+        padding: 0.5rem 0.75rem !important;
+        font-size: 0.95rem !important;
+    }
+    
+    .select2-container--bootstrap-5 .select2-results__option--highlighted {
+        background-color: #4e73df !important;
+        color: white !important;
+    }
+    
+    .select2-container--bootstrap-5 .select2-search--dropdown {
+        padding: 0.5rem !important;
+    }
+    
+    .select2-container--bootstrap-5 .select2-search--dropdown .select2-search__field {
+        border: 1px solid #ced4da !important;
+        border-radius: 4px !important;
+        padding: 0.5rem 0.75rem !important;
+        width: 100% !important;
+    }
+    
+    .select2-container--bootstrap-5 .select2-search--dropdown .select2-search__field:focus {
+        border-color: #4e73df !important;
+        outline: none !important;
+        box-shadow: 0 0 0 0.2rem rgba(78, 115, 223, 0.15) !important;
+    }
+    
+    /* Ensure consistent height for all form inputs */
+    .modern-input,
+    .form-select,
+    .form-control {
+        height: 42px !important;
+        min-height: 42px !important;
+    }
+    
+    textarea.modern-input,
+    textarea.form-control {
+        height: auto !important;
+        min-height: 42px !important;
+    }
+</style>
+{% endblock %}
+
+{% block scripts %}
+<!-- Select2 JS for searchable dropdowns -->
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+<script>
+    function switchTab(tabName) {
+        // Hide all tabs
+        document.querySelectorAll('.tab-content-section').forEach(tab => {
+            tab.classList.remove('active');
+        });
+        
+        // Show selected tab
+        const targetTab = document.getElementById(tabName + '-tab');
+        if (targetTab) {
+            targetTab.classList.add('active');
+        }
+        
+        // Update sidebar active state
+        document.querySelectorAll('.sidebar-nav-item.tab-link').forEach(link => {
+            link.classList.remove('active');
+        });
+        const targetLink = document.querySelector(`[data-tab="${tabName}"]`);
+        if (targetLink) {
+            targetLink.classList.add('active');
+        }
+        
+        // Save current tab to localStorage
+        localStorage.setItem('pmo_updater_current_tab', tabName);
+        
+        // If switching to history tab and it needs refresh, reload
+        if (tabName === 'history' && window.historyNeedsRefresh) {
+            window.historyNeedsRefresh = false; // Reset flag
+            location.reload();
+            return; // Stop execution since we're reloading
+        }
+        
+        // Scroll to top
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    
+    // Tab link click handlers
+    document.addEventListener('DOMContentLoaded', function() {
+        // Restore history sub-tab if saved
+        const savedHistorySubTab = localStorage.getItem('pmo_updater_history_subtab');
+        if (savedHistorySubTab) {
+            setTimeout(() => {
+                switchHistoryTab(savedHistorySubTab);
+                localStorage.removeItem('pmo_updater_history_subtab');
+            }, 100);
+        }
+        
+        // First, attach click handlers to tab links
+        document.querySelectorAll('.sidebar-nav-item.tab-link').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const tabName = this.getAttribute('data-tab');
+                switchTab(tabName);
+            });
+        });
+        
+        // Initialize DataTable for history
+        if (document.getElementById('historyTable')) {
+            $('#historyTable').DataTable({
+                order: [[0, 'desc']],
+                pageLength: 25
+            });
+        }
+        
+        // Fetch and display valid category codes
+        const validCategoriesList = document.getElementById('validCategoriesList');
+        
+        if (validCategoriesList) {
+            // Fetch categories on page load
+            fetch("{{ url_for('pmo.get_valid_category_codes') }}")
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.categories) {
+                        validCategoriesList.innerHTML = '';
+                        if (data.categories.length === 0) {
+                            validCategoriesList.innerHTML = '<span class="badge bg-warning" style="font-size: 0.85rem; padding: 6px 10px;">No categories available</span>';
+                        } else {
+                            data.categories.forEach(cat => {
+                                const badge = document.createElement('span');
+                                badge.className = 'badge';
+                                badge.style.cssText = 'background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); font-size: 0.85rem; padding: 6px 12px; font-weight: 500; box-shadow: 0 2px 4px rgba(0,0,0,0.1);';
+                                badge.innerHTML = `<i class="fas fa-code" style="margin-right: 4px; font-size: 0.75rem;"></i><code style="color: white; background: transparent; padding: 0;">${cat.code}</code>`;
+                                badge.title = cat.name;
+                                validCategoriesList.appendChild(badge);
+                            });
+                        }
+                    } else {
+                        validCategoriesList.innerHTML = '<span class="badge bg-danger" style="font-size: 0.85rem; padding: 6px 10px;"><i class="fas fa-exclamation-triangle"></i> Failed to load categories</span>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching categories:', error);
+                    validCategoriesList.innerHTML = '<span class="badge bg-danger" style="font-size: 0.85rem; padding: 6px 10px;"><i class="fas fa-exclamation-triangle"></i> Error loading categories</span>';
+                });
+        }
+        
+        // Don't use Select2 for category dropdown - use regular dropdown like Department
+        // Category dropdown will be a simple HTML select element
+        
+        // Category change handler - show/hide utilization field
+        function handleCategoryChange() {
+            const categorySelect = document.getElementById('category_id');
+            const selectedOption = categorySelect.options[categorySelect.selectedIndex];
+            const categoryName = selectedOption.getAttribute('data-category-name') || selectedOption.text.toLowerCase();
+            
+            const utilizationCol = document.getElementById('utilizationCol');
+            const utilizationInput = document.getElementById('utilization');
+            const notesCol = document.getElementById('notesCol');
+            const notesInput = document.getElementById('notes');
+            const notesFullRow = document.getElementById('notesFullRow');
+            const notesFullInput = document.getElementById('notes_full');
+            
+            // Check if category name contains "utilization" (or "utlization" typo), "billable", or "util"
+            if (categoryName && (
+                categoryName.includes('utilization') || 
+                categoryName.includes('utlization') || 
+                categoryName.includes('billable') ||
+                categoryName.includes('util')
+            )) {
+                // Show utilization field in place of notes
+                utilizationCol.style.display = 'block';
+                utilizationInput.required = true;
+                
+                // Hide inline notes, show full-width notes below
+                notesCol.style.display = 'none';
+                notesInput.required = false;
+                notesFullRow.style.display = 'block';
+                notesFullInput.required = true;
+                
+                // Copy notes value if any
+                if (notesInput.value) {
+                    notesFullInput.value = notesInput.value;
+                }
+            } else {
+                // Hide utilization field
+                utilizationCol.style.display = 'none';
+                utilizationInput.required = false;
+                utilizationInput.value = '';
+                
+                // Show inline notes, hide full-width notes
+                notesCol.style.display = 'block';
+                notesInput.required = true;
+                notesFullRow.style.display = 'none';
+                notesFullInput.required = false;
+                
+                // Copy notes value back if any
+                if (notesFullInput.value) {
+                    notesInput.value = notesFullInput.value;
+                }
+            }
+        }
+        
+        // Bind to both Select2 events and regular change event
+        $('#category_id').on('select2:select', handleCategoryChange);
+        $('#category_id').on('change', handleCategoryChange);
+        
+        // Also handle when cleared
+        $('#category_id').on('select2:clear', function() {
+            const utilizationCol = document.getElementById('utilizationCol');
+            const utilizationInput = document.getElementById('utilization');
+            const notesCol = document.getElementById('notesCol');
+            const notesInput = document.getElementById('notes');
+            const notesFullRow = document.getElementById('notesFullRow');
+            const notesFullInput = document.getElementById('notes_full');
+            
+            utilizationCol.style.display = 'none';
+            utilizationInput.required = false;
+            utilizationInput.value = '';
+            notesCol.style.display = 'block';
+            notesInput.required = true;
+            notesFullRow.style.display = 'none';
+            notesFullInput.required = false;
+        });
+        
+        // Check for duplicate utilization
+        let isDuplicateUtilization = false;
+        
+        async function checkUtilizationDuplicate() {
+            const employeeSelect = document.getElementById('employee_id');
+            const categorySelect = document.getElementById('category_id');
+            const eventDateInput = document.getElementById('event_date');
+            const utilizationInput = document.getElementById('utilization');
+            const utilizationCol = document.getElementById('utilizationCol');
+            
+            // Only check if it's a utilization category
+            const selectedOption = categorySelect.options[categorySelect.selectedIndex];
+            const categoryName = selectedOption ? selectedOption.getAttribute('data-category-name') : '';
+            const isUtilization = categoryName && (categoryName.includes('utilization') || categoryName.includes('billable'));
+            
+            if (!isUtilization || !employeeSelect.value || !categorySelect.value || !eventDateInput.value) {
+                isDuplicateUtilization = false;
+                utilizationInput.classList.remove('is-invalid');
+                const errorMsg = document.getElementById('utilizationError');
+                if (errorMsg) errorMsg.remove();
+                validateForm();
+                return;
+            }
+            
+            try {
+                const response = await fetch('{{ url_for("pmo.check_utilization_duplicate") }}', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        employee_id: employeeSelect.value,
+                        category_id: categorySelect.value,
+                        event_date: eventDateInput.value
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success && data.duplicate) {
+                    isDuplicateUtilization = true;
+                    utilizationInput.classList.add('is-invalid');
+                    
+                    // Show error message
+                    let errorMsg = document.getElementById('utilizationError');
+                    if (!errorMsg) {
+                        errorMsg = document.createElement('div');
+                        errorMsg.id = 'utilizationError';
+                        errorMsg.className = 'invalid-feedback d-block';
+                        utilizationCol.appendChild(errorMsg);
+                    }
+                    errorMsg.textContent = data.message;
+                } else {
+                    isDuplicateUtilization = false;
+                    utilizationInput.classList.remove('is-invalid');
+                    const errorMsg = document.getElementById('utilizationError');
+                    if (errorMsg) errorMsg.remove();
+                }
+                
+                validateForm();
+            } catch (error) {
+                console.error('Error checking duplicate:', error);
+            }
+        }
+        
+        // Form validation - Enable submit button only when checkbox is checked and validator is selected
+        function validateForm() {
+            const policyCheckbox = document.getElementById('policy_confirm');
+            const validatorSelect = document.getElementById('validator_id');
+            const submitBtn = document.getElementById('submitBtn');
+            
+            const isCheckboxChecked = policyCheckbox && policyCheckbox.checked;
+            const isValidatorSelected = validatorSelect && validatorSelect.value !== '';
+            
+            if (submitBtn) {
+                submitBtn.disabled = !(isCheckboxChecked && isValidatorSelected && !isDuplicateUtilization);
+            }
+        }
+        
+        // Attach validation to checkbox and validator dropdown
+        const policyCheckbox = document.getElementById('policy_confirm');
+        const validatorSelect = document.getElementById('validator_id');
+        const employeeSelect = document.getElementById('employee_id');
+        const eventDateInput = document.getElementById('event_date');
+        
+        if (policyCheckbox) {
+            policyCheckbox.addEventListener('change', validateForm);
+        }
+        
+        if (validatorSelect) {
+            validatorSelect.addEventListener('change', validateForm);
+        }
+        
+        // Add listeners for duplicate check
+        if (employeeSelect) {
+            employeeSelect.addEventListener('change', checkUtilizationDuplicate);
+        }
+        
+        if (eventDateInput) {
+            eventDateInput.addEventListener('change', checkUtilizationDuplicate);
+        }
+        
+        // Also check when category changes
+        $('#category_id').on('change', checkUtilizationDuplicate);
+        
+        // Initial validation
+        validateForm();
+        
+        // ===== TAB RESTORATION - Immediate execution =====
+        // Check localStorage for saved tab IMMEDIATELY (no setTimeout)
+        const savedTab = localStorage.getItem('pmo_updater_current_tab');
+        
+        if (savedTab && savedTab !== 'overview') {
+            // Force remove all active classes first
+            document.querySelectorAll('.tab-content-section').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.sidebar-nav-item.tab-link').forEach(link => {
+                link.classList.remove('active');
+            });
+            // Now switch to saved tab
+            switchTab(savedTab);
+        } else {
+            // Ensure overview is saved
+            localStorage.setItem('pmo_updater_current_tab', 'overview');
+        }
+        
+        // Remove preload style after tab is properly set
+        const preloadStyle = document.getElementById('tab-preload-style');
+        if (preloadStyle) {
+            preloadStyle.remove();
+        }
+        
+        // Department-Grade mapping from backend
+        const departmentGradesMap = {{ department_grades_map|tojson|safe }};
+        
+        const deptSelect = document.getElementById('department');
+        const gradeSelect = document.getElementById('grade');
+        const empSelect = document.getElementById('employee_id');
+        
+        if (!deptSelect || !gradeSelect || !empSelect) {
+            console.error('Dropdown elements not found');
+            return;
+        }
+        
+        // Department change handler
+        deptSelect.addEventListener('change', function() {
+            const dept = this.value;
+            
+            // Enable and clear grade dropdown
+            gradeSelect.disabled = false;
+            gradeSelect.innerHTML = '<option value="">Select grade</option>';
+            
+            // Disable and clear employee dropdown
+            empSelect.disabled = true;
+            empSelect.innerHTML = '<option value="">Select grade first</option>';
+            
+            // Destroy Select2 if exists
+            if ($('#employee_id').hasClass('select2-hidden-accessible')) {
+                $('#employee_id').select2('destroy');
+            }
+            
+            if (!dept) {
+                return;
+            }
+            
+            if (dept === 'all') {
+                // Add "All Grades" option
+                const allGradesOpt = document.createElement('option');
+                allGradesOpt.value = 'all';
+                allGradesOpt.textContent = 'All Grades';
+                gradeSelect.appendChild(allGradesOpt);
+                
+                // Get unique grades from all departments
+                const allGrades = [...new Set(Object.values(departmentGradesMap).flat())].sort();
+                allGrades.forEach(grade => {
+                    if (grade && grade.trim()) {
+                        const opt = document.createElement('option');
+                        opt.value = grade;
+                        opt.textContent = grade;
+                        gradeSelect.appendChild(opt);
+                    }
+                });
+            } else if (departmentGradesMap[dept]) {
+                // Populate grades for selected department
+                departmentGradesMap[dept].forEach(grade => {
+                    if (grade && grade.trim()) {
+                        const opt = document.createElement('option');
+                        opt.value = grade;
+                        opt.textContent = grade;
+                        gradeSelect.appendChild(opt);
+                    }
+                });
+            }
+        });
+        
+        // Grade change handler - fetch employees via API
+        gradeSelect.addEventListener('change', async function() {
+            const dept = deptSelect.value;
+            const grade = this.value;
+            
+            // Clear and disable employee dropdown if no grade selected
+            if (!grade) {
+                empSelect.disabled = true;
+                empSelect.innerHTML = '<option value="">Select grade first</option>';
+                return;
+            }
+            
+            empSelect.disabled = false;
+            empSelect.innerHTML = '<option value="">Loading...</option>';
+            
+            if (dept && grade) {
+                try {
+                    const formData = new FormData();
+                    formData.append('department', dept);
+                    formData.append('grade', grade);
+                    
+                    const response = await fetch('{{ url_for("pmo.get_employees_by_department_grade") }}', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    const data = await response.json();
+                    
+                    empSelect.innerHTML = '<option value="">Select employee</option>';
+                    
+                    if (data.success && data.employees) {
+                        data.employees.forEach(emp => {
+                            const opt = document.createElement('option');
+                            opt.value = emp.employee_id;
+                            opt.setAttribute('data-user-id', emp.id);
+                            opt.setAttribute('data-name', emp.name);
+                            opt.textContent = `${emp.name} - ${emp.employee_id}`;
+                            empSelect.appendChild(opt);
+                        });
+                        
+                        // Don't use Select2 for employee dropdown - use regular dropdown
+                        // Employee dropdown will be a simple HTML select element like Department
+                    } else {
+                        console.error('Error fetching employees:', data.error);
+                        empSelect.innerHTML = '<option value="">No employees found</option>';
+                    }
+                } catch (error) {
+                    console.error('Fetch error:', error);
+                    empSelect.innerHTML = '<option value="">Error loading employees</option>';
+                }
+            }
+        });
+        
+        // Firefox Fix: Clear all form fields on page refresh
+        // Firefox persists form values across refreshes, but we want a clean form on refresh
+        setTimeout(function() {
+            // Always reset the form to default state on page load
+            // This prevents Firefox from persisting "All Departments" or any other selection
+            
+            // Clear department dropdown
+            deptSelect.value = '';
+            
+            // Reset and disable grade dropdown
+            gradeSelect.disabled = true;
+            gradeSelect.innerHTML = '<option value="">Select department first</option>';
+            gradeSelect.value = '';
+            
+            // Reset and disable employee dropdown
+            empSelect.disabled = true;
+            empSelect.innerHTML = '<option value="">Select grade first</option>';
+            empSelect.value = '';
+            
+            // Clear other form fields
+            const categorySelect = document.getElementById('category_id');
+            const eventDateInput = document.getElementById('event_date');
+            const utilizationInput = document.getElementById('utilization');
+            const notesInput = document.getElementById('notes');
+            const notesFullInput = document.getElementById('notes_full');
+            const validatorSelect = document.getElementById('validator_id');
+            const policyCheckbox = document.getElementById('policy_confirm');
+            
+            if (categorySelect) categorySelect.value = '';
+            if (eventDateInput) eventDateInput.value = '';
+            if (utilizationInput) utilizationInput.value = '';
+            if (notesInput) notesInput.value = '';
+            if (notesFullInput) notesFullInput.value = '';
+            if (validatorSelect) validatorSelect.value = '';
+            if (policyCheckbox) policyCheckbox.checked = false;
+            
+            // Hide utilization field and show notes field
+            const utilizationCol = document.getElementById('utilizationCol');
+            const notesCol = document.getElementById('notesCol');
+            const notesFullRow = document.getElementById('notesFullRow');
+            
+            if (utilizationCol) utilizationCol.style.display = 'none';
+            if (notesCol) notesCol.style.display = 'block';
+            if (notesFullRow) notesFullRow.style.display = 'none';
+            
+            // Disable submit button
+            const submitBtn = document.getElementById('submitBtn');
+            if (submitBtn) submitBtn.disabled = true;
+        }, 100);
+    });
+    
+    // History Sub-tab Switching Function
+    function switchHistoryTab(tabName) {
+        // Hide all panes
+        document.querySelectorAll('.history-tab-pane').forEach(pane => {
+            pane.classList.remove('active');
+        });
+        
+        // Remove active from all links
+        document.querySelectorAll('.history-nav-tabs .nav-link').forEach(link => {
+            link.classList.remove('active');
+        });
+        
+        // Show selected pane
+        document.getElementById(tabName + '-history-pane').classList.add('active');
+        
+        // Activate selected link
+        document.getElementById(tabName + '-history-tab-link').classList.add('active');
+    }
+    
+    // Rewards History Filter Function
+    function filterRewardsTable() {
+        const quarterFilter = document.getElementById('rewardsQuarterFilter').value.toLowerCase();
+        const yearFilter = document.getElementById('rewardsYearFilter').value.toLowerCase();
+        const categoryFilter = document.getElementById('rewardsCategoryFilter').value.toLowerCase();
+        const departmentFilter = document.getElementById('rewardsDepartmentFilter').value.toLowerCase();
+        const statusFilter = document.getElementById('rewardsStatusFilter').value.toLowerCase();
+        const searchInput = document.getElementById('rewardsSearchInput').value.toLowerCase();
+        
+        const rows = document.querySelectorAll('.rewards-row');
+        
+        rows.forEach(row => {
+            const quarter = row.getAttribute('data-quarter').toLowerCase();
+            const year = row.getAttribute('data-year').toLowerCase();
+            const category = row.getAttribute('data-category').toLowerCase();
+            const department = row.getAttribute('data-department').toLowerCase();
+            const status = row.getAttribute('data-status').toLowerCase();
+            const employee = row.getAttribute('data-employee').toLowerCase();
+            const rowText = row.textContent.toLowerCase();
+            
+            const matchesQuarter = !quarterFilter || quarter === quarterFilter;
+            const matchesYear = !yearFilter || year === yearFilter;
+            const matchesCategory = !categoryFilter || category === categoryFilter;
+            const matchesDepartment = !departmentFilter || department === departmentFilter;
+            const matchesStatus = !statusFilter || status === statusFilter;
+            const matchesSearch = !searchInput || rowText.includes(searchInput);
+            
+            if (matchesQuarter && matchesYear && matchesCategory && matchesDepartment && matchesStatus && matchesSearch) {
+                row.setAttribute('data-filtered', 'false');
+            } else {
+                row.setAttribute('data-filtered', 'true');
+            }
+        });
+        
+        rewardsCurrentPage = 1;
+        updatePagination('rewards');
+    }
+    
+    // Utilization History Filter Function
+    function filterUtilizationTable() {
+        const quarterFilter = document.getElementById('utilQuarterFilter').value.toLowerCase();
+        const yearFilter = document.getElementById('utilYearFilter').value.toLowerCase();
+        const departmentFilter = document.getElementById('utilDepartmentFilter').value.toLowerCase();
+        const statusFilter = document.getElementById('utilStatusFilter').value.toLowerCase();
+        const searchInput = document.getElementById('utilSearchInput').value.toLowerCase();
+        
+        const rows = document.querySelectorAll('.util-row');
+        
+        rows.forEach(row => {
+            const quarter = row.getAttribute('data-quarter').toLowerCase();
+            const year = row.getAttribute('data-year').toLowerCase();
+            const department = row.getAttribute('data-department').toLowerCase();
+            const status = row.getAttribute('data-status').toLowerCase();
+            const employee = row.getAttribute('data-employee').toLowerCase();
+            const rowText = row.textContent.toLowerCase();
+            
+            const matchesQuarter = !quarterFilter || quarter === quarterFilter;
+            const matchesYear = !yearFilter || year === yearFilter;
+            const matchesDepartment = !departmentFilter || department === departmentFilter;
+            const matchesStatus = !statusFilter || status === statusFilter;
+            const matchesSearch = !searchInput || rowText.includes(searchInput);
+            
+            if (matchesQuarter && matchesYear && matchesDepartment && matchesStatus && matchesSearch) {
+                row.setAttribute('data-filtered', 'false');
+            } else {
+                row.setAttribute('data-filtered', 'true');
+            }
+        });
+        
+        utilCurrentPage = 1;
+        updatePagination('utilization');
+    }
+    
+    // Reset Rewards Filters
+    function resetRewardsFilters() {
+        document.getElementById('rewardsQuarterFilter').value = '';
+        document.getElementById('rewardsYearFilter').value = '';
+        document.getElementById('rewardsCategoryFilter').value = '';
+        document.getElementById('rewardsDepartmentFilter').value = '';
+        document.getElementById('rewardsStatusFilter').value = '';
+        document.getElementById('rewardsSearchInput').value = '';
+        filterRewardsTable();
+    }
+    
+    // Reset Utilization Filters
+    function resetUtilizationFilters() {
+        document.getElementById('utilQuarterFilter').value = '';
+        document.getElementById('utilYearFilter').value = '';
+        document.getElementById('utilDepartmentFilter').value = '';
+        document.getElementById('utilStatusFilter').value = '';
+        document.getElementById('utilSearchInput').value = '';
+        filterUtilizationTable();
+    }
+    
+    // Show Notes Modal using event delegation
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('view-notes-btn') || e.target.closest('.view-notes-btn')) {
+            const button = e.target.classList.contains('view-notes-btn') ? e.target : e.target.closest('.view-notes-btn');
+            const notes = button.getAttribute('data-notes');
+            document.getElementById('modalNotes').textContent = notes || 'No notes provided';
+            const modal = new bootstrap.Modal(document.getElementById('notesModal'));
+            modal.show();
+        }
+    });
+    
+    // Pagination state
+    let rewardsCurrentPage = 1;
+    let rewardsPageSize = 10;
+    let utilCurrentPage = 1;
+    let utilPageSize = 10;
+    
+    // Update Pagination and show/hide rows
+    function updatePagination(type) {
+        const isRewards = type === 'rewards';
+        const rows = document.querySelectorAll(isRewards ? '.rewards-row' : '.util-row');
+        
+        // Get rows that are NOT filtered out (check data attribute, not display style)
+        const visibleRows = [];
+        rows.forEach(row => {
+            // A row is visible if it's not marked as filtered
+            if (row.getAttribute('data-filtered') !== 'true') {
+                visibleRows.push(row);
+            }
+        });
+        const totalRows = visibleRows.length;
+        
+        const currentPage = isRewards ? rewardsCurrentPage : utilCurrentPage;
+        const pageSize = isRewards ? rewardsPageSize : utilPageSize;
+        const infoElement = document.getElementById(isRewards ? 'rewardsInfo' : 'utilInfo');
+        const paginationElement = document.getElementById(isRewards ? 'rewardsPagination' : 'utilPagination');
+        
+        if (!infoElement || !paginationElement) {
+            return;
+        }
+        
+        if (totalRows === 0) {
+            infoElement.textContent = 'No entries found';
+            paginationElement.innerHTML = '';
+            rows.forEach(row => row.style.display = 'none');
+            return;
+        }
+        
+        const totalPages = Math.ceil(totalRows / pageSize);
+        
+        // Ensure current page is valid
+        let validPage = Math.min(currentPage, totalPages);
+        validPage = Math.max(1, validPage);
+        
+        if (validPage !== currentPage) {
+            if (isRewards) {
+                rewardsCurrentPage = validPage;
+            } else {
+                utilCurrentPage = validPage;
+            }
+        }
+        
+        const start = (validPage - 1) * pageSize + 1;
+        const end = Math.min(validPage * pageSize, totalRows);
+        
+        infoElement.textContent = `Showing ${start} to ${end} of ${totalRows} entries`;
+        
+        // First, hide ALL rows (both filtered and unfiltered)
+        rows.forEach(row => row.style.display = 'none');
+        
+        // Then show only the rows for current page from visibleRows
+        visibleRows.forEach((row, index) => {
+            if (index >= (validPage - 1) * pageSize && index < validPage * pageSize) {
+                row.style.display = 'table-row';
+            }
+        });
+        
+        // Build pagination controls
+        let paginationHTML = '';
+        if (totalPages > 1) {
+            // Previous button
+            paginationHTML += `<li class="page-item ${validPage === 1 ? 'disabled' : ''}">
+                <a class="page-link" href="#" onclick="changePage('${type}', ${validPage - 1}); return false;">‹</a>
+            </li>`;
+            
+            // Page numbers
+            const maxPages = 5;
+            let startPage = Math.max(1, validPage - 2);
+            let endPage = Math.min(totalPages, startPage + maxPages - 1);
+            
+            if (endPage - startPage < maxPages - 1) {
+                startPage = Math.max(1, endPage - maxPages + 1);
+            }
+            
+            for (let i = startPage; i <= endPage; i++) {
+                paginationHTML += `<li class="page-item ${i === validPage ? 'active' : ''}">
+                    <a class="page-link" href="#" onclick="changePage('${type}', ${i}); return false;">${i}</a>
+                </li>`;
+            }
+            
+            // Next button
+            paginationHTML += `<li class="page-item ${validPage === totalPages ? 'disabled' : ''}">
+                <a class="page-link" href="#" onclick="changePage('${type}', ${validPage + 1}); return false;">›</a>
+            </li>`;
+        }
+        
+        paginationElement.innerHTML = paginationHTML;
+    }
+    
+    // Change page
+    function changePage(type, page) {
+        if (type === 'rewards') {
+            rewardsCurrentPage = page;
+        } else {
+            utilCurrentPage = page;
+        }
+        updatePagination(type);
+    }
+    
+    // Change page size
+    function changeRewardsPageSize() {
+        rewardsPageSize = parseInt(document.getElementById('rewardsPageSize').value);
+        rewardsCurrentPage = 1;
+        filterRewardsTable();
+    }
+    
+    function changeUtilPageSize() {
+        utilPageSize = parseInt(document.getElementById('utilPageSize').value);
+        utilCurrentPage = 1;
+        filterUtilizationTable();
+    }
+    
+    // Initialize pagination on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        // Set initial page size from dropdown (default is 10)
+        rewardsPageSize = parseInt(document.getElementById('rewardsPageSize')?.value) || 10;
+        utilPageSize = parseInt(document.getElementById('utilPageSize')?.value) || 10;
+        
+        // Mark all rows as not filtered initially
+        const rewardsRows = document.querySelectorAll('.rewards-row');
+        const utilRows = document.querySelectorAll('.util-row');
+        
+        rewardsRows.forEach(row => {
+            row.setAttribute('data-filtered', 'false');
+            row.style.display = 'table-row';
+        });
+        utilRows.forEach(row => {
+            row.setAttribute('data-filtered', 'false');
+            row.style.display = 'table-row';
+        });
+        
+        // Update pagination
+        setTimeout(() => {
+            updatePagination('rewards');
+            updatePagination('utilization');
+        }, 100);
+    });
+    
+    // Bulk Upload Validation
+    async function validateBulkUpload() {
+        const form = document.getElementById('bulkUploadForm');
+        const formData = new FormData(form);
+        
+        const fileInput = document.getElementById('bulk_csv_file');
+        
+        if (!fileInput.files[0]) {
+            alert('Please upload a CSV file');
+            return;
+        }
+        
+        // Show loading state
+        const validateBtn = document.getElementById('validateBulkButton');
+        const originalText = validateBtn.innerHTML;
+        validateBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Validating...';
+        validateBtn.disabled = true;
+        
+        try {
+            const response = await fetch('{{ url_for("pmo.validate_bulk_upload") }}', {
+                method: 'POST',
+                body: formData
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                // Enable review button
+                const reviewBtn = document.getElementById('reviewBulkButton');
+                reviewBtn.disabled = false;
+                reviewBtn.onclick = () => showBulkUploadModal(data);
+                
+                // Auto-show modal
+                showBulkUploadModal(data);
+                
+                // Reset validate button
+                validateBtn.innerHTML = originalText;
+                validateBtn.disabled = false;
+            } else {
+                // Check if error suggests wrong tab
+                const errorMsg = data.error || 'Validation failed';
+                if (errorMsg.includes('utilization') || errorMsg.includes('Utilization')) {
+                    alert('⚠️ Wrong Upload Tab\n\nThis appears to be a utilization CSV file. Please use the "Utilization Upload" tab for uploading utilization data.');
+                } else {
+                    alert('Validation Error: ' + errorMsg);
+                }
+                validateBtn.innerHTML = originalText;
+                validateBtn.disabled = false;
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('An error occurred during validation. Please try again.');
+            validateBtn.innerHTML = originalText;
+            validateBtn.disabled = false;
+        }
+    }
+    
+    // Store bulk upload data globally
+    let bulkUploadData = null;
+    
+    function showBulkUploadModal(data) {
+        bulkUploadData = data;
+        
+        const modalHtml = `
+            <div class="modal fade" id="bulkUploadModal" tabindex="-1">
+                <div class="modal-dialog modal-xl">
+                    <div class="modal-content">
+                        <div class="modal-header bg-success text-white">
+                            <h5 class="modal-title">
+                                <i class="fas fa-check-circle"></i> Bulk Upload Preview
+                            </h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="row mb-3">
+                                <div class="col-md-4">
+                                    <div class="card border-success">
+                                        <div class="card-body text-center">
+                                            <h3 class="text-success mb-0">${data.valid_rows.length}</h3>
+                                            <small class="text-muted">Valid Rows</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="card border-danger">
+                                        <div class="card-body text-center">
+                                            <h3 class="text-danger mb-0">${data.invalid_rows.length}</h3>
+                                            <small class="text-muted">Invalid Rows</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="card border-primary">
+                                        <div class="card-body text-center">
+                                            <h3 class="text-primary mb-0">${data.valid_rows.length > 0 ? [...new Set(data.valid_rows.map(r => r.category_name))].length : 0}</h3>
+                                            <small class="text-muted">Categories</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            ${data.valid_rows.length > 0 ? `
+                            <h6>Valid Rows:</h6>
+                            <div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
+                                <table class="table table-sm table-bordered" style="table-layout: fixed; width: 100%;">
+                                    <thead class="table-light sticky-top">
+                                        <tr>
+                                            <th style="width: 50px;">Row</th>
+                                            <th style="width: 150px;">Employee</th>
+                                            <th style="width: 100px;">Validator</th>
+                                            <th style="width: 100px;">Event Date</th>
+                                            <th style="width: 180px;">Category</th>
+                                            <th style="width: 80px;">Points</th>
+                                            <th>Notes</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${data.valid_rows.map(row => `
+                                            <tr>
+                                                <td>${row.row_number}</td>
+                                                <td style="word-wrap: break-word;">${row.employee_name} (${row.employee_id})</td>
+                                                <td><small>${row.validator_name}</small></td>
+                                                <td style="white-space: nowrap;">${row.event_date}</td>
+                                                <td><span class="badge bg-info" style="white-space: normal; text-align: left; display: inline-block; max-width: 100%;">${row.category_name}</span></td>
+                                                <td class="text-primary" style="white-space: nowrap;"><strong>${row.points}</strong></td>
+                                                <td style="word-wrap: break-word;"><small>${row.notes.substring(0, 30)}...</small></td>
+                                            </tr>
+                                        `).join('')}
+                                    </tbody>
+                                </table>
+                            </div>
+                            ` : ''}
+                            
+                            ${data.invalid_rows.length > 0 ? `
+                            <h6 class="mt-3 text-danger">Invalid Rows:</h6>
+                            <div class="table-responsive" style="max-height: 200px; overflow-y: auto;">
+                                <table class="table table-sm table-bordered">
+                                    <thead class="table-light sticky-top">
+                                        <tr>
+                                            <th>Row</th>
+                                            <th>Employee ID</th>
+                                            <th>Error</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${data.invalid_rows.map(row => `
+                                            <tr>
+                                                <td>${row.row_number}</td>
+                                                <td>${row.employee_id}</td>
+                                                <td class="text-danger">${row.error}</td>
+                                            </tr>
+                                        `).join('')}
+                                    </tbody>
+                                </table>
+                            </div>
+                            ` : ''}
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            ${data.valid_rows.length > 0 ? `
+                            <button type="button" class="btn btn-success" onclick="confirmBulkUpload()">
+                                <i class="fas fa-upload"></i> Upload ${data.valid_rows.length} Records
+                            </button>
+                            ` : ''}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Remove existing modal if any
+        const existingModal = document.getElementById('bulkUploadModal');
+        if (existingModal) existingModal.remove();
+        
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        const modal = new bootstrap.Modal(document.getElementById('bulkUploadModal'));
+        modal.show();
+    }
+    
+    function confirmBulkUpload() {
+        const data = bulkUploadData;
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '{{ url_for("pmo.updater_dashboard") }}';
+        
+        const actionInput = document.createElement('input');
+        actionInput.type = 'hidden';
+        actionInput.name = 'action_type';
+        actionInput.value = 'bulk_upload_confirmed';
+        form.appendChild(actionInput);
+        
+        const dataInput = document.createElement('input');
+        dataInput.type = 'hidden';
+        dataInput.name = 'validated_data';
+        dataInput.value = JSON.stringify(data.valid_rows);
+        form.appendChild(dataInput);
+        
+        document.body.appendChild(form);
+        form.submit();
+    }
+    
+    // Utilization Upload Validation
+    async function validateUtilizationUpload() {
+        const form = document.getElementById('utilizationUploadForm');
+        const formData = new FormData(form);
+        
+        const fileInput = document.getElementById('util_csv_file');
+        
+        if (!fileInput.files[0]) {
+            alert('Please upload a CSV file');
+            return;
+        }
+        
+        // Show loading state
+        const validateBtn = document.getElementById('validateUtilButton');
+        const originalText = validateBtn.innerHTML;
+        validateBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Validating...';
+        validateBtn.disabled = true;
+        
+        try {
+            const response = await fetch('{{ url_for("pmo.validate_utilization_upload") }}', {
+                method: 'POST',
+                body: formData
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                // Enable review button
+                const reviewBtn = document.getElementById('reviewUtilButton');
+                reviewBtn.disabled = false;
+                reviewBtn.onclick = () => showUtilizationUploadModal(data);
+                
+                // Auto-show modal
+                showUtilizationUploadModal(data);
+                
+                // Reset validate button
+                validateBtn.innerHTML = originalText;
+                validateBtn.disabled = false;
+            } else {
+                // Check if error suggests wrong tab
+                const errorMsg = data.error || 'Validation failed';
+                if (errorMsg.includes('spot') || errorMsg.includes('client') || errorMsg.includes('r&r') || errorMsg.includes('award')) {
+                    alert('⚠️ Wrong Upload Tab\n\nThis appears to be a bulk rewards CSV file. Please use the "Bulk Upload" tab for uploading reward data like Spot Awards, Client Appreciation, or R&R.');
+                } else {
+                    alert('Validation Error: ' + errorMsg);
+                }
+                validateBtn.innerHTML = originalText;
+                validateBtn.disabled = false;
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('An error occurred during validation. Please try again.');
+            validateBtn.innerHTML = originalText;
+            validateBtn.disabled = false;
+        }
+    }
+    
+    // Store utilization upload data globally
+    let utilizationUploadData = null;
+    let utilizationValidatorId = null;
+    
+    function showUtilizationUploadModal(data, validatorId) {
+        utilizationUploadData = data;
+        utilizationValidatorId = validatorId;
+        
+        const modalHtml = `
+            <div class="modal fade" id="utilizationUploadModal" tabindex="-1">
+                <div class="modal-dialog modal-xl">
+                    <div class="modal-content">
+                        <div class="modal-header bg-warning text-dark">
+                            <h5 class="modal-title">
+                                <i class="fas fa-chart-line"></i> Utilization Upload Preview
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="row mb-3">
+                                <div class="col-md-4">
+                                    <div class="card border-success">
+                                        <div class="card-body text-center">
+                                            <h3 class="text-success mb-0">${data.valid_rows.length}</h3>
+                                            <small class="text-muted">Valid Rows</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="card border-danger">
+                                        <div class="card-body text-center">
+                                            <h3 class="text-danger mb-0">${data.invalid_rows.length}</h3>
+                                            <small class="text-muted">Invalid Rows</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="card border-primary">
+                                        <div class="card-body text-center">
+                                            <h3 class="text-primary mb-0">${data.valid_rows.length > 0 ? [...new Set(data.valid_rows.map(r => r.category_name))].length : 0}</h3>
+                                            <small class="text-muted">Categories</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            ${data.valid_rows.length > 0 ? `
+                            <h6>Valid Rows:</h6>
+                            <div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
+                                <table class="table table-sm table-bordered" style="table-layout: fixed; width: 100%;">
+                                    <thead class="table-light sticky-top">
+                                        <tr>
+                                            <th style="width: 50px;">Row</th>
+                                            <th style="width: 180px;">Employee</th>
+                                            <th style="width: 120px;">Validator</th>
+                                            <th style="width: 100px;">Event Date</th>
+                                            <th style="width: 100px;">Utilization</th>
+                                            <th>Notes</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${data.valid_rows.map(row => `
+                                            <tr>
+                                                <td>${row.row_number}</td>
+                                                <td style="word-wrap: break-word;">${row.employee_name} (${row.employee_id})</td>
+                                                <td><small>${row.validator_name}</small></td>
+                                                <td style="white-space: nowrap;">${row.event_date}</td>
+                                                <td class="text-primary" style="white-space: nowrap;"><strong>${(row.utilization_value * 100).toFixed(0)}%</strong></td>
+                                                <td style="word-wrap: break-word;"><small>${row.notes.substring(0, 40)}...</small></td>
+                                            </tr>
+                                        `).join('')}
+                                    </tbody>
+                                </table>
+                            </div>
+                            ` : ''}
+                            
+                            ${data.invalid_rows.length > 0 ? `
+                            <h6 class="mt-3 text-danger">Invalid Rows:</h6>
+                            <div class="table-responsive" style="max-height: 200px; overflow-y: auto;">
+                                <table class="table table-sm table-bordered">
+                                    <thead class="table-light sticky-top">
+                                        <tr>
+                                            <th>Row</th>
+                                            <th>Employee ID</th>
+                                            <th>Error</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${data.invalid_rows.map(row => `
+                                            <tr>
+                                                <td>${row.row_number}</td>
+                                                <td>${row.employee_id}</td>
+                                                <td class="text-danger">${row.error}</td>
+                                            </tr>
+                                        `).join('')}
+                                    </tbody>
+                                </table>
+                            </div>
+                            ` : ''}
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            ${data.valid_rows.length > 0 ? `
+                            <button type="button" class="btn btn-warning" onclick="confirmUtilizationUpload()">
+                                <i class="fas fa-upload"></i> Upload ${data.valid_rows.length} Records
+                            </button>
+                            ` : ''}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Remove existing modal if any
+        const existingModal = document.getElementById('utilizationUploadModal');
+        if (existingModal) existingModal.remove();
+        
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        const modal = new bootstrap.Modal(document.getElementById('utilizationUploadModal'));
+        modal.show();
+    }
+    
+    function confirmUtilizationUpload() {
+        const data = utilizationUploadData;
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '{{ url_for("pmo.updater_dashboard") }}';
+        
+        const actionInput = document.createElement('input');
+        actionInput.type = 'hidden';
+        actionInput.name = 'action_type';
+        actionInput.value = 'utilization_upload_confirmed';
+        form.appendChild(actionInput);
+        
+        const dataInput = document.createElement('input');
+        dataInput.type = 'hidden';
+        dataInput.name = 'validated_data';
+        dataInput.value = JSON.stringify(data.valid_rows);
+        form.appendChild(dataInput);
+        
+        const categoryInput = document.createElement('input');
+        categoryInput.type = 'hidden';
+        categoryInput.name = 'category_id';
+        categoryInput.value = data.category_id;
+        form.appendChild(categoryInput);
+        
+        document.body.appendChild(form);
+        form.submit();
+    }
+    
+    // Real-time refresh function for history
+    window.refreshHistory = function() {
+        // Mark that history needs refresh
+        window.historyNeedsRefresh = true;
+        
+        // If currently on history tab, reload immediately
+        const historyTab = document.getElementById('history-tab');
+        if (historyTab && historyTab.classList.contains('active')) {
+            location.reload();
+        }
+    };
+    
+    // Initialize PMO Realtime Manager for Updater
+    document.addEventListener('DOMContentLoaded', function() {
+        {% if user and user._id %}
+        const userId = '{{ user._id }}';
+        if (typeof PMORealtimeManager !== 'undefined') {
+            PMORealtimeManager.init(userId, 'updater');
+            setInterval(() => PMORealtimeManager.ping(), 30000);
+        }
+        {% endif %}
+    });
+</script>
+{% endblock %}

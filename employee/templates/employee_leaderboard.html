@@ -1,0 +1,503 @@
+{% extends "employee_base.html" %}
+
+{% block title %}Leaderboard{% endblock %}
+{% block nav_leaderboard %}active{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="card">
+        <div class="card-header pmo-header-primary">
+            <div class="d-flex align-items-center">
+                <div class="topbar-icon"><i class="fas fa-trophy"></i></div>
+                <div class="topbar-info">
+                    <div class="topbar-title">Leaderboard</div>
+                    <div class="topbar-subtitle">View rankings across the organization</div>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <!-- Filters -->
+            <div class="row mb-3">
+                <div class="col-md-2 mb-2">
+                    <label for="leaderboardYearFilter" class="form-label">Year</label>
+                    <select id="leaderboardYearFilter" class="form-select">
+                        {% for year in leaderboard_distinct_years %}
+                        <option value="{{ year }}">{% if year == 'all' %}All Years{% else %}{{ year }}{% endif %}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2 mb-2">
+                    <label for="leaderboardQuarterFilter" class="form-label">Quarter</label>
+                    <select id="leaderboardQuarterFilter" class="form-select">
+                        <option value="all">All Quarters</option>
+                        <option value="Q1">Q1</option>
+                        <option value="Q2">Q2</option>
+                        <option value="Q3">Q3</option>
+                        <option value="Q4">Q4</option>
+                    </select>
+                </div>
+                <div class="col-md-2 mb-2">
+                    <label for="leaderboardDepartmentFilter" class="form-label">Department</label>
+                    <select id="leaderboardDepartmentFilter" class="form-select">
+                        <option value="all">All Departments</option>
+                        {% for dept in leaderboard_distinct_departments %}
+                        <option value="{{ dept }}">{{ dept }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2 mb-2">
+                    <label for="leaderboardGradeFilter" class="form-label">Grade</label>
+                    <select id="leaderboardGradeFilter" class="form-select">
+                        <option value="all">All Grades</option>
+                        {% for grade in leaderboard_distinct_grades %}
+                        <option value="{{ grade }}">{{ grade }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4 mb-2">
+                    <label for="leaderboardCategoryFilter" class="form-label">Category</label>
+                    <select id="leaderboardCategoryFilter" class="form-select">
+                        <option value="all">All Categories</option>
+                        {% for cat in leaderboard_categories_options %}
+                        <option value="{{ cat._id }}">{{ cat.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="row mb-4">
+                <div class="col-md-12 text-end">
+                    <button id="applyLeaderboardFilters" class="btn btn-primary">
+                        <i class="fas fa-filter me-1"></i> Apply Filters
+                    </button>
+                    <button id="resetLeaderboardFilters" class="btn btn-secondary">
+                        <i class="fas fa-undo me-1"></i> Reset
+                    </button>
+                </div>
+            </div>
+
+            <!-- Loading Overlay -->
+            <div id="leaderboardLoadingOverlay" class="text-center py-5" style="display: none;">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-3 text-muted">Loading leaderboard data...</p>
+            </div>
+
+            <!-- Leaderboard Content -->
+            <div id="leaderboardMainContent">
+                <!-- Your Performance -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="card h-100 shadow-sm">
+                            <div class="card-body text-center">
+                                <h5><i class="fas fa-user-circle me-2"></i>Your Rank</h5>
+                                <p class="display-4 fw-bold text-primary mb-1" id="currentUserRankValue">N/A</p>
+                                <p class="mb-0">Points: <strong id="currentUserPointsValue">N/A</strong></p>
+                                <small class="text-muted" id="currentUserDetails">Dept: N/A | Grade: N/A</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card h-100 shadow-sm">
+                            <div class="card-body">
+                                <h5 class="text-center"><i class="fas fa-chart-line me-2"></i>Next Rank</h5>
+                                <div id="nextRankInfo" class="text-center">
+                                    <p class="fs-5 mb-1" id="nextRankMessage"></p>
+                                    <p class="small text-muted mb-0">Currently held by: <span id="personAboveName">N/A</span></p>
+                                </div>
+                                <div id="atTopRankInfo" class="text-center" style="display: none;">
+                                    <p class="fs-5 text-success"><i class="fas fa-crown"></i> You are at the top!</p>
+                                </div>
+                                <div id="noRankInfo" class="text-center" style="display: none;">
+                                    <p class="text-muted">Not currently ranked</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stats Summary -->
+                <div class="row mb-4">
+                    <div class="col-md-4">
+                        <div class="card shadow-sm">
+                            <div class="card-body text-center">
+                                <h6 class="text-muted mb-2">Total Participants</h6>
+                                <p class="fs-4 fw-bold mb-0" id="totalParticipants">0</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card shadow-sm">
+                            <div class="card-body text-center">
+                                <h6 class="text-muted mb-2">Average Points</h6>
+                                <p class="fs-4 fw-bold mb-0" id="averagePoints">0</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card shadow-sm">
+                            <div class="card-body text-center">
+                                <h6 class="text-muted mb-2">Your Percentile</h6>
+                                <p class="fs-4 fw-bold mb-0" id="userPercentile">N/A</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Top Performers -->
+                <h5 class="mb-3">Top Performers</h5>
+                <div class="row mb-4" id="topPerformersRow">
+                    <!-- First Place -->
+                    <div class="col-md-4 mb-3" id="performerCard1" style="display:none;">
+                        <div class="card h-100" style="background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);">
+                            <div class="card-body position-relative">
+                                <div class="position-absolute top-0 end-0 mt-3 me-3">
+                                    <div style="width: 40px; height: 40px; background-color: #ffd700; border-radius: 50%; 
+                                                display: flex; align-items: center; justify-content: center; 
+                                                font-weight: bold; font-size: 1.2rem; color: #7D6608;">1</div>
+                                </div>
+                                <h6 class="text-uppercase mb-1" style="font-size: 0.8rem; color: rgba(0, 0, 0, 0.6);">Top Performer</h6>
+                                <h4 id="performerName1" class="mb-1">N/A</h4>
+                                <div class="small mb-2">
+                                    <i class="fas fa-building me-1"></i><span id="performerDept1">Dept</span> | 
+                                    <i class="fas fa-certificate me-1"></i><span id="performerGrade1">Grade</span>
+                                </div>
+                                <p class="fs-5 fw-bold mb-0">Points: <span id="performerPoints1">0</span></p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Second Place -->
+                    <div class="col-md-4 mb-3" id="performerCard2" style="display:none;">
+                        <div class="card h-100" style="background: linear-gradient(135deg, #E0EAFC 0%, #CFDEF3 100%);">
+                            <div class="card-body position-relative">
+                                <div class="position-absolute top-0 end-0 mt-3 me-3">
+                                    <div style="width: 40px; height: 40px; background-color: #C0C0C0; border-radius: 50%; 
+                                                display: flex; align-items: center; justify-content: center; 
+                                                font-weight: bold; font-size: 1.2rem; color: #444;">2</div>
+                                </div>
+                                <h6 class="text-uppercase mb-1" style="font-size: 0.8rem; color: rgba(0, 0, 0, 0.6);">Runner Up</h6>
+                                <h4 id="performerName2" class="mb-1">N/A</h4>
+                                <div class="small mb-2">
+                                    <i class="fas fa-building me-1"></i><span id="performerDept2">Dept</span> | 
+                                    <i class="fas fa-certificate me-1"></i><span id="performerGrade2">Grade</span>
+                                </div>
+                                <p class="fs-5 fw-bold mb-0">Points: <span id="performerPoints2">0</span></p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Third Place -->
+                    <div class="col-md-4 mb-3" id="performerCard3" style="display:none;">
+                        <div class="card h-100" style="background: linear-gradient(135deg, #ffd1b3 0%, #ffb199 100%);">
+                            <div class="card-body position-relative">
+                                <div class="position-absolute top-0 end-0 mt-3 me-3">
+                                    <div style="width: 40px; height: 40px; background-color: #CD7F32; border-radius: 50%; 
+                                                display: flex; align-items: center; justify-content: center; 
+                                                font-weight: bold; font-size: 1.2rem; color: white;">3</div>
+                                </div>
+                                <h6 class="text-uppercase mb-1" style="font-size: 0.8rem; color: rgba(0, 0, 0, 0.6);">Third Place</h6>
+                                <h4 id="performerName3" class="mb-1">N/A</h4>
+                                <div class="small mb-2">
+                                    <i class="fas fa-building me-1"></i><span id="performerDept3">Dept</span> | 
+                                    <i class="fas fa-certificate me-1"></i><span id="performerGrade3">Grade</span>
+                                </div>
+                                <p class="fs-5 fw-bold mb-0">Points: <span id="performerPoints3">0</span></p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12" id="noTopPerformers" style="display:none;">
+                        <div class="alert alert-light text-center">
+                            <i class="fas fa-info-circle me-2"></i>No top performers to display with current filters
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Detailed Rankings -->
+                <h5 class="mb-3">Detailed Rankings</h5>
+                <div id="leaderboardContent" class="table-responsive">
+                    <table class="table table-hover modern-table" id="leaderboardTable">
+                        <thead>
+                            <tr>
+                                <th>Rank</th>
+                                <th>Name</th>
+                                <th>Department</th>
+                                <th>Grade</th>
+                                <th>Points</th>
+                            </tr>
+                        </thead>
+                        <tbody id="leaderboardTableBody">
+                            <tr>
+                                <td colspan="5" class="text-center py-4">
+                                    <div class="spinner-border spinner-border-sm text-primary" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                    <span class="ms-2">Loading leaderboard data...</span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div id="leaderboardNoData" class="alert alert-info" style="display: none;">
+                    <i class="fas fa-info-circle me-2"></i>No data available for the selected filters.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Pass initial data to JavaScript -->
+<script>
+    var initialLeaderboardData = {{ initial_leaderboard_data | tojson | safe }};
+</script>
+
+<!-- Leaderboard JavaScript -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // ==========================================
+    // INITIALIZE WITH INITIAL DATA
+    // ==========================================
+    if (initialLeaderboardData) {
+        populateLeaderboard(initialLeaderboardData);
+    }
+
+    // ==========================================
+    // APPLY FILTERS BUTTON
+    // ==========================================
+    document.getElementById('applyLeaderboardFilters').addEventListener('click', function() {
+        const filters = {
+            year: document.getElementById('leaderboardYearFilter').value,
+            quarter: document.getElementById('leaderboardQuarterFilter').value,
+            department: document.getElementById('leaderboardDepartmentFilter').value,
+            grade: document.getElementById('leaderboardGradeFilter').value,
+            category: document.getElementById('leaderboardCategoryFilter').value
+        };
+
+        fetchLeaderboardData(filters);
+    });
+
+    // ==========================================
+    // RESET FILTERS BUTTON
+    // ==========================================
+    document.getElementById('resetLeaderboardFilters').addEventListener('click', function() {
+        // Reset all filter dropdowns
+        document.getElementById('leaderboardYearFilter').value = 'all';
+        document.getElementById('leaderboardQuarterFilter').value = 'all';
+        document.getElementById('leaderboardDepartmentFilter').value = 'all';
+        document.getElementById('leaderboardGradeFilter').value = 'all';
+        document.getElementById('leaderboardCategoryFilter').value = 'all';
+
+        // Fetch data with no filters
+        fetchLeaderboardData({
+            year: 'all',
+            quarter: 'all',
+            department: 'all',
+            grade: 'all',
+            category: 'all',
+            quarter: 'all'
+        });
+    });
+
+    // ==========================================
+    // FETCH LEADERBOARD DATA
+    // ==========================================
+    function fetchLeaderboardData(filters) {
+        // Show loading overlay
+        document.getElementById('leaderboardLoadingOverlay').style.display = 'block';
+        document.getElementById('leaderboardMainContent').style.opacity = '0.3';
+
+        // Build query string
+        const queryParams = new URLSearchParams(filters);
+        const url = '/employee/get-leaderboard-data?' + queryParams.toString();
+
+        fetch(url)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                populateLeaderboard(data);
+            })
+            .catch(error => {
+                showError('Failed to load leaderboard data. Please try again.');
+            })
+            .finally(() => {
+                // Hide loading overlay
+                document.getElementById('leaderboardLoadingOverlay').style.display = 'none';
+                document.getElementById('leaderboardMainContent').style.opacity = '1';
+            });
+    }
+
+    // ==========================================
+    // POPULATE LEADERBOARD
+    // ==========================================
+    function populateLeaderboard(data) {
+        if (!data) {
+            showError('No data available');
+            return;
+        }
+
+        // ==========================================
+        // 1. POPULATE USER RANK DETAILS
+        // ==========================================
+        const userRankDetails = data.user_rank_details;
+        if (userRankDetails) {
+            document.getElementById('currentUserRankValue').textContent = userRankDetails.rank || 'N/A';
+            document.getElementById('currentUserPointsValue').textContent = userRankDetails.points || 0;
+            document.getElementById('currentUserDetails').textContent = 
+                `Dept: ${userRankDetails.department || 'N/A'} | Grade: ${userRankDetails.grade || 'N/A'}`;
+        } else {
+            document.getElementById('currentUserRankValue').textContent = 'N/A';
+            document.getElementById('currentUserPointsValue').textContent = '0';
+            document.getElementById('currentUserDetails').textContent = 'Dept: N/A | Grade: N/A';
+        }
+
+        // ==========================================
+        // 2. POPULATE NEXT RANK INFO
+        // ==========================================
+        const pointsToNext = data.points_to_next_rank;
+        const personAbove = data.person_above;
+
+        // Hide all next rank sections first
+        document.getElementById('nextRankInfo').style.display = 'none';
+        document.getElementById('atTopRankInfo').style.display = 'none';
+        document.getElementById('noRankInfo').style.display = 'none';
+
+        if (pointsToNext === 0) {
+            // User is at the top
+            document.getElementById('atTopRankInfo').style.display = 'block';
+        } else if (pointsToNext && pointsToNext !== 'N/A' && personAbove) {
+            // User has a rank and can move up
+            document.getElementById('nextRankInfo').style.display = 'block';
+            document.getElementById('nextRankMessage').innerHTML = 
+                `<strong>${pointsToNext}</strong> points needed to reach rank <strong>${personAbove.rank}</strong>`;
+            document.getElementById('personAboveName').textContent = personAbove.name || 'N/A';
+        } else if (userRankDetails && userRankDetails.rank === 'N/A') {
+            // User is not ranked
+            document.getElementById('noRankInfo').style.display = 'block';
+        } else {
+            // Default case
+            document.getElementById('nextRankInfo').style.display = 'block';
+            document.getElementById('nextRankMessage').textContent = 'Keep earning points to improve your rank!';
+            document.getElementById('personAboveName').textContent = 'N/A';
+        }
+
+        // ==========================================
+        // 3. POPULATE STATS SUMMARY
+        // ==========================================
+        document.getElementById('totalParticipants').textContent = data.all_count || 0;
+        document.getElementById('averagePoints').textContent = 
+            data.average_points ? data.average_points.toFixed(2) : '0';
+
+        // Calculate percentile
+        if (userRankDetails && userRankDetails.rank !== 'N/A' && data.all_count > 0) {
+            const percentile = ((data.all_count - userRankDetails.rank + 1) / data.all_count * 100).toFixed(1);
+            document.getElementById('userPercentile').textContent = percentile + '%';
+        } else {
+            document.getElementById('userPercentile').textContent = 'N/A';
+        }
+
+        // ==========================================
+        // 4. POPULATE TOP 3 PERFORMERS
+        // ==========================================
+        const top3 = data.top_3_employees || [];
+        
+        // Hide all performer cards first
+        for (let i = 1; i <= 3; i++) {
+            document.getElementById(`performerCard${i}`).style.display = 'none';
+        }
+        
+        if (top3.length === 0) {
+            document.getElementById('noTopPerformers').style.display = 'block';
+        } else {
+            document.getElementById('noTopPerformers').style.display = 'none';
+            
+            // Show and populate performer cards
+            top3.forEach((performer, index) => {
+                const cardNum = index + 1;
+                document.getElementById(`performerCard${cardNum}`).style.display = 'block';
+                document.getElementById(`performerName${cardNum}`).textContent = performer.name || 'N/A';
+                document.getElementById(`performerDept${cardNum}`).textContent = performer.department || 'N/A';
+                document.getElementById(`performerGrade${cardNum}`).textContent = performer.grade || 'N/A';
+                document.getElementById(`performerPoints${cardNum}`).textContent = performer.points || 0;
+            });
+        }
+
+        // ==========================================
+        // 5. POPULATE LEADERBOARD TABLE
+        // ==========================================
+        const tableData = data.leaderboard_table_data || [];
+        const tableBody = document.getElementById('leaderboardTableBody');
+        const leaderboardNoData = document.getElementById('leaderboardNoData');
+
+        if (tableData.length === 0) {
+            // No data to display
+            tableBody.innerHTML = '';
+            leaderboardNoData.style.display = 'block';
+            document.getElementById('leaderboardContent').style.display = 'none';
+        } else {
+            // Populate table
+            leaderboardNoData.style.display = 'none';
+            document.getElementById('leaderboardContent').style.display = 'block';
+            
+            let tableHTML = '';
+            tableData.forEach(emp => {
+                // Determine rank badge style
+                let rankBadgeClass = 'badge bg-secondary';
+                let rankBadgeStyle = '';
+                
+                if (emp.rank === 1) {
+                    rankBadgeStyle = 'background-color: #ffd700; color: #7D6608;';
+                } else if (emp.rank === 2) {
+                    rankBadgeStyle = 'background-color: #C0C0C0; color: #444;';
+                } else if (emp.rank === 3) {
+                    rankBadgeStyle = 'background-color: #CD7F32; color: white;';
+                }
+
+                // Highlight current user's row
+                const isCurrentUser = userRankDetails && emp.user_id === userRankDetails.user_id;
+                const rowClass = isCurrentUser ? 'table-primary' : '';
+
+                tableHTML += `
+                    <tr class="${rowClass}">
+                        <td>
+                            ${rankBadgeStyle ? 
+                                `<span class="badge" style="${rankBadgeStyle}">${emp.rank}</span>` : 
+                                `<span class="badge bg-secondary">${emp.rank || 'N/A'}</span>`
+                            }
+                            ${isCurrentUser ? '<i class="fas fa-user-circle ms-2 text-primary"></i>' : ''}
+                        </td>
+                        <td class="fw-bold">${emp.name || 'N/A'}</td>
+                        <td>${emp.department || 'N/A'}</td>
+                        <td><span class="badge bg-info">${emp.grade || 'N/A'}</span></td>
+                        <td><strong class="text-primary">${emp.points || 0}</strong></td>
+                    </tr>
+                `;
+            });
+            
+            tableBody.innerHTML = tableHTML;
+        }
+    }
+
+    // ==========================================
+    // ERROR HANDLING
+    // ==========================================
+    function showError(message) {
+        const tableBody = document.getElementById('leaderboardTableBody');
+        tableBody.innerHTML = `
+            <tr>
+                <td colspan="5" class="text-center text-danger py-4">
+                    <i class="fas fa-exclamation-triangle me-2"></i>${message}
+                </td>
+            </tr>
+        `;
+        
+        // Hide other sections
+        document.getElementById('noTopPerformers').style.display = 'block';
+        for (let i = 1; i <= 3; i++) {
+            document.getElementById(`performerCard${i}`).style.display = 'none';
+        }
+    }
+});
+</script>
+{% endblock %}

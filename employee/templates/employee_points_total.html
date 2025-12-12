@@ -1,0 +1,734 @@
+{% extends "employee_base.html" %}
+
+{% block title %}Total Points History{% endblock %}
+{% block nav_points %}active{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="card">
+        <div class="card-header pmo-header-secondary">
+            <div class="d-flex align-items-center">
+                <div class="topbar-icon">
+                    <i class="fas fa-filter"></i>
+                </div>
+                <div class="topbar-info">
+                    <div class="topbar-title">Total Points History</div>
+                    <div class="topbar-subtitle">Employee requests and manager awards</div>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <!-- Filters -->
+            <div class="row mb-3">
+                <div class="col-md mb-2">
+                    <label for="yearFilter" class="form-label">Year</label>
+                    <select class="form-select" id="yearFilter">
+                        <option value="all">All Years</option>
+                    </select>
+                </div>
+                <div class="col-md mb-2">
+                    <label for="quarterFilter" class="form-label">Quarter</label>
+                    <select class="form-select" id="quarterFilter">
+                        <option value="all">All Quarters</option>
+                    </select>
+                </div>
+                <div class="col-md mb-2">
+                    <label for="categoryFilter" class="form-label">Category</label>
+                    <select class="form-select" id="categoryFilter">
+                        <option value="all">All Categories</option>
+                    </select>
+                </div>
+                <div class="col-md mb-2">
+                    <label for="sourceFilter" class="form-label">Source</label>
+                    <select class="form-select" id="sourceFilter">
+                        <option value="all">All Sources</option>
+                        <option value="Employee Request">Employee Request</option>
+                        <option value="Direct Award">Direct Award</option>
+                    </select>
+                </div>
+                <div class="col-md mb-2">
+                    <label for="pointTypeFilter" class="form-label">Point Type</label>
+                    <select class="form-select" id="pointTypeFilter">
+                        <option value="all">All Points</option>
+                        <option value="regular">Regular Points</option>
+                        <option value="bonus">Bonus Points</option>
+                    </select>
+                </div>
+                <div class="col-md mb-2">
+                    <label for="statusFilter" class="form-label">Status</label>
+                    <select class="form-select" id="statusFilter">
+                        <option value="all">All Status</option>
+                        <option value="Approved">Approved</option>
+                        <option value="Pending">Pending</option>
+                        <option value="Rejected">Rejected</option>
+                    </select>
+                </div>
+            </div>
+            <div class="row mb-4 justify-content-end">
+                <div class="col-md-auto mb-2">
+                    <button class="btn btn-primary" id="applyFilters">
+                        <i class="fas fa-search"></i> Apply Filters
+                    </button>
+                </div>
+                <div class="col-md-auto mb-2">
+                    <button class="btn btn-outline-secondary" id="resetFilters">
+                        <i class="fas fa-undo"></i> Reset Filters
+                    </button>
+                </div>
+            </div>
+
+            <!-- Summary Cards -->
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <div class="card bg-light">
+                        <div class="card-body text-center">
+                            <h6>Total Regular Points</h6>
+                            <h2 class="text-primary" id="totalRegularPoints">{{ total_points|default(0)|int }}</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-light">
+                        <div class="card-body text-center">
+                            <h6>Total Bonus Points</h6>
+                            <h2 class="text-warning" id="totalBonusPoints">{{ total_bonus_points|default(0) }}</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-light">
+                        <div class="card-body text-center">
+                            <h6>Total Combined Points</h6>
+                            <h2 class="text-success" id="totalCombinedPoints">
+                                {{ (total_points|default(0)|int) + (total_bonus_points|default(0)|int) }}
+                            </h2>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Table -->
+            <div class="table-responsive">
+                <table class="table table-hover modern-table" id="totalPointsTable">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Category</th>
+                            <th>Points / Value</th>
+                            <th>Type</th>
+                            <th>Source</th>
+                            <th>Validator</th>
+                            <th>Status</th>
+                            <th>Notes</th>
+                            <th>Attachment</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for req in request_history %}
+                        <tr data-category="{{ req.category_name }}" 
+                            data-source="{{ req.display_source }}"
+                            data-quarter="{{ req.quarter_label or '' }}"
+                            data-year="{{ req.display_date.strftime('%Y') if req.display_date else '' }}"
+                            data-date="{{ req.display_date.strftime('%Y-%m-%d') if req.display_date else '' }}"
+                            data-is-bonus="{{ 'true' if req.is_bonus else 'false' }}"
+                            data-is-utilization="{{ 'true' if req.is_utilization else 'false' }}"
+                            data-status="{{ req.status }}"
+                            data-points="{{ req.points }}"
+                            class="{% if req.status == 'Rejected' %}table-danger{% elif req.is_bonus %}table-warning{% endif %}">
+                            
+                            <td>{{ req.display_date.strftime('%d/%m/%Y') if req.display_date else 'N/A' }}</td>
+                            <td>{{ req.category_name }}</td>
+                            <td>
+                                {% if req.is_utilization %}
+                                <span class="badge bg-info text-white" style="font-size: 0.95rem; padding: 6px 12px;">
+                                    <i></i>{{ req.display_value }}
+                                </span>
+                                {% elif req.is_bonus %}
+                                <span class="text-warning fw-bold">{{ req.display_value }}</span>
+                                {% else %}
+                                {{ req.display_value }}
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if req.is_utilization %}
+                                <span class="badge bg-info">
+                                    <i></i> Utilization
+                                </span>
+                                {% elif req.is_bonus %}
+                                <span class="badge bg-warning text-dark">
+                                    <i class="fas fa-star"></i> Bonus
+                                </span>
+                                {% else %}
+                                <span class="badge bg-info">Regular</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if req.display_source == 'Employee Request' %}
+                                <span class="badge bg-primary">Employee Request</span>
+                                {% else %}
+                                <span class="badge bg-success">Direct Award</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if req.validator_name %}
+                                <span class="badge bg-info">{{ req.validator_name }}</span>
+                                {% else %}
+                                <span class="text-muted">N/A</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if req.status == 'Approved' %}
+                                <span class="badge bg-success">Approved</span>
+                                {% elif req.status == 'Rejected' %}
+                                <span class="badge bg-danger">Rejected</span>
+                                {% else %}
+                                <span class="badge bg-warning text-dark">{{ req.status }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% set notes_to_display = req.response_notes or req.submission_notes %}
+                                {% if notes_to_display and notes_to_display != 'N/A' %}
+                                <button class="btn btn-sm btn-outline-primary view-note-btn"
+                                        data-notes="{{ notes_to_display | e }}"
+                                        data-category="{{ req.category_name }}"
+                                        data-date="{{ req.display_date.strftime('%d/%m/%Y') if req.display_date else 'N/A' }}">
+                                    <i class="fas fa-eye me-1"></i> View
+                                </button>
+                                {% else %}
+                                <span class="text-muted">No notes</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if req.has_attachment %}
+                                <a href="{{ url_for('employee_points_total.get_attachment', request_id=req.id) }}"
+                                class="btn btn-sm btn-info">
+                                    <i class="fas fa-download"></i> Download
+                                </a>
+                                {% else %}
+                                <span class="text-muted">None</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Notes Modal -->
+<div class="modal fade" id="notesModal" tabindex="-1" role="dialog" aria-labelledby="notesModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="notesModalLabel">
+                    <i class="fas fa-sticky-note me-2"></i>Request Notes
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <strong>Category:</strong> <span id="modalCategory"></span>
+                </div>
+                <div class="mb-3">
+                    <strong>Date:</strong> <span id="modalDate"></span>
+                </div>
+                <div>
+                    <strong>Notes:</strong>
+                    <div class="p-3 bg-light rounded mt-2" id="modalNotesContent" style="white-space: pre-wrap; word-wrap: break-word; overflow-wrap: break-word;"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>Close
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<style>
+/* Cross-browser modal fixes for Opera Mini, Firefox, Edge, Chrome */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1050;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    outline: 0;
+}
+
+.modal.show {
+    display: block !important;
+}
+
+.modal-dialog {
+    position: relative;
+    width: auto;
+    margin: 0.5rem;
+    pointer-events: none;
+}
+
+@media (min-width: 576px) {
+    .modal-dialog {
+        max-width: 500px;
+        margin: 1.75rem auto;
+    }
+}
+
+@media (min-width: 992px) {
+    .modal-dialog.modal-lg {
+        max-width: 800px;
+    }
+}
+
+.modal-content {
+    position: relative;
+    display: -webkit-box;
+    display: -ms-flexbox;
+    display: flex;
+    -webkit-box-orient: vertical;
+    -webkit-box-direction: normal;
+    -ms-flex-direction: column;
+    flex-direction: column;
+    width: 100%;
+    pointer-events: auto;
+    background-color: #fff;
+    background-clip: padding-box;
+    border: 1px solid rgba(0,0,0,.2);
+    border-radius: 0.3rem;
+    outline: 0;
+}
+
+.modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 1040;
+    width: 100vw;
+    height: 100vh;
+    background-color: #000;
+}
+
+.modal-backdrop.show {
+    opacity: 0.5;
+}
+
+/* Button styling for cross-browser */
+.view-note-btn {
+    cursor: pointer;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+.view-note-btn:hover {
+    opacity: 0.8;
+}
+
+/* Ensure proper text wrapping in all browsers */
+#modalNotesContent {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    -webkit-hyphens: auto;
+    -moz-hyphens: auto;
+    -ms-hyphens: auto;
+    hyphens: auto;
+}
+</style>
+
+<script>
+let table;
+
+$(document).ready(function() {
+    // ✅ Ensure totals are displayed correctly on page load (cross-browser fix)
+    var regularPoints = parseInt($('#totalRegularPoints').text()) || 0;
+    var bonusPoints = parseInt($('#totalBonusPoints').text()) || 0;
+    var combinedPoints = parseInt($('#totalCombinedPoints').text()) || 0;
+    
+    // Force update to ensure proper display
+    $('#totalRegularPoints').text(regularPoints);
+    $('#totalBonusPoints').text(bonusPoints);
+    $('#totalCombinedPoints').text(combinedPoints);
+    
+    console.log('Initial totals loaded:', { regular: regularPoints, bonus: bonusPoints, combined: combinedPoints });
+    
+    // ✅ Initialize DataTable
+    table = $('#totalPointsTable').DataTable({
+        order: [[0, 'desc']],
+        pageLength: 25,
+        lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
+        language: {
+            search: "_INPUT_",
+            searchPlaceholder: "Search records...",
+            lengthMenu: "Show _MENU_ entries",
+            info: "Showing _START_ to _END_ of _TOTAL_ entries"
+        },
+        initComplete: function() {
+            // ✅ Populate filters AFTER DataTable is fully initialized
+            populateFiltersFromTable();
+        }
+    });
+    
+    // ✅ Notes modal handler - Cross-browser compatible
+    $(document).on('click', '.view-note-btn', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        const notes = $(this).data('notes') || $(this).attr('data-notes') || 'No notes available';
+        const category = $(this).data('category') || $(this).attr('data-category') || 'N/A';
+        const date = $(this).data('date') || $(this).attr('data-date') || 'N/A';
+        
+        console.log('Opening notes modal:', { category, date, notes });
+        
+        // Set modal content
+        $('#modalCategory').text(category);
+        $('#modalDate').text(date);
+        $('#modalNotesContent').text(notes);
+        
+        // Show modal with cross-browser support
+        try {
+            const modalElement = document.getElementById('notesModal');
+            if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+                // Bootstrap 5 method
+                const modal = new bootstrap.Modal(modalElement);
+                modal.show();
+            } else {
+                // Fallback for older Bootstrap or jQuery
+                $('#notesModal').modal('show');
+            }
+        } catch (error) {
+            console.error('Error showing modal:', error);
+            // Last resort fallback
+            $('#notesModal').modal('show');
+        }
+    });
+    
+    // ✅ Apply filters button
+    $('#applyFilters').click(function() {
+        applyFilters();
+    });
+    
+    // ✅ Reset filters button
+    $('#resetFilters').click(function() {
+        // Reset all filter dropdowns
+        $('#yearFilter').val('all');
+        $('#quarterFilter').val('all');
+        $('#categoryFilter').val('all');
+        $('#sourceFilter').val('all');
+        $('#pointTypeFilter').val('all');
+        $('#statusFilter').val('all');
+        
+        // Show loading state for reset button
+        $('#resetFilters').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Resetting...');
+        
+        // Fetch data with all filters set to 'all'
+        $.ajax({
+            url: '/employee/api/filter-points',
+            method: 'POST',
+            contentType: 'application/json; charset=utf-8',
+            dataType: 'json',
+            data: JSON.stringify({
+                year: 'all',
+                quarter: 'all',
+                category: 'all',
+                source: 'all',
+                pointType: 'all',
+                status: 'all'
+            }),
+            success: function(response) {
+                console.log('Reset - Filtered data received:', response);
+                
+                // ✅ Update totals with explicit integer conversion for cross-browser compatibility
+                $('#totalRegularPoints').text(Math.floor(response.totals.regular || 0));
+                $('#totalBonusPoints').text(Math.floor(response.totals.bonus || 0));
+                $('#totalCombinedPoints').text(Math.floor(response.totals.combined || 0));
+                
+                // Clear and reload DataTable
+                reloadTableWithData(response.data);
+                
+                // Reset button state
+                $('#resetFilters').prop('disabled', false).html('<i class="fas fa-undo"></i> Reset');
+            },
+            error: function(xhr, status, error) {
+                console.error('Reset filter error:', error);
+                alert('Error resetting filters. Please try again.');
+                $('#resetFilters').prop('disabled', false).html('<i class="fas fa-undo"></i> Reset');
+            }
+        });
+    });
+    
+    // ✅ Set initial totals from server on page load
+    // Store server totals for reset functionality
+    window.serverTotals = {
+        regular: {{ (total_points|default(0)|int) }},
+        bonus: {{ (total_bonus_points|default(0)|int) }},
+        combined: {{ ((total_points|default(0)|int) + (total_bonus_points|default(0)|int)) }}
+    };
+    
+    console.log('Server totals:', window.serverTotals);
+});
+
+// ✅ Populate filters from table data
+function populateFiltersFromTable() {
+    const categories = new Set();
+    const quarters = new Set();
+    const years = new Set();
+    const pointTypes = new Set();
+    const statuses = new Set();
+    
+    // ✅ FIX: Use DataTable API to get ALL rows (not just visible 25)
+    const table = $('#totalPointsTable').DataTable();
+    table.rows().every(function() {
+        const row = $(this.node());
+        const category = row.data('category');
+        const quarter = row.data('quarter');
+        const year = row.data('year');
+        const status = row.data('status');
+        const isBonus = row.data('is-bonus') === 'true';
+        const isUtilization = row.data('is-utilization') === 'true';
+        
+        if (category) categories.add(category);
+        if (quarter) quarters.add(quarter);
+        if (year) years.add(year);
+        if (status) statuses.add(status);
+        
+        // Determine point type
+        if (isBonus) {
+            pointTypes.add('bonus');
+        } else if (isUtilization) {
+            pointTypes.add('utilization');
+        } else {
+            pointTypes.add('regular');
+        }
+    });
+    
+    // Populate category dropdown
+    const categoryFilter = $('#categoryFilter');
+    Array.from(categories).sort().forEach(cat => {
+        categoryFilter.append(`<option value="${cat}">${cat}</option>`);
+    });
+    
+    // ✅ Populate year dropdown (sorted descending)
+    const yearFilter = $('#yearFilter');
+    const sortedYears = Array.from(years).filter(y => y).sort((a, b) => b - a);
+    sortedYears.forEach(y => {
+        yearFilter.append(`<option value="${y}">${y}</option>`);
+    });
+    
+    // ✅ Populate quarter dropdown - show Q1, Q2, Q3, Q4 only
+    const quarterFilter = $('#quarterFilter');
+    
+    // Extract unique quarters from the data
+    const uniqueQuarters = new Set();
+    Array.from(quarters).forEach(q => {
+        if (q) {
+            // Extract quarter number from "FY2025 Q1" format
+            const match = q.match(/Q(\d+)/);
+            if (match) {
+                uniqueQuarters.add(parseInt(match[1]));
+            }
+        }
+    });
+    
+    // Sort quarters (Q1, Q2, Q3, Q4)
+    const sortedQuarters = Array.from(uniqueQuarters).sort((a, b) => a - b);
+    
+    // Add quarters to dropdown
+    sortedQuarters.forEach(q => {
+        quarterFilter.append(`<option value="Q${q}">Q${q}</option>`);
+    });
+    
+    // ✅ Populate point type dropdown dynamically
+    const pointTypeFilter = $('#pointTypeFilter');
+    // Clear existing options except "All Points"
+    pointTypeFilter.find('option:not(:first)').remove();
+    
+    // Add point types in specific order if they exist
+    if (pointTypes.has('regular')) {
+        pointTypeFilter.append('<option value="regular">Regular Points</option>');
+    }
+    if (pointTypes.has('bonus')) {
+        pointTypeFilter.append('<option value="bonus">Bonus Points</option>');
+    }
+    if (pointTypes.has('utilization')) {
+        pointTypeFilter.append('<option value="utilization">Utilization</option>');
+    }
+    
+    // ✅ Populate status dropdown dynamically
+    const statusFilter = $('#statusFilter');
+    // Clear existing options except "All Status"
+    statusFilter.find('option:not(:first)').remove();
+    
+    // Add statuses in specific order if they exist
+    const statusOrder = ['Approved', 'Pending', 'Rejected'];
+    statusOrder.forEach(status => {
+        if (statuses.has(status)) {
+            statusFilter.append(`<option value="${status}">${status}</option>`);
+        }
+    });
+}
+
+// ✅ Apply filters function - Fetch filtered data from backend
+function applyFilters() {
+    const yearVal = $('#yearFilter').val();
+    const quarterVal = $('#quarterFilter').val();
+    const categoryVal = $('#categoryFilter').val();
+    const sourceVal = $('#sourceFilter').val();
+    const pointTypeVal = $('#pointTypeFilter').val();
+    const statusVal = $('#statusFilter').val();
+    
+    console.log('Applying filters:', {
+        year: yearVal,
+        quarter: quarterVal,
+        category: categoryVal,
+        source: sourceVal,
+        pointType: pointTypeVal,
+        status: statusVal
+    });
+    
+    // Show loading state
+    $('#applyFilters').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Loading...');
+    
+    // Call backend API to get filtered data
+    $.ajax({
+        url: '/employee/api/filter-points',
+        method: 'POST',
+        contentType: 'application/json; charset=utf-8',
+        dataType: 'json',
+        data: JSON.stringify({
+            year: yearVal,
+            quarter: quarterVal,
+            category: categoryVal,
+            source: sourceVal,
+            pointType: pointTypeVal,
+            status: statusVal
+        }),
+        success: function(response) {
+            console.log('Filtered data received:', response);
+            
+            // ✅ Update totals with explicit integer conversion for cross-browser compatibility
+            $('#totalRegularPoints').text(Math.floor(response.totals.regular || 0));
+            $('#totalBonusPoints').text(Math.floor(response.totals.bonus || 0));
+            $('#totalCombinedPoints').text(Math.floor(response.totals.combined || 0));
+            
+            // Clear and reload DataTable
+            reloadTableWithData(response.data);
+            
+            // Reset button state
+            $('#applyFilters').prop('disabled', false).html('<i class="fas fa-search"></i> Apply Filters');
+        },
+        error: function(xhr, status, error) {
+            console.error('Filter error:', error);
+            alert('Error applying filters. Please try again.');
+            $('#applyFilters').prop('disabled', false).html('<i class="fas fa-search"></i> Apply Filters');
+        }
+    });
+}
+
+// ✅ Reload DataTable with new filtered data
+function reloadTableWithData(data) {
+    // Destroy existing DataTable
+    if (table) {
+        table.destroy();
+    }
+    
+    // Clear table body
+    $('#totalPointsTable tbody').empty();
+    
+    // Build new rows
+    data.forEach(function(row) {
+        const statusBadge = row.status === 'Approved' ? 
+            '<span class="badge bg-success">Approved</span>' :
+            row.status === 'Rejected' ?
+            '<span class="badge bg-danger">Rejected</span>' :
+            '<span class="badge bg-warning text-dark">' + row.status + '</span>';
+        
+        const sourceBadge = row.display_source === 'Employee Request' ?
+            '<span class="badge bg-primary">Employee Request</span>' :
+            '<span class="badge bg-success">Direct Award</span>';
+        
+        let typeBadge = '';
+        if (row.is_utilization) {
+            typeBadge = '<span class="badge bg-info"><i></i> Utilization</span>';
+        } else if (row.is_bonus) {
+            typeBadge = '<span class="badge bg-warning text-dark"><i class="fas fa-star"></i> Bonus</span>';
+        } else {
+            typeBadge = '<span class="badge bg-info">Regular</span>';
+        }
+        
+        let pointsDisplay = '';
+        if (row.is_utilization) {
+            pointsDisplay = '<span class="badge bg-info text-white" style="font-size: 0.95rem; padding: 6px 12px;"><i></i>' + row.display_value + '</span>';
+        } else if (row.is_bonus) {
+            pointsDisplay = '<span class="text-warning fw-bold">' + row.display_value + '</span>';
+        } else {
+            pointsDisplay = row.display_value;
+        }
+        
+        const validatorDisplay = row.validator_name !== 'N/A' ?
+            '<span class="badge bg-info">' + row.validator_name + '</span>' :
+            '<span class="text-muted">N/A</span>';
+        
+        const notesToDisplay = row.response_notes || row.submission_notes;
+        const notesButton = (notesToDisplay && notesToDisplay !== 'N/A') ?
+            '<button class="btn btn-sm btn-outline-primary view-note-btn" data-notes="' + 
+            $('<div>').text(notesToDisplay).html() + '" data-category="' + row.category_name + 
+            '" data-date="' + row.display_date + '"><i class="fas fa-eye me-1"></i> View</button>' :
+            '<span class="text-muted">No notes</span>';
+        
+        const attachmentButton = row.has_attachment ?
+            '<a href="/employee/get-attachment/' + row.id + '" class="btn btn-sm btn-info"><i class="fas fa-download"></i> Download</a>' :
+            '<span class="text-muted">None</span>';
+        
+        const rowClass = row.status === 'Rejected' ? 'table-danger' : (row.is_bonus ? 'table-warning' : '');
+        
+        const newRow = '<tr class="' + rowClass + '" ' +
+            'data-category="' + row.category_name + '" ' +
+            'data-source="' + row.display_source + '" ' +
+            'data-quarter="' + row.quarter_label + '" ' +
+            'data-year="' + row.year + '" ' +
+            'data-date="' + row.display_date_iso + '" ' +
+            'data-is-bonus="' + row.is_bonus + '" ' +
+            'data-is-utilization="' + row.is_utilization + '" ' +
+            'data-status="' + row.status + '" ' +
+            'data-points="' + row.points + '">' +
+            '<td>' + row.display_date + '</td>' +
+            '<td>' + row.category_name + '</td>' +
+            '<td>' + pointsDisplay + '</td>' +
+            '<td>' + typeBadge + '</td>' +
+            '<td>' + sourceBadge + '</td>' +
+            '<td>' + validatorDisplay + '</td>' +
+            '<td>' + statusBadge + '</td>' +
+            '<td>' + notesButton + '</td>' +
+            '<td>' + attachmentButton + '</td>' +
+            '</tr>';
+        
+        $('#totalPointsTable tbody').append(newRow);
+    });
+    
+    // Reinitialize DataTable
+    table = $('#totalPointsTable').DataTable({
+        order: [[0, 'desc']],
+        pageLength: 25,
+        lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
+        language: {
+            search: "_INPUT_",
+            searchPlaceholder: "Search records...",
+            lengthMenu: "Show _MENU_ entries",
+            info: "Showing _START_ to _END_ of _TOTAL_ entries"
+        }
+    });
+    
+    console.log('Table reloaded with ' + data.length + ' rows');
+}
+</script>
+{% endblock %}

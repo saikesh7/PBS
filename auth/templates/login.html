@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+  <title>Login - PBS System</title>
+
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <!-- Font Awesome -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #f8f9fa;
+      min-height: 100vh;
+      position: relative;
+      margin: 0;
+      padding: 0;
+      overflow-x: hidden;
+      overflow-y: auto;
+    }
+
+    /* Background Design */
+    .background-shape {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(100px);
+      opacity: 0.3;
+      animation: float 20s infinite ease-in-out;
+      z-index: 0;
+    }
+
+    .shape-1 {
+      width: 400px;
+      height: 400px;
+      background: #667eea;
+      top: -200px;
+      left: -200px;
+    }
+
+    .shape-2 {
+      width: 300px;
+      height: 300px;
+      background: #764ba2;
+      bottom: -150px;
+      right: -150px;
+      animation-delay: 10s;
+    }
+
+    .shape-3 {
+      width: 250px;
+      height: 250px;
+      background: #f093fb;
+      top: 50%;
+      right: 10%;
+      animation-delay: 5s;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      25% { transform: translate(30px, -30px) scale(1.1); }
+      50% { transform: translate(-20px, 20px) scale(0.9); }
+      75% { transform: translate(20px, -10px) scale(1.05); }
+    }
+
+    /* Main Container */
+    .login-wrapper {
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+      z-index: 1;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    .login-container {
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+      display: flex;
+      min-height: 600px;
+      width: 100%;
+      margin: 20px 0;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Left Side - Form */
+    .login-form-section {
+      flex: 1;
+      padding: 60px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .logo-section {
+      margin-bottom: 40px;
+    }
+
+    .logo-section img {
+      height: 40px;
+      margin-bottom: 30px;
+    }
+
+    .welcome-text h2 {
+      font-size: 32px;
+      font-weight: 700;
+      color: #1a1a1a;
+      margin-bottom: 10px;
+    }
+
+    .welcome-text p {
+      color: #6c757d;
+      font-size: 16px;
+      margin-bottom: 0;
+    }
+
+    .form-section {
+      margin-top: 40px;
+    }
+
+    .form-group {
+      margin-bottom: 24px;
+    }
+
+    .form-label {
+      font-weight: 500;
+      color: #344054;
+      margin-bottom: 8px;
+      font-size: 14px;
+    }
+
+    .form-control {
+      height: 48px;
+      border: 1px solid #d0d5dd;
+      border-radius: 8px;
+      font-size: 16px;
+      padding: 12px 16px;
+      transition: all 0.2s;
+      background-color: #ffffff;
+    }
+
+    .form-control:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+    }
+
+    .password-field {
+      position: relative;
+    }
+
+    .password-toggle {
+      position: absolute;
+      right: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: #6c757d;
+      cursor: pointer;
+      padding: 4px;
+      transition: color 0.2s;
+    }
+
+    .password-toggle:hover {
+      color: #495057;
+    }
+
+    .form-options {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+
+    .remember-me {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .remember-me input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      border: 1px solid #d0d5dd;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .remember-me label {
+      font-size: 14px;
+      color: #344054;
+      cursor: pointer;
+      margin-bottom: 0;
+    }
+
+    .forgot-password {
+      color: #667eea;
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 500;
+      transition: color 0.2s;
+    }
+
+    .forgot-password:hover {
+      color: #5a67d8;
+      text-decoration: underline;
+    }
+
+    .btn-login {
+      width: 100%;
+      height: 48px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border: none;
+      border-radius: 8px;
+      color: white;
+      font-weight: 600;
+      font-size: 16px;
+      cursor: pointer;
+      transition: all 0.3s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn-login:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+    }
+
+    .btn-login:active {
+      transform: translateY(0);
+    }
+
+    /* Right Side - Image */
+    .login-image-section {
+      flex: 1;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      padding: 60px;
+    }
+
+    .image-content {
+      text-align: center;
+      color: white;
+      z-index: 1;
+    }
+
+    .image-content h3 {
+      font-size: 36px;
+      font-weight: 700;
+      margin-bottom: 20px;
+    }
+
+    .image-content p {
+      font-size: 18px;
+      opacity: 0.9;
+      line-height: 1.6;
+      margin-bottom: 40px;
+    }
+
+    .feature-list {
+      text-align: left;
+      display: inline-block;
+    }
+
+    .feature-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+      font-size: 16px;
+    }
+
+    .feature-item i {
+      width: 24px;
+      height: 24px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+    }
+
+    .pattern-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-image: 
+        radial-gradient(circle at 20% 80%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 40% 40%, rgba(255, 255, 255, 0.05) 0%, transparent 50%);
+    }
+
+    /* Mobile PBS Banner - Hidden by default */
+    .mobile-pbs-banner {
+      display: none;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 30px 20px;
+      text-align: center;
+      border-radius: 16px;
+      margin-bottom: 20px;
+      margin-top: 20px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .mobile-pbs-banner .pattern-overlay {
+      opacity: 0.3;
+    }
+
+    .mobile-pbs-banner-content {
+      position: relative;
+      z-index: 1;
+    }
+
+    .mobile-pbs-banner h3 {
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 12px;
+    }
+
+    .mobile-pbs-banner p {
+      font-size: 14px;
+      opacity: 0.9;
+      margin-bottom: 20px;
+      line-height: 1.5;
+    }
+
+    .mobile-feature-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      text-align: left;
+      max-width: 320px;
+      margin: 0 auto;
+    }
+
+    .mobile-feature-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+    }
+
+    .mobile-feature-item i {
+      width: 20px;
+      height: 20px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      flex-shrink: 0;
+    }
+
+    /* Footer */
+    .login-footer {
+      text-align: center;
+      font-size: 13px;
+      color: #6c757d;
+      padding: 20px;
+      margin-top: 20px;
+    }
+
+    .login-footer a {
+      color: #667eea;
+      text-decoration: none;
+    }
+
+    /* Responsive Design for small laptops */
+    @media (max-height: 800px) {
+      .login-wrapper {
+        min-height: auto;
+        padding: 10px 20px;
+      }
+
+      .login-container {
+        min-height: auto;
+        margin: 10px 0;
+      }
+
+      .login-form-section {
+        padding: 40px;
+      }
+
+      .logo-section {
+        margin-bottom: 30px;
+      }
+
+      .form-section {
+        margin-top: 30px;
+      }
+
+      .welcome-text h2 {
+        font-size: 28px;
+      }
+
+      .login-image-section {
+        padding: 40px;
+      }
+
+      .image-content h3 {
+        font-size: 32px;
+      }
+
+      .image-content p {
+        font-size: 16px;
+        margin-bottom: 30px;
+      }
+    }
+
+    @media (max-height: 700px) {
+      .login-form-section {
+        padding: 30px;
+      }
+
+      .logo-section {
+        margin-bottom: 20px;
+      }
+
+      .form-section {
+        margin-top: 20px;
+      }
+
+      .form-group {
+        margin-bottom: 18px;
+      }
+
+      .form-control {
+        height: 44px;
+      }
+
+      .btn-login {
+        height: 44px;
+      }
+
+      .welcome-text h2 {
+        font-size: 26px;
+      }
+
+      .welcome-text p {
+        font-size: 15px;
+      }
+    }
+
+    /* Responsive Design for tablets */
+    @media (max-width: 992px) {
+      .login-container {
+        flex-direction: column;
+        max-width: 600px;
+      }
+
+      .login-image-section {
+        padding: 40px;
+        min-height: 300px;
+      }
+
+      .image-content h3 {
+        font-size: 28px;
+      }
+
+      .image-content p {
+        font-size: 16px;
+        margin-bottom: 30px;
+      }
+
+      .feature-list {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+        text-align: left;
+      }
+
+      .feature-item {
+        font-size: 14px;
+      }
+
+      .login-form-section {
+        padding: 40px;
+      }
+    }
+
+    /* Mobile Design */
+    @media (max-width: 576px) {
+      .login-wrapper {
+        padding: 10px;
+        align-items: flex-start;
+        padding-top: 20px;
+      }
+
+      .login-container {
+        border-radius: 16px;
+        margin: 10px 0;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+      }
+
+      /* Hide desktop image section on mobile */
+      .login-image-section {
+        display: none;
+      }
+
+      /* Show mobile PBS banner */
+      .mobile-pbs-banner {
+        display: block;
+      }
+
+      .login-form-section {
+        padding: 24px 20px;
+      }
+
+      .logo-section {
+        margin-bottom: 24px;
+      }
+
+      .logo-section img {
+        height: 32px;
+        margin-bottom: 20px;
+      }
+
+      .welcome-text h2 {
+        font-size: 24px;
+        margin-bottom: 8px;
+      }
+
+      .welcome-text p {
+        font-size: 14px;
+      }
+
+      .form-section {
+        margin-top: 24px;
+      }
+
+      .form-group {
+        margin-bottom: 18px;
+      }
+
+      .form-label {
+        font-size: 13px;
+      }
+
+      .form-control {
+        height: 44px;
+        font-size: 15px;
+      }
+
+      .form-options {
+        flex-direction: column;
+        gap: 12px;
+        align-items: flex-start;
+      }
+
+      .remember-me label {
+        font-size: 13px;
+      }
+
+      .forgot-password {
+        font-size: 13px;
+      }
+
+      .btn-login {
+        height: 44px;
+        font-size: 15px;
+      }
+
+      .login-footer {
+        font-size: 12px;
+        padding: 16px;
+        margin-top: 10px;
+      }
+
+      /* Adjust background shapes for mobile */
+      .shape-1 {
+        width: 200px;
+        height: 200px;
+        top: -100px;
+        left: -100px;
+      }
+
+      .shape-2 {
+        width: 150px;
+        height: 150px;
+        bottom: -75px;
+        right: -75px;
+      }
+
+      .shape-3 {
+        width: 120px;
+        height: 120px;
+      }
+    }
+
+    /* Extra small devices */
+    @media (max-width: 380px) {
+      .mobile-pbs-banner {
+        padding: 24px 16px;
+      }
+
+      .mobile-pbs-banner h3 {
+        font-size: 22px;
+      }
+
+      .mobile-pbs-banner p {
+        font-size: 13px;
+      }
+
+      .mobile-feature-grid {
+        grid-template-columns: 1fr;
+        gap: 10px;
+      }
+
+      .login-form-section {
+        padding: 20px 16px;
+      }
+
+      .welcome-text h2 {
+        font-size: 22px;
+      }
+
+      .welcome-text p {
+        font-size: 13px;
+      }
+    }
+
+    /* Alert Styling */
+    .alert {
+      border: none;
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .alert-danger {
+      background-color: #fee;
+      color: #dc2626;
+    }
+
+    .alert-success {
+      background-color: #f0fdf4;
+      color: #16a34a;
+    }
+
+    .alert-dismissible .btn-close {
+      position: static;
+      padding: 0;
+      width: 20px;
+      height: 20px;
+      opacity: 0.5;
+    }
+
+    /* Ripple Animation */
+    .btn-login .ripple {
+      position: absolute;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.6);
+      transform: scale(0);
+      animation: ripple-animation 0.6s ease-out;
+    }
+
+    @keyframes ripple-animation {
+      to {
+        transform: scale(4);
+        opacity: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Background Shapes -->
+  <div class="background-shape shape-1"></div>
+  <div class="background-shape shape-2"></div>
+  <div class="background-shape shape-3"></div>
+
+  <!-- Login Container -->
+  <div class="login-wrapper">
+    <div class="login-container">
+      <!-- Left Side - Form -->
+      <div class="login-form-section">
+        <div class="logo-section">
+          <img src="https://www.prowesssoft.com/wp-content/uploads/2023/06/Prowess_soft_logo1.png" alt="Prowess Logo">
+        </div>
+
+        <div class="welcome-text">
+          <h2>Welcome Prowessian</h2>
+          <p>Please enter your details to sign in</p>
+        </div>
+
+        <!-- Mobile PBS Banner - Only visible on mobile -->
+        <div class="mobile-pbs-banner">
+          <div class="pattern-overlay"></div>
+          <div class="mobile-pbs-banner-content">
+            <h3>Welcome to PBS</h3>
+            <p>Access your personalized dashboard to view your performance metrics and achievements.</p>
+            
+            <div class="mobile-feature-grid">
+              <div class="mobile-feature-item">
+                <i class="fas fa-check"></i>
+                <span>View points & rankings</span>
+              </div>
+              <div class="mobile-feature-item">
+                <i class="fas fa-check"></i>
+                <span>Track contributions</span>
+              </div>
+              <div class="mobile-feature-item">
+                <i class="fas fa-check"></i>
+                <span>Monitor progress</span>
+              </div>
+              <div class="mobile-feature-item">
+                <i class="fas fa-check"></i>
+                <span>Performance history</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+              {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show mb-3" role="alert">
+                  <i class="fas fa-{{ 'exclamation-circle' if category == 'danger' else 'check-circle' }}"></i>
+                  {{ message }}
+                  <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+              {% endfor %}
+            {% endif %}
+          {% endwith %}
+
+          <form method="POST" aria-label="Login Form">
+            <div class="form-group">
+              <label for="email" class="form-label">Email address</label>
+              <input type="email" name="email" id="email" class="form-control" placeholder="Enter your email" value="{{ remembered_email }}" required>
+            </div>
+
+            <div class="form-group">
+              <label for="password" class="form-label">Password</label>
+              <div class="password-field">
+                <input type="password" name="password" id="password" class="form-control" placeholder="Enter your password" value="{{ remembered_password }}" required>
+                <button type="button" class="password-toggle" id="togglePassword" tabindex="-1">
+                  <i class="fas fa-eye-slash"></i>
+                </button>
+              </div>
+            </div>
+
+            <div class="form-options">
+              <div class="remember-me">
+                <input type="checkbox" id="remember" name="remember" {% if remembered_email %}checked{% endif %}>
+                <label for="remember">Remember me</label>
+              </div>
+              <a href="{{ url_for('auth.forgot_password') }}" class="forgot-password">Forgot password?</a>
+            </div>
+
+            <button type="submit" class="btn-login">
+              Sign in
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Right Side - Image (Desktop/Tablet only) -->
+      <div class="login-image-section">
+        <div class="pattern-overlay"></div>
+        <div class="image-content">
+          <h3>Welcome to PBS</h3>
+          <p>Access your personalized dashboard to view your performance metrics and achievements.</p>
+          
+          <div class="feature-list">
+            <div class="feature-item">
+              <i class="fas fa-check"></i>
+              <span>View your points and rankings</span>
+            </div>
+            <div class="feature-item">
+              <i class="fas fa-check"></i>
+              <span>Track contributions</span>
+            </div>
+            <div class="feature-item">
+              <i class="fas fa-check"></i>
+              <span>Monitor Progress and Utilization</span>
+            </div>
+            <div class="feature-item">
+              <i class="fas fa-check"></i>
+              <span>Detailed Performance History</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="login-footer">
+    <p>&copy; 2025 PROWESSSOFT | Developed by <a href="https://digital.ealkay.com" target="_blank">EALKAY</a></p>
+  </div>
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- Security Module -->
+  <script src="{{ url_for('auth.static', filename='js/auth-security.js') }}"></script>
+
+  <!-- Password Toggle Script -->
+  <script>
+    document.getElementById('togglePassword').addEventListener('click', function () {
+      const passwordInput = document.getElementById('password');
+      const icon = this.querySelector('i');
+      const isVisible = passwordInput.type === 'text';
+
+      passwordInput.type = isVisible ? 'password' : 'text';
+      icon.classList.remove(isVisible ? 'fa-eye' : 'fa-eye-slash');
+      icon.classList.add(isVisible ? 'fa-eye-slash' : 'fa-eye');
+    });
+
+    // Add ripple effect to login button
+    document.querySelector('.btn-login').addEventListener('click', function(e) {
+      const ripple = document.createElement('span');
+      const rect = this.getBoundingClientRect();
+      const size = Math.max(rect.width, rect.height);
+      const x = e.clientX - rect.left - size / 2;
+      const y = e.clientY - rect.top - size / 2;
+      
+      ripple.style.width = ripple.style.height = size + 'px';
+      ripple.style.left = x + 'px';
+      ripple.style.top = y + 'px';
+      ripple.classList.add('ripple');
+      
+      this.appendChild(ripple);
+      
+      setTimeout(() => ripple.remove(), 600);
+    });
+  </script>
+</body>
+</html>

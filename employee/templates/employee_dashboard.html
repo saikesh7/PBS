@@ -1,0 +1,439 @@
+{% extends "employee_base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+{% block nav_dashboard %}active{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Milestone Bonus Points -->
+    <div class="col-md-12 mb-4">
+        <div class="card">
+            <div class="card-header head text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-gift me-2"></i>
+                    Milestone Bonus Points per Quarter
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered table-striped text-center">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Milestone</th>
+                                <th>Description</th>
+                                <th>Qtr1 Bonus</th>
+                                <th>Qtr2 Bonus</th>
+                                <th>Qtr3 Bonus</th>
+                                <th>Qtr4 Bonus</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if milestones %}
+                            {% for milestone in milestones %}
+                            <tr>
+                                <td>{{ milestone.name }}</td>
+                                <td class="text-start">{{ milestone.description }}</td>
+                                <td>{{ milestone.bonus_points.Q1 | default(0) }}</td>
+                                <td>{{ milestone.bonus_points.Q2 | default(0) }}</td>
+                                <td>{{ milestone.bonus_points.Q3 | default(0) }}</td>
+                                <td>{{ milestone.bonus_points.Q4 | default(0) }}</td>
+                            </tr>
+                            {% endfor %}
+                            {% else %}
+                            <tr>
+                                <td colspan="6">Milestone information not available</td>
+                            </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Points Overview -->
+    <div class="col-md-12 mb-4">
+        <div class="card">
+            <div class="card-header pmo-header-primary">
+                <div class="d-flex align-items-center">
+                    <div class="topbar-icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <div class="topbar-info">
+                        <div class="topbar-title">Points Overview</div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <div class="card bg-primary text-white h-100">
+                            <div class="card-body text-center">
+                                <h3 class="display-4" id="total_points_dashboard">
+                                    {{ (total_points|default(0)|int) + (total_bonus_points|default(0)|int) }}
+                                </h3>
+                                <p class="mb-0">Total Points</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="card bg-success text-white h-100">
+                            <div class="card-body text-center">
+                                <h3 class="display-4" id="quarterlyPoints_dashboard">
+                                    {{ current_quarter_total_points | default(0) | int }}
+                                </h3>
+                                <p class="mb-0">Current Quarter Points</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="card bg-secondary text-white h-100">
+                            <div class="card-body text-center" style="background-color: #8147f3;">
+                                <h3 class="display-4" id="yearlyPoints_dashboard">
+                                    {{ current_year_total_points | default(0) | int }}
+                                </h3>
+                                <p class="mb-0">Current Year Points</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Targets Row -->
+                <div class="row mt-3">
+                    <div class="col-md-6 mb-3">
+                        <div class="card h-100">
+                            <div class="card-header bg-info text-white">
+                                <h5 class="mb-0">Quarterly Target ({{ user.grade }})</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="progress" style="height: 20px;">
+                                    <div id="quarterlyProgressBar_dashboard" class="progress-bar bg-info" 
+                                         role="progressbar" style="width: 0%;">0%</div>
+                                </div>
+                                <div class="text-end mt-2">
+                                    <span id="quarterlyAchievement_dashboard">{{ current_quarter_total_points | default(0) }}</span>
+                                    / 
+                                    <span id="quarterlyTarget_dashboard">{{ grade_targets[user.grade] if user.grade in grade_targets else '-' }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="card h-100">
+                            <div class="card-header bg-warning text-dark">
+                                <h5 class="mb-0">Yearly Target ({{ user.grade }})</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="progress" style="height: 20px;">
+                                    <div id="yearlyProgressBar_dashboard" class="progress-bar bg-warning" 
+                                         role="progressbar" style="width: 0%;">0%</div>
+                                </div>
+                                <div class="text-end mt-2">
+                                    <span id="yearlyAchievement_dashboard">{{ current_year_total_points | default(0) }}</span>
+                                    / 
+                                    <span id="yearlyTarget_dashboard">{{ (grade_targets[user.grade] * 4) if user.grade in grade_targets else '-' }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Utilization Tracker -->
+    <div class="col-md-12 mb-4">
+        <div class="card">
+            <div class="card-header head text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-percentage me-2"></i>
+                    Utilization Tracker
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if utilization_records and utilization_records|length > 0 %}
+                    <div class="row mb-4">
+                        <!-- Average Utilization Card -->
+                        <div class="col-md-6 mb-3">
+                            <div class="card h-100">
+                                <div class="card-header bg-gradient-pink text-white" style="background: blue;">
+                                    <h6 class="mb-0">
+                                        <i class="fas fa-chart-bar me-2"></i>
+                                        Average Utilization
+                                    </h6>
+                                </div>
+                                <div class="card-body bg-white">
+                                    <h2 class="mb-2" style="font-size: 2.5rem; font-weight: 700; color: #333;">{{ average_utilization }}%</h2>
+                                    <div class="progress mb-2" style="height: 12px;">
+                                        <div class="progress-bar" role="progressbar" 
+                                             style="width: {{ average_utilization }}%; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);"
+                                             aria-valuenow="{{ average_utilization }}" 
+                                             aria-valuemin="0" 
+                                             aria-valuemax="100">
+                                        </div>
+                                    </div>
+                                    <small class="text-muted">Based on {{ utilization_records|length }} month(s)</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Monthly Utilization Card -->
+                        <div class="col-md-6 mb-3">
+                            <div class="card h-100">
+                                <div class="card-header bg-gradient-blue text-white" style="background: blue;">
+                                    <h6 class="mb-0">
+                                        <i class="fas fa-calendar-alt me-2"></i>
+                                        Monthly Utilization
+                                    </h6>
+                                </div>
+                                <div class="card-body bg-white">
+                                    <select id="utilizationMonthSelector" class="form-select mb-3" style="border: 1px solid #dee2e6;">
+                                        <option value="">Select a month...</option>
+                                        {% for month in utilization_months %}
+                                        <option value="{{ month.value }}">{{ month.label }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <div id="selectedMonthUtilization">
+                                        <h2 class="mb-2" style="font-size: 2.5rem; font-weight: 700; color: #333;" id="monthUtilizationValue">-</h2>
+                                        <div class="progress mb-2" style="height: 12px;">
+                                            <div class="progress-bar" role="progressbar" 
+                                                 style="width: 0%; background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);" 
+                                                 id="monthUtilizationProgress">
+                                            </div>
+                                        </div>
+                                        <small class="text-muted" id="monthUtilizationDate">Select a month to view</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Utilization History Table -->
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-header bg-light">
+                                    <h6 class="mb-0">
+                                        <i class="fas fa-history me-2"></i>
+                                        Utilization History
+                                    </h6>
+                                </div>
+                                <div class="card-body p-0">
+                                    <div class="table-responsive">
+                                        <table class="table table-hover mb-0" id="utilizationHistoryTable">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th style="text-align: center; vertical-align: middle;">Month</th>
+                                                    <th style="text-align: center; vertical-align: middle;">Utilization %</th>
+                                                    <th style="width: 250px; text-align: center; vertical-align: middle;">Progress</th>
+                                                    <th style="text-align: center; vertical-align: middle;">Awarded On</th>
+                                                    <th style="text-align: center; vertical-align: middle;">Notes</th>
+                                                    <th style="text-align: center; vertical-align: middle;">Status</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for record in utilization_records %}
+                                                <tr data-month="{{ record.month_year_value }}">
+                                                    <td style="text-align: center; vertical-align: middle;"><strong>{{ record.month_year }}</strong></td>
+                                                    <td style="text-align: center; vertical-align: middle;">
+                                                        <span class="badge {% if record.utilization_percentage >= 80 %}bg-success{% elif record.utilization_percentage >= 60 %}bg-warning{% else %}bg-danger{% endif %}" style="font-size: 0.9rem; padding: 6px 12px;">
+                                                            {{ record.utilization_percentage }}%
+                                                        </span>
+                                                    </td>
+                                                    <td style="text-align: center; vertical-align: middle;">
+                                                        <div class="progress" style="height: 20px; margin: 0 auto; max-width: 250px;">
+                                                            <div class="progress-bar {% if record.utilization_percentage >= 80 %}bg-success{% elif record.utilization_percentage >= 60 %}bg-warning{% else %}bg-danger{% endif %}" 
+                                                                 role="progressbar" 
+                                                                 style="width: {{ record.utilization_percentage }}%; font-size: 0.75rem; font-weight: 600;"
+                                                                 aria-valuenow="{{ record.utilization_percentage }}" 
+                                                                 aria-valuemin="0" 
+                                                                 aria-valuemax="100">
+                                                                {{ record.utilization_percentage }}%
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td style="text-align: center; vertical-align: middle;">
+                                                        {% if record.request_date %}
+                                                        {{ record.request_date.strftime('%b %d, %Y') }}
+                                                        {% else %}
+                                                        -
+                                                        {% endif %}
+                                                    </td>
+                                                    <td style="text-align: center; vertical-align: middle;">
+                                                        <button type="button" class="btn btn-sm view-utilization-notes-btn" 
+                                                                style="padding: 6px 16px; background-color: #17a2b8; color: #ffffff; border: 1px solid #17a2b8; border-radius: 4px; font-weight: 500; cursor: pointer; display: inline-block; text-align: center; white-space: nowrap; vertical-align: middle; user-select: none; line-height: 1.5; transition: all 0.15s ease-in-out;" 
+                                                                data-notes="{{ (record.notes if record.notes else record.response_notes if record.response_notes else 'No notes available') | replace('"', '&quot;') | replace("'", '&#39;') }}"
+                                                                title="View Notes"
+                                                                onmouseover="this.style.backgroundColor='#138496'; this.style.borderColor='#117a8b';"
+                                                                onmouseout="this.style.backgroundColor='#17a2b8'; this.style.borderColor='#17a2b8';">
+                                                            <i class="fas fa-eye"></i> View
+                                                        </button>
+                                                    </td>
+                                                    <td style="text-align: center; vertical-align: middle;">
+                                                        <span class="badge bg-success">
+                                                            <i class="fas fa-check-circle me-1"></i>Approved
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                {% else %}
+                    <!-- No Utilization Data -->
+                    <div class="text-center py-5">
+                        <i class="fas fa-chart-line fa-4x text-muted mb-3"></i>
+                        <h5 class="text-muted">No Utilization Data Available</h5>
+                        <p class="text-muted">Your utilization data will appear here once it's awarded by the PMO team.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Notes Modal -->
+<div class="modal fade" id="utilizationNotesModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header" style="background-color: #17a2b8; color: white;">
+                <h5 class="modal-title"><i class="fas fa-sticky-note me-2"></i>Utilization Notes</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
+                <div id="modalUtilizationNotes" class="p-3" style="background-color: #f8f9fa; border-radius: 4px; min-height: 100px; white-space: pre-wrap; word-wrap: break-word;"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><i class="fas fa-times me-1"></i>Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<style>
+    /* Cross-browser button compatibility for utilization notes */
+    .view-utilization-notes-btn {
+        -webkit-appearance: button;
+        -moz-appearance: button;
+        appearance: button;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+        background-color: #17a2b8 !important;
+        color: #ffffff !important;
+        border: 1px solid #17a2b8 !important;
+        border-radius: 4px;
+        padding: 6px 16px;
+        font-weight: 500;
+        cursor: pointer;
+        display: inline-block;
+        text-align: center;
+        white-space: nowrap;
+        vertical-align: middle;
+        line-height: 1.5;
+        transition: all 0.15s ease-in-out;
+        -webkit-transition: all 0.15s ease-in-out;
+        -moz-transition: all 0.15s ease-in-out;
+        -o-transition: all 0.15s ease-in-out;
+    }
+    
+    .view-utilization-notes-btn:hover {
+        background-color: #138496 !important;
+        border-color: #117a8b !important;
+        color: #ffffff !important;
+    }
+    
+    .view-utilization-notes-btn:focus {
+        outline: 2px solid #17a2b8;
+        outline-offset: 2px;
+    }
+</style>
+
+<script>
+// Dashboard specific initialization
+$(document).ready(function() {
+    updateProgressBars();
+    initializeUtilizationSelector();
+    
+    // View utilization notes button handler
+    $(document).on('click', '.view-utilization-notes-btn', function() {
+        const notes = $(this).attr('data-notes');
+        $('#modalUtilizationNotes').text(notes);
+        const modal = new bootstrap.Modal(document.getElementById('utilizationNotesModal'));
+        modal.show();
+    });
+});
+
+function updateProgressBars() {
+    const quarterlyAchievement = parseInt($('#quarterlyAchievement_dashboard').text()) || 0;
+    const quarterlyTarget = parseInt($('#quarterlyTarget_dashboard').text()) || 1;
+    const quarterlyPercent = Math.min((quarterlyAchievement / quarterlyTarget) * 100, 100);
+    
+    $('#quarterlyProgressBar_dashboard')
+        .css('width', quarterlyPercent + '%')
+        .text(quarterlyPercent.toFixed(1) + '%');
+    
+    const yearlyAchievement = parseInt($('#yearlyAchievement_dashboard').text()) || 0;
+    const yearlyTarget = parseInt($('#yearlyTarget_dashboard').text()) || 1;
+    const yearlyPercent = Math.min((yearlyAchievement / yearlyTarget) * 100, 100);
+    
+    $('#yearlyProgressBar_dashboard')
+        .css('width', yearlyPercent + '%')
+        .text(yearlyPercent.toFixed(1) + '%');
+}
+
+// Utilization Selector Functionality
+function initializeUtilizationSelector() {
+    // Store utilization data from template
+    const utilizationData = {};
+    
+    {% for record in utilization_records %}
+    utilizationData['{{ record.month_year_value }}'] = {
+        percentage: {{ record.utilization_percentage }},
+        month_year: '{{ record.month_year }}',
+        request_date: '{% if record.request_date %}{{ record.request_date.strftime("%b %d, %Y") }}{% else %}-{% endif %}',
+        notes: '{{ record.notes if record.notes else record.response_notes if record.response_notes else "-" }}'
+    };
+    {% endfor %}
+    
+    // Month selector change handler
+    $('#utilizationMonthSelector').on('change', function() {
+        const selectedMonth = $(this).val();
+        
+        if (!selectedMonth) {
+            $('#monthUtilizationValue').text('-');
+            $('#monthUtilizationProgress').css('width', '0%');
+            $('#monthUtilizationDate').text('Select a month to view');
+            // Reset table highlighting
+            $('#utilizationHistoryTable tbody tr').removeClass('table-info');
+            return;
+        }
+        
+        const data = utilizationData[selectedMonth];
+        if (data) {
+            $('#monthUtilizationValue').text(data.percentage + '%');
+            $('#monthUtilizationProgress').css('width', data.percentage + '%');
+            $('#monthUtilizationDate').html('<strong>' + data.month_year + '</strong><br>Awarded: ' + data.request_date);
+            
+            // Highlight selected row in table
+            $('#utilizationHistoryTable tbody tr').removeClass('table-info');
+            $('#utilizationHistoryTable tbody tr[data-month="' + selectedMonth + '"]').addClass('table-info');
+        }
+    });
+    
+    // Auto-select most recent month
+    {% if utilization_months and utilization_months|length > 0 %}
+    $('#utilizationMonthSelector').val('{{ utilization_months[0].value }}').trigger('change');
+    {% endif %}
+}
+</script>
+{% endblock %}

@@ -1,0 +1,1903 @@
+{% extends "hr_base.html" %}
+
+{% block title %}HR Validator Dashboard{% endblock %}
+{% block dashboard_title %}HR Validator Dashboard{% endblock %}
+
+{% block extra_css %}
+<!-- Prevent flash of wrong tab on page load -->
+<script>
+    // This runs IMMEDIATELY before page renders to prevent flash
+    (function() {
+        // Dashboard Switch Detection Logic
+        const DASHBOARD_KEY = 'current_dashboard';
+        const CURRENT_DASHBOARD = 'hr_validator';
+        
+        // Check if we're coming from a different dashboard
+        const lastDashboard = sessionStorage.getItem(DASHBOARD_KEY);
+        const isDashboardSwitch = lastDashboard && lastDashboard !== CURRENT_DASHBOARD;
+        
+        // Update current dashboard in sessionStorage
+        sessionStorage.setItem(DASHBOARD_KEY, CURRENT_DASHBOARD);
+        
+        // Determine which tab to show
+        let activeTab;
+        if (isDashboardSwitch) {
+            // Coming from different dashboard → go to Overview
+            activeTab = 'overview';
+            localStorage.setItem('hr_validator_current_tab', 'overview');
+        } else {
+            // Same dashboard (page reload) → restore saved tab
+            activeTab = localStorage.getItem('hr_validator_current_tab') || 'overview';
+        }
+        
+        if (activeTab && activeTab !== 'overview') {
+            // Add CSS to hide overview tab and show saved tab
+            document.write('<style id="tab-preload-style">');
+            document.write('#overview-tab { display: none !important; }');
+            document.write('#' + activeTab + '-tab { display: block !important; }');
+            document.write('.sidebar-nav-item.tab-link { opacity: 0.6; }');
+            document.write('.sidebar-nav-item.tab-link[data-tab="' + activeTab + '"] { opacity: 1; background-color: rgba(78, 115, 223, 0.2); border-left: 4px solid #4e73df; }');
+            document.write('</style>');
+        }
+    })();
+</script>
+{% endblock %}
+
+{% block sidebar_nav %}
+<!-- Validator Navigation Items -->
+<a href="javascript:void(0);" class="sidebar-nav-item tab-link active" data-tab="overview">
+    <div>
+        <i class="fas fa-tachometer-alt"></i>
+        <span>Dashboard</span>
+    </div>
+</a>
+
+<a href="javascript:void(0);" class="sidebar-nav-item tab-link" data-tab="review">
+    <div>
+        <i class="fas fa-check-square"></i>
+        <span>Review Requests</span>
+        <span class="badge bg-warning" style="display: {{ 'inline-block' if pending_count > 0 else 'none' }};">{{ pending_count if pending_count > 0 else '0' }}</span>
+    </div>
+</a>
+
+<a href="javascript:void(0);" class="sidebar-nav-item tab-link" data-tab="history">
+    <div>
+        <i class="fas fa-history"></i>
+        <span>History</span>
+    </div>
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Overview Tab (Dashboard Summary) -->
+    <div class="tab-content-section active" id="overview-tab">
+        <!-- Stats Cards Row -->
+        <div class="row mb-4">
+            <div class="col-xl-4 col-md-6 mb-3">
+                <div class="card border-left-warning shadow h-100">
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col">
+                                <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Pending Requests</div>
+                                <div class="h5 mb-0 font-weight-bold" data-pending-count>{{ pending_count }}</div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-clock fa-2x text-warning" style="opacity: 0.3;"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-xl-4 col-md-6 mb-3">
+                <div class="card border-left-success shadow h-100">
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col">
+                                <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Approved</div>
+                                <div class="h5 mb-0 font-weight-bold">{{ history_data|selectattr('status', 'equalto', 'Approved')|list|length if history_data else 0 }}</div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-check-circle fa-2x text-success" style="opacity: 0.3;"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-xl-4 col-md-6 mb-3">
+                <div class="card border-left-danger shadow h-100">
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col">
+                                <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">Rejected</div>
+                                <div class="h5 mb-0 font-weight-bold">{{ history_data|selectattr('status', 'equalto', 'Rejected')|list|length if history_data else 0 }}</div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-times-circle fa-2x text-danger" style="opacity: 0.3;"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Action Button -->
+        {% if pending_count > 0 %}
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card shadow-sm border-0" style="background-color: #2c5aa0;">
+                    <div class="card-body text-white text-center py-4">
+                        <h4 class="mb-3"><i class="fas fa-bell me-2"></i>{{ pending_count }} Request(s) Awaiting Your Review</h4>
+                        <button class="btn btn-light btn-lg px-5" onclick="switchTab('review')">
+                            <i class="fas fa-check-square me-2"></i>Review Requests
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Recent Activity -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0"><i class="fas fa-clock me-2"></i>Recent Activity</h5>
+                    </div>
+                    <div class="card-body">
+                        {% if history_data %}
+                        <div class="timeline">
+                            {% for item in history_data[:10] %}
+                            <div class="timeline-item mb-3 pb-3 border-bottom" data-request-id="{{ item.request_id }}">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div class="flex-grow-1">
+                                        <div class="d-flex align-items-center mb-1">
+                                            <span class="badge bg-{{ 'success' if item.status == 'Approved' else 'danger' if item.status == 'Rejected' else 'warning' }} me-2">
+                                                {{ item.status }}
+                                            </span>
+                                            <strong>{{ item.employee }}</strong>
+                                        </div>
+                                        <div class="text-muted small">
+                                            <i class="fas fa-tag me-1"></i>{{ item.category }}
+                                            <span class="mx-2">•</span>
+                                            {% if item.utilization_value %}
+                                                <i class="fas fa-chart-line me-1"></i>{{ (item.utilization_value * 100)|round(1) }}%
+                                            {% else %}
+                                                <i class="fas fa-coins me-1"></i>{{ item.points }} points
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="text-end text-muted small">
+                                        {{ item.event_date if item.event_date else 'N/A' }}
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="text-center text-muted py-4">
+                            <i class="fas fa-inbox fa-3x mb-3 d-block opacity-25"></i>
+                            <p>No activity yet.</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Review Requests Tab -->
+    <div class="tab-content-section" id="review-tab">
+        <div class="card shadow-sm border-0">
+            <div class="card-header" style="background-color: #2c5aa0; padding: 15px 20px;">
+                <h5 class="mb-0 text-white" style="font-weight: 600;">
+                    <i class="fas fa-check-square"></i> Review Pending Requests
+                </h5>
+            </div>
+            <div class="card-body p-4" style="background-color: #ffffff;">
+                {% if validator_requests %}
+                <form method="POST" action="{{ url_for('hr_roles.validator_dashboard') }}" id="reviewForm">
+                    <input type="hidden" name="action_type" id="action_type">
+                    
+                    <!-- Pagination Controls Top -->
+                    <div class="row mb-3 align-items-center">
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center">
+                                <span class="me-2 small">Show</span>
+                                <select class="form-select form-select-sm" style="width: 80px;" id="reviewPageSize" onchange="changeReviewPageSize()">
+                                    <option value="10" selected>10</option>
+                                    <option value="25">25</option>
+                                    <option value="50">50</option>
+                                </select>
+                                <span class="ms-2 small">entries</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-flex gap-2 align-items-center justify-content-end">
+                                <span class="small">Search:</span>
+                                <input type="text" class="form-control form-control-sm" placeholder="Search..." id="reviewSearchInput" onkeyup="searchReviewTable()" onkeydown="if(event.key === 'Enter') event.preventDefault();" style="max-width: 200px;">
+                            </div>
+                        </div>
+                    </div>
+
+                    
+                    <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
+                        <table class="table table-hover mb-0" style="font-size: 0.9rem; table-layout: fixed; width: 100%;" id="reviewRequestsTable">
+                            <thead style="position: sticky; top: 0; z-index: 10; background-color: #f8f9fa;">
+                                <tr style="border-bottom: 2px solid #dee2e6;">
+                                    <th style="width: 50px; padding: 12px 8px; white-space: nowrap;"><input type="checkbox" id="selectAll"></th>
+                                    <th style="width: 120px; padding: 12px 8px; font-weight: 600; color: #495057; white-space: nowrap; text-transform: uppercase; font-size: 0.75rem;">EVENT DATE</th>
+                                    <th style="width: 180px; padding: 12px 8px; font-weight: 600; color: #495057; white-space: nowrap; text-transform: uppercase; font-size: 0.75rem;">EMPLOYEE</th>
+                                    <th style="width: 130px; padding: 12px 8px; font-weight: 600; color: #495057; white-space: nowrap; text-transform: uppercase; font-size: 0.75rem; text-align: center;">SUBMITTED BY</th>
+                                    <th style="width: 160px; padding: 12px 8px; font-weight: 600; color: #495057; white-space: nowrap; text-transform: uppercase; font-size: 0.75rem;">CATEGORY</th>
+                                    <th style="width: 130px; padding: 12px 8px; font-weight: 600; color: #495057; white-space: nowrap; text-transform: uppercase; font-size: 0.75rem; text-align: center;">POINTS/UTIL %</th>
+                                    <th style="width: 150px; padding: 12px 8px; font-weight: 600; color: #495057; white-space: nowrap; text-transform: uppercase; font-size: 0.75rem; text-align: center;">REQUEST NOTES</th>
+                                    <th style="width: 130px; padding: 12px 8px; font-weight: 600; color: #495057; white-space: nowrap; text-transform: uppercase; font-size: 0.75rem; text-align: center;">ACTIONS</th>
+                                </tr>
+                            </thead>
+                            <tbody id="reviewRequestsBody">
+                                {% for req in validator_requests %}
+                                <tr class="review-row">
+                                    <td style="padding: 10px 8px;"><input type="checkbox" name="selected_requests" value="{{ req.request_id }}"></td>
+                                    <td style="padding: 10px 8px;">{{ req.event_date }}</td>
+                                    <td style="padding: 10px 8px;">{{ req.employee_name }} ({{ req.employee_id }})</td>
+                                    <td style="padding: 10px 8px; text-align: center;">{{ req.updater_name }}</td>
+                                    <td style="padding: 10px 8px;">{{ req.category_name }}</td>
+                                    <td style="padding: 10px 8px; text-align: center;">
+                                        {% if req.utilization_value %}
+                                        {{ (req.utilization_value * 100)|int }}%
+                                        {% else %}
+                                        {{ req.points }} pts
+                                        {% endif %}
+                                    </td>
+                                    <td style="padding: 10px 8px; text-align: center;">
+                                        <button type="button" class="btn btn-sm btn-info view-notes-btn" style="padding: 4px 12px; white-space: nowrap;" 
+                                                data-notes="{{ (req.notes if req.notes else 'No notes provided') | replace('"', '&quot;') | replace("'", '&#39;') }}" 
+                                                title="View Notes">
+                                            View
+                                        </button>
+                                    </td>
+                                    <td style="padding: 10px 8px; text-align: center;">
+                                        <button type="button" class="btn btn-sm btn-success me-1" 
+                                                onclick="singleAction('{{ req.request_id }}', 'approve')" style="padding: 4px 8px;">
+                                            <i class="fas fa-check"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-danger" 
+                                                onclick="singleAction('{{ req.request_id }}', 'reject')" style="padding: 4px 8px;">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Pagination Bottom -->
+                    <div class="d-flex justify-content-between align-items-center mt-3">
+                        <div class="small text-muted" id="reviewInfoBottom">Showing 1 to 10 of {{ validator_requests|length }} entries</div>
+                        <nav>
+                            <ul class="pagination pagination-sm mb-0" id="reviewPagination">
+                                <li class="page-item disabled"><a class="page-link" href="#" onclick="changeReviewPage('prev'); return false;">Previous</a></li>
+                                <li class="page-item active"><a class="page-link" href="#" onclick="changeReviewPage(1); return false;">1</a></li>
+                                <li class="page-item"><a class="page-link" href="#" onclick="changeReviewPage('next'); return false;">Next</a></li>
+                            </ul>
+                        </nav>
+                    </div>
+                    
+                    <!-- Bulk Action Buttons -->
+                    <div class="d-flex justify-content-end gap-2 mt-3">
+                        <button type="button" class="btn btn-success" onclick="bulkAction('bulk_approve')">
+                            <i class="fas fa-check me-2"></i>Approve Selected
+                        </button>
+                        <button type="button" class="btn btn-danger" onclick="bulkAction('bulk_reject')">
+                            <i class="fas fa-times me-2"></i>Reject Selected
+                        </button>
+                    </div>
+                </form>
+                {% else %}
+                <div class="alert alert-info text-center">
+                    <i class="fas fa-info-circle fa-3x mb-3"></i>
+                    <h5>No Pending Requests</h5>
+                    <p class="mb-0">All requests have been reviewed</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- History Tab -->
+    <div class="tab-content-section" id="history-tab">
+        <div class="card shadow-sm border-0">
+            <div class="card-header" style="background-color: #2c5aa0; padding: 15px 20px;">
+                <h5 class="mb-0 text-white" style="font-weight: 600;">
+                    <i class="fas fa-history"></i> Action History
+                </h5>
+            </div>
+            <div class="card-body p-0">
+                <!-- Sub-tabs for Rewards and Utilization -->
+                <ul class="nav nav-tabs border-0 history-nav-tabs" style="background-color: #f8f9fa; padding: 10px 20px 0 20px;">
+                    <li class="nav-item">
+                        <a class="nav-link active" id="validator-rewards-history-tab-link" href="#" onclick="switchValidatorHistoryTab('rewards'); return false;">
+                            <i class="fas fa-award"></i> Rewards History
+                        </a>
+                    </li>
+                    {# Utilization history not needed for HR
+                    <li class="nav-item">
+                        <a class="nav-link" id="validator-utilization-history-tab-link" href="#" onclick="switchValidatorHistoryTab('utilization'); return false;">
+                            <i class="fas fa-chart-line"></i> Utilization History
+                        </a>
+                    </li>
+                    #}
+                </ul>
+
+                <!-- Rewards History Content -->
+                <div class="history-tab-pane active" id="validator-rewards-history-pane">
+                    <div class="p-4">
+                        <!-- Filters Row -->
+                        <div class="row mb-3 g-2">
+                            <div class="col-md-2">
+                                <label class="form-label small text-muted mb-1">Year</label>
+                                <select class="form-select form-select-sm" id="valRewardsYearFilter">
+                                    <option value="">All</option>
+                                    {% set years = [] %}
+                                    {% for h in history_data %}
+                                    {% if not h.get('utilization_value') and h.request_date %}
+                                    {% set year = h.request_date.year %}
+                                    {% if year not in years %}
+                                    {% set _ = years.append(year) %}
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endfor %}
+                                    {% for year in years|sort(reverse=True) %}
+                                    <option value="{{ year }}">{{ year }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label small text-muted mb-1">Quarter</label>
+                                <select class="form-select form-select-sm" id="valRewardsQuarterFilter">
+                                    <option value="">All</option>
+                                    {% set quarters = [] %}
+                                    {% for h in history_data %}
+                                    {% if not h.get('utilization_value') and h.request_date %}
+                                    {% set month = h.request_date.month %}
+                                    {% set quarter = 'Q1' if month in [4,5,6] else 'Q2' if month in [7,8,9] else 'Q3' if month in [10,11,12] else 'Q4' if month in [1,2,3] else '' %}
+                                    {% if quarter and quarter not in quarters %}
+                                    {% set _ = quarters.append(quarter) %}
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endfor %}
+                                    {% for q in ['Q1', 'Q2', 'Q3', 'Q4'] %}
+                                    {% if q in quarters %}
+                                    <option value="{{ q }}">{{ q }}</option>
+                                    {% endif %}
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label small text-muted mb-1">Category</label>
+                                <select class="form-select form-select-sm" id="valRewardsCategoryFilter">
+                                    <option value="">All</option>
+                                    {% set categories = [] %}
+                                    {% for h in history_data %}
+                                    {% if not h.get('utilization_value') and h.category %}
+                                    {% if h.category not in categories %}
+                                    {% set _ = categories.append(h.category) %}
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endfor %}
+                                    {% for cat in categories|sort %}
+                                    <option value="{{ cat }}">{{ cat }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label small text-muted mb-1">Department</label>
+                                <select class="form-select form-select-sm" id="valRewardsDepartmentFilter">
+                                    <option value="">All</option>
+                                    {% set depts = [] %}
+                                    {% for h in history_data %}
+                                    {% if not h.get('utilization_value') and h.employee_department %}
+                                    {% if h.employee_department not in depts %}
+                                    {% set _ = depts.append(h.employee_department) %}
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endfor %}
+                                    {% for dept in depts|sort %}
+                                    <option value="{{ dept }}">{{ dept }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label small text-muted mb-1">Status</label>
+                                <select class="form-select form-select-sm" id="valRewardsStatusFilter">
+                                    <option value="">All</option>
+                                    {% set statuses = [] %}
+                                    {% for h in history_data %}
+                                    {% if not h.get('utilization_value') and h.status %}
+                                    {% if h.status not in statuses %}
+                                    {% set _ = statuses.append(h.status) %}
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endfor %}
+                                    {% for status in statuses|sort %}
+                                    <option value="{{ status }}">{{ status }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-2 d-flex align-items-end gap-1">
+                                <button class="btn btn-sm btn-primary" onclick="filterValRewardsTable()" style="flex: 1;">
+                                    <i class="fas fa-filter"></i> Apply
+                                </button>
+                                <button class="btn btn-sm btn-outline-secondary" onclick="resetValRewardsFilters()" style="flex: 1;">
+                                    <i class="fas fa-redo"></i> Reset
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3 align-items-center">
+                            <div class="col-md-3">
+                                <div class="d-flex align-items-center">
+                                    <span class="me-2 small">Show</span>
+                                    <select class="form-select form-select-sm" style="width: 80px;" id="valRewardsPageSize" onchange="changeValRewardsPageSize()">
+                                        <option value="10" selected>10</option>
+                                        <option value="25">25</option>
+                                        <option value="50">50</option>
+                                    </select>
+                                    <span class="ms-2 small">entries</span>
+                                </div>
+                            </div>
+                            <div class="col-md-6"></div>
+                            <div class="col-md-3">
+                                <div class="d-flex gap-2 align-items-center justify-content-end">
+                                    <span class="small">Search:</span>
+                                    <input type="text" class="form-control form-control-sm" placeholder="Search..." id="valRewardsSearchInput" onkeyup="filterValRewardsTable()" style="max-width: 200px;">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Table -->
+                        <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                            <table class="table table-hover mb-0" style="font-size: 0.9rem; table-layout: fixed; width: 100%;">
+                                <thead style="position: sticky; top: 0; z-index: 10; background-color: #f8f9fa;">
+                                    <tr style="border-bottom: 2px solid #dee2e6;">
+                                        <th style="width: 110px; padding: 12px 8px; font-weight: 600; color: #495057; white-space: nowrap; text-transform: uppercase; font-size: 0.75rem; vertical-align: middle;">EVENT DATE</th>
+                                        <th style="width: 140px; padding: 12px 8px; font-weight: 600; color: #495057; white-space: nowrap; text-transform: uppercase; font-size: 0.75rem; vertical-align: middle;">EMPLOYEE</th>
+                                        <th style="width: 200px; padding: 12px 8px; font-weight: 600; color: #495057; white-space: nowrap; text-transform: uppercase; font-size: 0.75rem; vertical-align: middle;">CATEGORY</th>
+                                        <th style="width: 90px; padding: 12px 8px; font-weight: 600; color: #495057; white-space: nowrap; text-transform: uppercase; font-size: 0.75rem; text-align: center; vertical-align: middle;">POINTS</th>
+                                        <th style="width: 110px; padding: 12px 8px; font-weight: 600; color: #495057; white-space: nowrap; text-transform: uppercase; font-size: 0.75rem; text-align: center; vertical-align: middle;">STATUS</th>
+                                        <th style="width: 120px; padding: 12px 8px; font-weight: 600; color: #495057; white-space: nowrap; text-transform: uppercase; font-size: 0.75rem; vertical-align: middle;">SUBMITTED BY</th>
+                                        <th style="width: 120px; padding: 12px 8px; font-weight: 600; color: #495057; white-space: nowrap; text-transform: uppercase; font-size: 0.75rem; text-align: center; vertical-align: middle;">ACTION NOTES</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for h in history_data %}
+                                    {% if not h.get('utilization_value') %}
+                                    {% set month = h.request_date.month if h.request_date else 0 %}
+                                    {% set quarter = 'Q1' if month in [4,5,6] else 'Q2' if month in [7,8,9] else 'Q3' if month in [10,11,12] else 'Q4' if month in [1,2,3] else '' %}
+                                    <tr class="val-rewards-row"
+                                        data-year="{{ h.request_date.year if h.request_date else '' }}"
+                                        data-quarter="{{ quarter }}"
+                                        data-category="{{ h.category }}"
+                                        data-department="{{ h.employee_department }}"
+                                        data-status="{{ h.status }}">
+                                        <td style="padding: 10px 8px; white-space: nowrap; vertical-align: middle;">{{ h.event_date }}</td>
+                                        <td style="padding: 10px 8px; white-space: nowrap; vertical-align: middle;">{{ h.employee }}</td>
+                                        <td style="padding: 10px 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; vertical-align: middle;" title="{{ h.category }}">{{ h.category }}</td>
+                                        <td style="padding: 10px 8px; text-align: center; vertical-align: middle;">{{ h.points }}</td>
+                                        <td style="padding: 10px 8px; text-align: center; vertical-align: middle;">
+                                            <span class="badge" style="background-color: {{ '#28a745' if h.status == 'Approved' else '#dc3545' }}; color: #fff; font-weight: 600; padding: 4px 12px; white-space: nowrap;">
+                                                {{ h.status }}
+                                            </span>
+                                        </td>
+                                        <td style="padding: 10px 8px; white-space: nowrap; vertical-align: middle;">HR</td>
+                                        <td style="padding: 10px 8px; text-align: center; vertical-align: middle;">
+                                            <button type="button" class="btn btn-sm btn-info view-history-notes-btn" style="background-color: #17a2b8; color: white; padding: 4px 12px; white-space: nowrap; border-color: #17a2b8;" 
+                                                    data-submission-notes="{{ (h.submission_notes if h.submission_notes else '') | replace('"', '&quot;') | replace("'", '&#39;') }}"
+                                                    data-response-notes="{{ (h.response_notes if h.response_notes else '') | replace('"', '&quot;') | replace("'", '&#39;') }}"
+                                                    title="View Notes">
+                                                View
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    {% endif %}
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Pagination -->
+                        <div class="d-flex justify-content-between align-items-center mt-3">
+                            <div class="small text-muted" id="valRewardsInfo">Showing 1 to 10 of entries</div>
+                            <nav>
+                                <ul class="pagination pagination-sm mb-0" id="valRewardsPagination">
+                                    <li class="page-item disabled"><a class="page-link" href="#">Previous</a></li>
+                                    <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                                    <li class="page-item"><a class="page-link" href="#">Next</a></li>
+                                </ul>
+                            </nav>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Utilization History Content - Not needed for HR -->
+                <div class="history-tab-pane" id="validator-utilization-history-pane" style="display:none;">
+                    <div class="p-4">
+                        <!-- Filters Row -->
+                        <div class="row mb-3 g-2">
+                            <div class="col-md-2">
+                                <label class="form-label small text-muted mb-1">Year</label>
+                                <select class="form-select form-select-sm" id="valUtilYearFilter">
+                                    <option value="">All</option>
+                                    {% for year in util_years %}
+                                    <option value="{{ year }}">{{ year }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label small text-muted mb-1">Quarter</label>
+                                <select class="form-select form-select-sm" id="valUtilQuarterFilter">
+                                    <option value="">All</option>
+                                    {% for q in util_quarters %}
+                                    <option value="{{ q }}">{{ q }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label small text-muted mb-1">Department</label>
+                                <select class="form-select form-select-sm" id="valUtilDepartmentFilter">
+                                    <option value="">All</option>
+                                    {% set util_depts = [] %}
+                                    {% for h in history_data %}
+                                    {% if h.get('utilization_value') and h.employee_department %}
+                                    {% if h.employee_department not in util_depts %}
+                                    {% set _ = util_depts.append(h.employee_department) %}
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endfor %}
+                                    {% for dept in util_depts|sort %}
+                                    <option value="{{ dept }}">{{ dept }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label small text-muted mb-1">Status</label>
+                                <select class="form-select form-select-sm" id="valUtilStatusFilter">
+                                    <option value="">All</option>
+                                    {% set util_statuses = [] %}
+                                    {% for h in history_data %}
+                                    {% if h.get('utilization_value') and h.status %}
+                                    {% if h.status not in util_statuses %}
+                                    {% set _ = util_statuses.append(h.status) %}
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endfor %}
+                                    {% for status in util_statuses|sort %}
+                                    <option value="{{ status }}">{{ status }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-2 d-flex align-items-end gap-1">
+                                <button class="btn btn-sm btn-primary" onclick="filterValUtilTable()" style="flex: 1;">
+                                    <i class="fas fa-filter"></i> Apply
+                                </button>
+                                <button class="btn btn-sm btn-outline-secondary" onclick="resetValUtilFilters()" style="flex: 1;">
+                                    <i class="fas fa-redo"></i> Reset
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3 align-items-center">
+                            <div class="col-md-3">
+                                <div class="d-flex align-items-center">
+                                    <span class="me-2 small">Show</span>
+                                    <select class="form-select form-select-sm" style="width: 80px;" id="valUtilPageSize" onchange="changeValUtilPageSize()">
+                                        <option value="10" selected>10</option>
+                                        <option value="25">25</option>
+                                        <option value="50">50</option>
+                                    </select>
+                                    <span class="ms-2 small">entries</span>
+                                </div>
+                            </div>
+                            <div class="col-md-6"></div>
+                            <div class="col-md-3">
+                                <div class="d-flex gap-2 align-items-center justify-content-end">
+                                    <span class="small">Search:</span>
+                                    <input type="text" class="form-control form-control-sm" placeholder="Search..." id="valUtilSearchInput" onkeyup="filterValUtilTable()" style="max-width: 200px;">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                            <table class="table table-hover mb-0" style="font-size: 0.9rem; table-layout: fixed; width: 100%;">
+                                <thead style="position: sticky; top: 0; z-index: 10; background-color: #f8f9fa;">
+                                    <tr style="border-bottom: 2px solid #dee2e6;">
+                                        <th style="width: 110px; padding: 12px 8px; font-weight: 600; color: #495057; white-space: nowrap; text-transform: uppercase; font-size: 0.75rem; vertical-align: middle;">EVENT DATE</th>
+                                        <th style="width: 150px; padding: 12px 8px; font-weight: 600; color: #495057; white-space: nowrap; text-transform: uppercase; font-size: 0.75rem; vertical-align: middle;">EMPLOYEE</th>
+                                        <th style="width: 120px; padding: 12px 8px; font-weight: 600; color: #495057; white-space: nowrap; text-transform: uppercase; font-size: 0.75rem; text-align: center; vertical-align: middle;">UTILIZATION %</th>
+                                        <th style="width: 100px; padding: 12px 8px; font-weight: 600; color: #495057; white-space: nowrap; text-transform: uppercase; font-size: 0.75rem; text-align: center; vertical-align: middle;">STATUS</th>
+                                        <th style="width: 120px; padding: 12px 8px; font-weight: 600; color: #495057; white-space: nowrap; text-transform: uppercase; font-size: 0.75rem; vertical-align: middle;">SUBMITTED BY</th>
+                                        <th style="width: 110px; padding: 12px 8px; font-weight: 600; color: #495057; white-space: nowrap; text-transform: uppercase; font-size: 0.75rem; text-align: center; vertical-align: middle;">ACTION NOTES</th>
+                                        <th style="width: 90px; padding: 12px 8px; font-weight: 600; color: #495057; white-space: nowrap; text-transform: uppercase; font-size: 0.75rem; text-align: center; vertical-align: middle;">ACTIONS</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for h in history_data %}
+                                    {% if h.get('utilization_value') %}
+                                    {% set month = h.request_date.month if h.request_date else 0 %}
+                                    {% set quarter = 'Q1' if month in [4,5,6] else 'Q2' if month in [7,8,9] else 'Q3' if month in [10,11,12] else 'Q4' if month in [1,2,3] else '' %}
+                                    <tr class="val-util-row"
+                                        data-year="{{ h.request_date.year if h.request_date else '' }}"
+                                        data-quarter="{{ quarter }}"
+                                        data-department="{{ h.employee_department }}"
+                                        data-status="{{ h.status }}">
+                                        <td style="padding: 10px 8px; white-space: nowrap; vertical-align: middle;">{{ h.event_date }}</td>
+                                        <td style="padding: 10px 8px; white-space: nowrap; vertical-align: middle;">{{ h.employee }}</td>
+                                        <td style="padding: 10px 8px; text-align: center; white-space: nowrap; vertical-align: middle;">{{ (h.utilization_value * 100)|int }}%</td>
+                                        <td style="padding: 10px 8px; text-align: center; vertical-align: middle;">
+                                            <span class="badge" style="background-color: {{ '#28a745' if h.status == 'Approved' else '#dc3545' }}; color: #fff; font-weight: 600; padding: 4px 12px; white-space: nowrap;">
+                                                {{ h.status }}
+                                            </span>
+                                        </td>
+                                        <td style="padding: 10px 8px; white-space: nowrap; vertical-align: middle;">HR</td>
+                                        <td style="padding: 10px 8px; text-align: center; vertical-align: middle;">
+                                            <button type="button" class="btn btn-sm btn-info view-history-notes-btn" style="background-color: #17a2b8; color: white; padding: 4px 12px; white-space: nowrap; border-color: #17a2b8;" 
+                                                    data-submission-notes="{{ (h.submission_notes if h.submission_notes else '') | replace('"', '&quot;') | replace("'", '&#39;') }}"
+                                                    data-response-notes="{{ (h.response_notes if h.response_notes else '') | replace('"', '&quot;') | replace("'", '&#39;') }}"
+                                                    title="View Notes">
+                                                View
+                                            </button>
+                                        </td>
+                                        <td style="padding: 10px 8px; text-align: center; vertical-align: middle;">
+                                            <button class="btn btn-sm btn-warning edit-util-btn" 
+                                                    data-request-id="{{ h.request_id if h.request_id else '' }}"
+                                                    data-point-id="{{ h.point_id if h.point_id else '' }}"
+                                                    data-employee="{{ h.employee }}"
+                                                    data-employee-id="{{ h.employee_id }}"
+                                                    data-utilization="{{ (h.utilization_value * 100)|int }}"
+                                                    data-event-date="{{ h.event_date }}"
+                                                    data-submission-notes="{{ (h.submission_notes if h.submission_notes else '') | replace('"', '&quot;') | replace("'", '&#39;') }}"
+                                                    data-response-notes="{{ (h.response_notes if h.response_notes else '') | replace('"', '&quot;') | replace("'", '&#39;') }}"
+                                                    title="Edit Utilization"
+                                                    style="white-space: nowrap;">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    {% endif %}
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Pagination -->
+                        <div class="d-flex justify-content-between align-items-center mt-3">
+                            <div class="small text-muted" id="valUtilInfo">Showing 1 to 10 of entries</div>
+                            <nav>
+                                <ul class="pagination pagination-sm mb-0" id="valUtilPagination">
+                                    <li class="page-item disabled"><a class="page-link" href="#">Previous</a></li>
+                                    <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                                    <li class="page-item"><a class="page-link" href="#">Next</a></li>
+                                </ul>
+                            </nav>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Notes Modal -->
+    <div class="modal fade" id="notesModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header" style="background-color: #2c5aa0; color: white;">
+                    <h5 class="modal-title"><i class="fas fa-sticky-note me-2"></i>Request Notes</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
+                    <div id="modalNotes" class="p-3" style="background-color: #f8f9fa; border-radius: 4px; min-height: 100px; white-space: pre-wrap; word-wrap: break-word; word-break: break-word; font-family: monospace; font-size: 0.9rem; line-height: 1.6;"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><i class="fas fa-times me-1"></i>Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Utilization Modal -->
+    <div class="modal fade" id="editUtilizationModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header" style="background-color: #ffc107; color: #000;">
+                    <h5 class="modal-title"><i class="fas fa-edit"></i> Edit Utilization</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="editUtilizationForm">
+                    <div class="modal-body">
+                        <input type="hidden" id="edit_request_id" name="request_id">
+                        <input type="hidden" id="edit_point_id" name="point_id">
+                        
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Employee</label>
+                            <input type="text" class="form-control" id="edit_employee_name" readonly>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Event Date</label>
+                            <input type="text" class="form-control" id="edit_event_date" readonly>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="edit_utilization" class="form-label fw-bold">Utilization Percentage <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <input type="number" class="form-control" id="edit_utilization" name="utilization" 
+                                       min="0" max="100" step="1" required>
+                                <span class="input-group-text">%</span>
+                            </div>
+                            <small class="text-muted">Enter value between 0 and 100</small>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="edit_notes" class="form-label fw-bold">Notes</label>
+                            <textarea class="form-control" id="edit_notes" name="notes" rows="3" readonly></textarea>
+                        </div>
+                        
+                        <div class="alert alert-warning mb-0">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <strong>Note:</strong> This will update the utilization percentage for this record.
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-warning">
+                            <i class="fas fa-save me-1"></i> Update Utilization
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Action Confirmation Modal -->
+    <div class="modal fade" id="actionConfirmModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header" id="actionModalHeader">
+                    <h5 class="modal-title" id="actionModalTitle"></h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="actionConfirmForm">
+                    <div class="modal-body">
+                        <input type="hidden" id="action_request_id">
+                        <input type="hidden" id="action_type_value">
+                        
+                        <div class="mb-3">
+                            <p id="actionConfirmMessage" class="mb-3"></p>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="action_notes" class="form-label fw-bold">
+                                Notes <span class="text-danger">*</span>
+                            </label>
+                            <textarea class="form-control" id="action_notes" name="notes" rows="4" 
+                                      placeholder="Enter your notes for this action..." required></textarea>
+                            <small class="text-muted">Please provide a reason or comment for this action</small>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="fas fa-times me-1"></i> Cancel
+                        </button>
+                        <button type="submit" class="btn" id="actionConfirmBtn">
+                            <i class="fas fa-check me-1"></i> Confirm
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bulk Confirmation Modal -->
+    <div class="modal fade" id="bulkConfirmModal" tabindex="-1">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header" id="bulkModalHeader">
+                    <h5 class="modal-title" id="bulkModalTitle"></h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-info mb-3" id="bulkSummary"></div>
+                    
+                    <h6 class="mb-3">Selected Requests:</h6>
+                    <div class="table-responsive" style="max-height: 400px;">
+                        <table class="table table-sm table-hover">
+                            <thead class="table-light sticky-top">
+                                <tr>
+                                    <th>Employee</th>
+                                    <th>Category</th>
+                                    <th>Points</th>
+                                    <th>Date</th>
+                                </tr>
+                            </thead>
+                            <tbody id="bulkRequestsList"></tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="mt-3" id="bulkNotesSection" style="display: none;">
+                        <label for="bulk_notes" class="form-label fw-bold">
+                            Notes <span class="text-danger">*</span>
+                        </label>
+                        <textarea class="form-control" id="bulk_notes" rows="3" 
+                                  placeholder="Enter notes for this bulk action..." required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i> Cancel
+                    </button>
+                    <button type="button" class="btn" id="bulkConfirmBtn" onclick="confirmBulkAction()">
+                        <i class="fas fa-check me-1"></i> Confirm
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Notification Modal -->
+<div class="modal fade" id="notificationModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content" style="border-radius: 10px; border: none; box-shadow: 0 5px 15px rgba(0,0,0,0.3);">
+            <div class="modal-header border-0 pb-0" id="notificationModalHeader" style="background-color: #dc3545; color: white; border-radius: 10px 10px 0 0;">
+                <h6 class="modal-title" id="notificationModalTitle" style="font-weight: 600;">
+                    <i class="fas fa-exclamation-circle me-2"></i>Error
+                </h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center py-4">
+                <p id="notificationModalMessage" class="mb-0" style="font-size: 0.95rem; color: #333;"></p>
+            </div>
+            <div class="modal-footer border-0 pt-0 justify-content-center">
+                <button type="button" class="btn btn-primary px-4" data-bs-dismiss="modal" style="border-radius: 20px;">OK</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .tab-content-section {
+        display: none;
+    }
+    .tab-content-section.active {
+        display: block;
+    }
+    .quick-action-btn {
+        padding: 2rem;
+        font-size: 1.1rem;
+    }
+    .border-left-warning {
+        border-left: 4px solid #f6c23e;
+    }
+    .border-left-success {
+        border-left: 4px solid #1cc88a;
+    }
+    .border-left-danger {
+        border-left: 4px solid #e74a3b;
+    }
+</style>
+
+<script>
+    function switchTab(tabName) {
+        // Hide all tabs
+        document.querySelectorAll('.tab-content-section').forEach(tab => {
+            tab.classList.remove('active');
+        });
+        
+        // Show selected tab
+        document.getElementById(tabName + '-tab').classList.add('active');
+        
+        // Update sidebar active state
+        document.querySelectorAll('.sidebar-nav-item.tab-link').forEach(link => {
+            link.classList.remove('active');
+        });
+        document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+        
+        // Save current tab to localStorage
+        localStorage.setItem('hr_validator_current_tab', tabName);
+        
+        // If switching to review tab, use cached data or fetch fresh
+        if (tabName === 'review') {
+            // Small delay to ensure tab is visible
+            setTimeout(function() {
+                const tableBody = document.querySelector('#review-tab tbody');
+                
+                if (tableBody) {
+                    // Table exists - update it with cached data
+                    if (window.cachedPendingRequests && window.cachedPendingRequests.length > 0) {
+                        updatePendingRequestsTable(tableBody, window.cachedPendingRequests);
+                    } else {
+                        if (typeof window.refreshPendingRequests === 'function') {
+                            window.refreshPendingRequests();
+                        }
+                    }
+                } else {
+                    // Table doesn't exist (page loaded with 0 requests)
+                    // Check if we have cached data that needs to be displayed
+                    if (window.cachedPendingRequests && window.cachedPendingRequests.length > 0) {
+                        location.reload();
+                    }
+                }
+            }, 50);
+        }
+        
+        // Scroll to top
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    
+    // Restore tab on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        // Check localStorage for saved tab IMMEDIATELY (no setTimeout)
+        const savedTab = localStorage.getItem('hr_validator_current_tab');
+        
+        if (savedTab && savedTab !== 'overview') {
+            // Force remove all active classes first
+            document.querySelectorAll('.tab-content-section').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.sidebar-nav-item.tab-link').forEach(link => {
+                link.classList.remove('active');
+            });
+            // Now switch to saved tab
+            switchTab(savedTab);
+        } else {
+            // Ensure overview is saved
+            localStorage.setItem('hr_validator_current_tab', 'overview');
+        }
+        
+        // Remove preload style after tab is properly set
+        const preloadStyle = document.getElementById('tab-preload-style');
+        if (preloadStyle) {
+            preloadStyle.remove();
+        }
+    });
+    
+    function singleAction(requestId, action) {
+        // Set up modal based on action type
+        const modal = document.getElementById('actionConfirmModal');
+        const modalHeader = document.getElementById('actionModalHeader');
+        const modalTitle = document.getElementById('actionModalTitle');
+        const modalMessage = document.getElementById('actionConfirmMessage');
+        const confirmBtn = document.getElementById('actionConfirmBtn');
+        
+        // Store values
+        document.getElementById('action_request_id').value = requestId;
+        document.getElementById('action_type_value').value = action;
+        document.getElementById('action_notes').value = '';
+        
+        if (action === 'approve') {
+            modalHeader.style.backgroundColor = '#28a745';
+            modalHeader.style.color = 'white';
+            modalTitle.innerHTML = '<i class="fas fa-check-circle me-2"></i>Approve Request';
+            modalMessage.innerHTML = '<i class="fas fa-info-circle text-success me-2"></i>You are about to <strong>approve</strong> this reward request. Please provide notes for your approval.';
+            confirmBtn.className = 'btn btn-success';
+            confirmBtn.innerHTML = '<i class="fas fa-check me-1"></i> Approve';
+        } else {
+            modalHeader.style.backgroundColor = '#dc3545';
+            modalHeader.style.color = 'white';
+            modalTitle.innerHTML = '<i class="fas fa-times-circle me-2"></i>Reject Request';
+            modalMessage.innerHTML = '<i class="fas fa-exclamation-triangle text-danger me-2"></i>You are about to <strong>reject</strong> this reward request. Please provide a reason for rejection.';
+            confirmBtn.className = 'btn btn-danger';
+            confirmBtn.innerHTML = '<i class="fas fa-times me-1"></i> Reject';
+        }
+        
+        // Show modal
+        const bsModal = new bootstrap.Modal(modal);
+        bsModal.show();
+    }
+    
+    let currentBulkAction = null;
+    
+    // Function to show notification modal
+    function showNotification(title, message, type = 'error') {
+        const modal = document.getElementById('notificationModal');
+        const header = document.getElementById('notificationModalHeader');
+        const titleElement = document.getElementById('notificationModalTitle');
+        const messageElement = document.getElementById('notificationModalMessage');
+        
+        // Set colors and icons based on type
+        const config = {
+            error: { bg: '#dc3545', icon: 'fa-exclamation-circle', title: title || 'Error' },
+            warning: { bg: '#ffc107', icon: 'fa-exclamation-triangle', title: title || 'Warning' },
+            success: { bg: '#28a745', icon: 'fa-check-circle', title: title || 'Success' },
+            info: { bg: '#17a2b8', icon: 'fa-info-circle', title: title || 'Information' }
+        };
+        
+        const settings = config[type] || config.error;
+        header.style.backgroundColor = settings.bg;
+        titleElement.innerHTML = `<i class="fas ${settings.icon} me-2"></i>${settings.title}`;
+        messageElement.textContent = message;
+        
+        const bsModal = new bootstrap.Modal(modal);
+        bsModal.show();
+    }
+    
+    function bulkAction(actionType) {
+        const selected = document.querySelectorAll('input[name="selected_requests"]:checked');
+        if (selected.length === 0) {
+            showNotification('No Selection', 'Please select at least one request', 'warning');
+            return;
+        }
+        
+        // Store action type
+        currentBulkAction = actionType;
+        
+        // Set up bulk confirmation modal
+        const modal = document.getElementById('bulkConfirmModal');
+        const modalHeader = document.getElementById('bulkModalHeader');
+        const modalTitle = document.getElementById('bulkModalTitle');
+        const bulkSummary = document.getElementById('bulkSummary');
+        const bulkRequestsList = document.getElementById('bulkRequestsList');
+        const confirmBtn = document.getElementById('bulkConfirmBtn');
+        const notesSection = document.getElementById('bulkNotesSection');
+        
+        // Configure modal based on action type
+        if (actionType === 'bulk_approve') {
+            modalHeader.style.backgroundColor = '#28a745';
+            modalHeader.style.color = 'white';
+            modalTitle.innerHTML = '<i class="fas fa-check-circle me-2"></i>Confirm Bulk Approval';
+            bulkSummary.className = 'alert alert-success mb-3';
+            bulkSummary.innerHTML = `<i class="fas fa-check-circle me-2"></i>You are about to <strong>approve ${selected.length} request(s)</strong>. Please review the list below and provide notes.`;
+            confirmBtn.className = 'btn btn-success';
+            confirmBtn.innerHTML = '<i class="fas fa-check me-1"></i> Approve All';
+            notesSection.style.display = 'block';
+            document.getElementById('bulk_notes').value = '';
+        } else {
+            modalHeader.style.backgroundColor = '#dc3545';
+            modalHeader.style.color = 'white';
+            modalTitle.innerHTML = '<i class="fas fa-times-circle me-2"></i>Confirm Bulk Rejection';
+            bulkSummary.className = 'alert alert-danger mb-3';
+            bulkSummary.innerHTML = `<i class="fas fa-exclamation-triangle me-2"></i>You are about to <strong>reject ${selected.length} request(s)</strong>. Please review and provide a reason.`;
+            confirmBtn.className = 'btn btn-danger';
+            confirmBtn.innerHTML = '<i class="fas fa-times me-1"></i> Reject All';
+            notesSection.style.display = 'block';
+            document.getElementById('bulk_notes').value = '';
+        }
+        
+        // Build list of selected requests
+        let requestsHTML = '';
+        selected.forEach(checkbox => {
+            const row = checkbox.closest('tr');
+            const employee = row.querySelector('td:nth-child(3)').textContent.trim();
+            const category = row.querySelector('td:nth-child(4)').textContent.trim();
+            const points = row.querySelector('td:nth-child(5)').textContent.trim();
+            const date = row.querySelector('td:nth-child(6)').textContent.trim();
+            
+            requestsHTML += `
+                <tr>
+                    <td>${employee}</td>
+                    <td>${category}</td>
+                    <td><span class="badge bg-primary">${points}</span></td>
+                    <td>${date}</td>
+                </tr>
+            `;
+        });
+        
+        bulkRequestsList.innerHTML = requestsHTML;
+        
+        // Show modal
+        const bsModal = new bootstrap.Modal(modal);
+        bsModal.show();
+    }
+    
+    function confirmBulkAction() {
+        const notes = document.getElementById('bulk_notes').value.trim();
+        
+        if (currentBulkAction === 'bulk_reject') {
+            if (!notes) {
+                showNotification('Notes Required', 'Please provide a reason for rejection', 'warning');
+                return;
+            }
+            document.querySelector('#reviewForm').insertAdjacentHTML('beforeend', 
+                `<input type="hidden" name="rejection_notes" value="${notes}">`);
+        } else if (currentBulkAction === 'bulk_approve') {
+            if (!notes) {
+                showNotification('Notes Required', 'Please provide notes for approval', 'warning');
+                return;
+            }
+            document.querySelector('#reviewForm').insertAdjacentHTML('beforeend', 
+                `<input type="hidden" name="approval_notes" value="${notes}">`);
+        }
+        
+        // Close modal
+        const modal = bootstrap.Modal.getInstance(document.getElementById('bulkConfirmModal'));
+        if (modal) modal.hide();
+        
+        // Submit form
+        document.getElementById('action_type').value = currentBulkAction;
+        document.querySelector('#reviewForm').submit();
+    }
+    
+    // Handle action confirmation form submission
+    document.addEventListener('DOMContentLoaded', function() {
+        document.getElementById('actionConfirmForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const requestId = document.getElementById('action_request_id').value;
+            const action = document.getElementById('action_type_value').value;
+            const notes = document.getElementById('action_notes').value.trim();
+            
+            if (!notes) {
+                showNotification('Notes Required', 'Please provide notes for this action', 'warning');
+                return;
+            }
+            
+            // Close modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('actionConfirmModal'));
+            if (modal) modal.hide();
+            
+            if (action === 'bulk_reject') {
+                // Handle bulk rejection
+                document.querySelector('#reviewForm').insertAdjacentHTML('beforeend', 
+                    `<input type="hidden" name="rejection_notes" value="${notes}">`);
+                document.getElementById('action_type').value = 'bulk_reject';
+                document.querySelector('#reviewForm').submit();
+            } else {
+                // Handle single action
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.innerHTML = `
+                    <input type="hidden" name="action_type" value="single_action">
+                    <input type="hidden" name="request_id" value="${requestId}">
+                    <input type="hidden" name="action" value="${action}">
+                    <input type="hidden" name="response_notes" value="${notes}">
+                `;
+                document.body.appendChild(form);
+                form.submit();
+            }
+        });
+    });
+    
+    // Tab link click handlers
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.sidebar-nav-item.tab-link').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const tabName = this.getAttribute('data-tab');
+                switchTab(tabName);
+            });
+        });
+        
+        // Select all checkbox - only select visible rows on current page
+        document.getElementById('selectAll')?.addEventListener('change', function() {
+            const checkboxes = document.querySelectorAll('input[name="selected_requests"]');
+            checkboxes.forEach(cb => {
+                // Only check/uncheck if the parent row is visible
+                const row = cb.closest('tr');
+                if (row && row.style.display !== 'none') {
+                    cb.checked = this.checked;
+                }
+            });
+        });
+        
+        // Initialize DataTables
+        if (document.getElementById('pendingTable')) {
+            $('#pendingTable').DataTable({
+                order: [[1, 'asc']],
+                pageLength: 25
+            });
+        }
+        
+        if (document.getElementById('historyTable')) {
+            $('#historyTable').DataTable({
+                order: [[0, 'desc']],
+                pageLength: 25
+            });
+        }
+        
+        // Initialize real-time updates for HR Validator
+        if (typeof HRRealtimeManager !== 'undefined') {
+            HRRealtimeManager.init('validator');
+        }
+        
+        // Notes Modal Handler
+        document.addEventListener('click', function(e) {
+            // Handle pending requests notes (single notes field)
+            if (e.target.classList.contains('view-notes-btn') || e.target.closest('.view-notes-btn')) {
+                const button = e.target.classList.contains('view-notes-btn') ? e.target : e.target.closest('.view-notes-btn');
+                const notes = button.getAttribute('data-notes');
+                document.getElementById('modalNotes').textContent = notes || 'No notes provided';
+                const modal = new bootstrap.Modal(document.getElementById('notesModal'));
+                modal.show();
+            }
+            
+            // Handle history notes (show ONLY validator's response notes)
+            if (e.target.classList.contains('view-history-notes-btn') || e.target.closest('.view-history-notes-btn')) {
+                const button = e.target.classList.contains('view-history-notes-btn') ? e.target : e.target.closest('.view-history-notes-btn');
+                const responseNotes = button.getAttribute('data-response-notes') || '';
+                
+                document.getElementById('modalNotes').textContent = responseNotes || 'No action notes provided';
+                const modal = new bootstrap.Modal(document.getElementById('notesModal'));
+                modal.show();
+                return; // Prevent fall-through
+            }
+            
+            // Edit Utilization Button Handler
+            if (e.target.classList.contains('edit-util-btn') || e.target.closest('.edit-util-btn')) {
+                const button = e.target.classList.contains('edit-util-btn') ? e.target : e.target.closest('.edit-util-btn');
+                
+                const requestId = button.getAttribute('data-request-id');
+                const pointId = button.getAttribute('data-point-id');
+                const employee = button.getAttribute('data-employee');
+                const employeeId = button.getAttribute('data-employee-id');
+                const utilization = button.getAttribute('data-utilization');
+                const eventDate = button.getAttribute('data-event-date');
+                const notes = button.getAttribute('data-notes');
+                
+                // Populate modal fields
+                document.getElementById('edit_request_id').value = requestId || '';
+                document.getElementById('edit_point_id').value = pointId || '';
+                document.getElementById('edit_employee_name').value = `${employee} (${employeeId})`;
+                document.getElementById('edit_event_date').value = eventDate;
+                document.getElementById('edit_utilization').value = utilization;
+                document.getElementById('edit_notes').value = notes || 'No notes provided';
+                
+                const modal = new bootstrap.Modal(document.getElementById('editUtilizationModal'));
+                modal.show();
+            }
+        });
+        
+        // Edit Utilization Form Submission
+        document.getElementById('editUtilizationForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const requestId = document.getElementById('edit_request_id').value;
+            const pointId = document.getElementById('edit_point_id').value;
+            const utilization = document.getElementById('edit_utilization').value;
+            
+            if (!utilization || utilization < 0 || utilization > 100) {
+                showNotification('Invalid Input', 'Please enter a valid utilization percentage between 0 and 100', 'warning');
+                return;
+            }
+            
+            // Show loading state
+            const submitBtn = this.querySelector('button[type="submit"]');
+            const originalBtnText = submitBtn.innerHTML;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Updating...';
+            
+            try {
+                const formData = new FormData();
+                formData.append('request_id', requestId);
+                formData.append('point_id', pointId);
+                formData.append('utilization', utilization);
+                
+                const response = await fetch('{{ url_for("hr_roles.update_utilization") }}', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Close modal
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('editUtilizationModal'));
+                    if (modal) modal.hide();
+                    
+                    // Show success notification
+                    showNotification('Success', 'Utilization percentage has been updated successfully', 'success');
+                    
+                    // Reload after delay to allow notification to be seen
+                    setTimeout(() => location.reload(), 2500);
+                } else {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalBtnText;
+                    
+                    showNotification('Update Failed', data.error || 'Failed to update utilization', 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalBtnText;
+                
+                showNotification('Error', 'An error occurred while updating utilization. Please try again.', 'error');
+            }
+        });
+        
+        // Mark all rows as not filtered initially
+        document.querySelectorAll('.val-rewards-row').forEach(row => {
+            row.setAttribute('data-filtered', 'false');
+            row.style.display = 'table-row';
+        });
+        document.querySelectorAll('.val-util-row').forEach(row => {
+            row.setAttribute('data-filtered', 'false');
+            row.style.display = 'table-row';
+        });
+        
+        // Initialize pagination for history tables
+        updateValPagination('rewards');
+        updateValPagination('utilization');
+    });
+    
+    // History Sub-tab Switching Function
+    function switchValidatorHistoryTab(tabName) {
+        document.querySelectorAll('.history-tab-pane').forEach(pane => pane.classList.remove('active'));
+        document.querySelectorAll('.history-nav-tabs .nav-link').forEach(link => link.classList.remove('active'));
+        document.getElementById('validator-' + tabName + '-history-pane').classList.add('active');
+        document.getElementById('validator-' + tabName + '-history-tab-link').classList.add('active');
+    }
+    
+    // Pagination state
+    let valRewardsCurrentPage = 1;
+    let valRewardsPageSize = 10;
+    let valUtilCurrentPage = 1;
+    let valUtilPageSize = 10;
+    
+    // Filter function for validator rewards history
+    function filterValRewardsTable() {
+        const quarterFilter = document.getElementById('valRewardsQuarterFilter')?.value.toLowerCase() || '';
+        const yearFilter = document.getElementById('valRewardsYearFilter')?.value.toLowerCase() || '';
+        const categoryFilter = document.getElementById('valRewardsCategoryFilter')?.value.toLowerCase() || '';
+        const departmentFilter = document.getElementById('valRewardsDepartmentFilter')?.value.toLowerCase() || '';
+        const statusFilter = document.getElementById('valRewardsStatusFilter')?.value.toLowerCase() || '';
+        const searchInput = document.getElementById('valRewardsSearchInput')?.value.toLowerCase() || '';
+        
+        const rows = document.querySelectorAll('.val-rewards-row');
+        rows.forEach(row => {
+            const quarter = (row.getAttribute('data-quarter') || '').toLowerCase();
+            const year = (row.getAttribute('data-year') || '').toLowerCase();
+            const category = (row.getAttribute('data-category') || '').toLowerCase();
+            const department = (row.getAttribute('data-department') || '').toLowerCase();
+            const status = (row.getAttribute('data-status') || '').toLowerCase();
+            const rowText = row.textContent.toLowerCase();
+            
+            const matches = (!quarterFilter || quarter === quarterFilter) &&
+                          (!yearFilter || year === yearFilter) &&
+                          (!categoryFilter || category === categoryFilter) &&
+                          (!departmentFilter || department === departmentFilter) &&
+                          (!statusFilter || status === statusFilter) &&
+                          (!searchInput || rowText.includes(searchInput));
+            
+            row.setAttribute('data-filtered', matches ? 'false' : 'true');
+        });
+        valRewardsCurrentPage = 1;
+        updateValPagination('rewards');
+    }
+    
+    // Filter function for validator utilization history
+    function filterValUtilTable() {
+        const quarterFilter = document.getElementById('valUtilQuarterFilter')?.value.toLowerCase() || '';
+        const yearFilter = document.getElementById('valUtilYearFilter')?.value.toLowerCase() || '';
+        const departmentFilter = document.getElementById('valUtilDepartmentFilter')?.value.toLowerCase() || '';
+        const statusFilter = document.getElementById('valUtilStatusFilter')?.value.toLowerCase() || '';
+        const searchInput = document.getElementById('valUtilSearchInput')?.value.toLowerCase() || '';
+        
+        const rows = document.querySelectorAll('.val-util-row');
+        rows.forEach(row => {
+            const quarter = (row.getAttribute('data-quarter') || '').toLowerCase();
+            const year = (row.getAttribute('data-year') || '').toLowerCase();
+            const department = (row.getAttribute('data-department') || '').toLowerCase();
+            const status = (row.getAttribute('data-status') || '').toLowerCase();
+            const rowText = row.textContent.toLowerCase();
+            
+            const matches = (!quarterFilter || quarter === quarterFilter) &&
+                          (!yearFilter || year === yearFilter) &&
+                          (!departmentFilter || department === departmentFilter) &&
+                          (!statusFilter || status === statusFilter) &&
+                          (!searchInput || rowText.includes(searchInput));
+            
+            row.setAttribute('data-filtered', matches ? 'false' : 'true');
+        });
+        valUtilCurrentPage = 1;
+        updateValPagination('utilization');
+    }
+    
+    // Update Pagination and show/hide rows
+    function updateValPagination(type) {
+        const isRewards = type === 'rewards';
+        const rows = document.querySelectorAll(isRewards ? '.val-rewards-row' : '.val-util-row');
+        
+        // Get rows that are NOT filtered out (check data attribute)
+        const visibleRows = [];
+        rows.forEach(row => {
+            if (row.getAttribute('data-filtered') !== 'true') {
+                visibleRows.push(row);
+            }
+        });
+        const totalRows = visibleRows.length;
+        
+        const currentPage = isRewards ? valRewardsCurrentPage : valUtilCurrentPage;
+        const pageSize = isRewards ? valRewardsPageSize : valUtilPageSize;
+        const infoElement = document.getElementById(isRewards ? 'valRewardsInfo' : 'valUtilInfo');
+        const paginationElement = document.getElementById(isRewards ? 'valRewardsPagination' : 'valUtilPagination');
+        
+        if (totalRows === 0) {
+            infoElement.textContent = 'No entries found';
+            paginationElement.innerHTML = '';
+            rows.forEach(row => row.style.display = 'none');
+            return;
+        }
+        
+        const totalPages = Math.ceil(totalRows / pageSize);
+        
+        // Ensure current page is valid
+        let validPage = Math.min(currentPage, totalPages);
+        validPage = Math.max(1, validPage);
+        
+        if (validPage !== currentPage) {
+            if (isRewards) {
+                valRewardsCurrentPage = validPage;
+            } else {
+                valUtilCurrentPage = validPage;
+            }
+        }
+        
+        const start = (validPage - 1) * pageSize + 1;
+        const end = Math.min(validPage * pageSize, totalRows);
+        
+        infoElement.textContent = `Showing ${start} to ${end} of ${totalRows} entries`;
+        
+        // Hide ALL rows first
+        rows.forEach(row => row.style.display = 'none');
+        
+        // Show only rows for current page
+        visibleRows.forEach((row, index) => {
+            if (index >= (validPage - 1) * pageSize && index < validPage * pageSize) {
+                row.style.display = 'table-row';
+            }
+        });
+        
+        // Build pagination controls
+        let paginationHTML = '';
+        if (totalPages > 1) {
+            // Previous button
+            paginationHTML += `<li class="page-item ${validPage === 1 ? 'disabled' : ''}">
+                <a class="page-link" href="#" onclick="changeValPage('${type}', ${validPage - 1}); return false;">‹</a>
+            </li>`;
+            
+            // Page numbers
+            const maxPages = 5;
+            let startPage = Math.max(1, validPage - 2);
+            let endPage = Math.min(totalPages, startPage + maxPages - 1);
+            
+            if (endPage - startPage < maxPages - 1) {
+                startPage = Math.max(1, endPage - maxPages + 1);
+            }
+            
+            for (let i = startPage; i <= endPage; i++) {
+                paginationHTML += `<li class="page-item ${i === validPage ? 'active' : ''}">
+                    <a class="page-link" href="#" onclick="changeValPage('${type}', ${i}); return false;">${i}</a>
+                </li>`;
+            }
+            
+            // Next button
+            paginationHTML += `<li class="page-item ${validPage === totalPages ? 'disabled' : ''}">
+                <a class="page-link" href="#" onclick="changeValPage('${type}', ${validPage + 1}); return false;">›</a>
+            </li>`;
+        }
+        
+        paginationElement.innerHTML = paginationHTML;
+    }
+    
+    // Change page
+    function changeValPage(type, page) {
+        if (type === 'rewards') {
+            valRewardsCurrentPage = page;
+        } else {
+            valUtilCurrentPage = page;
+        }
+        updateValPagination(type);
+    }
+    
+    // Change page size
+    function changeValRewardsPageSize() {
+        valRewardsPageSize = parseInt(document.getElementById('valRewardsPageSize').value);
+        valRewardsCurrentPage = 1;
+        filterValRewardsTable();
+    }
+    
+    function changeValUtilPageSize() {
+        valUtilPageSize = parseInt(document.getElementById('valUtilPageSize').value);
+        valUtilCurrentPage = 1;
+        filterValUtilTable();
+    }
+    
+    // Reset filters
+    function resetValRewardsFilters() {
+        document.getElementById('valRewardsQuarterFilter').value = '';
+        document.getElementById('valRewardsYearFilter').value = '';
+        document.getElementById('valRewardsCategoryFilter').value = '';
+        document.getElementById('valRewardsDepartmentFilter').value = '';
+        document.getElementById('valRewardsStatusFilter').value = '';
+        document.getElementById('valRewardsSearchInput').value = '';
+        filterValRewardsTable();
+    }
+    
+    function resetValUtilFilters() {
+        document.getElementById('valUtilQuarterFilter').value = '';
+        document.getElementById('valUtilYearFilter').value = '';
+        document.getElementById('valUtilDepartmentFilter').value = '';
+        document.getElementById('valUtilStatusFilter').value = '';
+        document.getElementById('valUtilSearchInput').value = '';
+        filterValUtilTable();
+    }
+    
+    // Review Requests Pagination - Global variables and functions
+    let reviewCurrentPage = 1;
+    let reviewPageSize = 10;
+    let reviewTotalRows = 0;
+    let reviewAllRows = [];
+    let reviewOriginalRows = []; // Store original unfiltered rows
+    
+    function initReviewPagination() {
+        const tbody = document.getElementById('reviewRequestsBody');
+        if (!tbody) {
+            return;
+        }
+        
+        // Store all rows in array
+        reviewAllRows = Array.from(tbody.querySelectorAll('tr.review-row'));
+        reviewOriginalRows = [...reviewAllRows]; // Keep a copy of original rows
+        reviewTotalRows = reviewAllRows.length;
+        
+        if (reviewTotalRows > 0) {
+            displayReviewPage(1);
+        }
+    }
+    
+    function displayReviewPage(page) {
+        const tbody = document.getElementById('reviewRequestsBody');
+        if (!tbody) return;
+        
+        // Remove any existing "no results" message
+        const existingNoResults = tbody.querySelector('.no-results-row');
+        if (existingNoResults) {
+            existingNoResults.remove();
+        }
+        
+        // Check if we have no rows to display
+        if (reviewAllRows.length === 0) {
+            // Hide all original rows
+            reviewOriginalRows.forEach(row => {
+                row.style.display = 'none';
+            });
+            
+            // Show "No records found" message
+            const noResultsRow = document.createElement('tr');
+            noResultsRow.className = 'no-results-row';
+            noResultsRow.innerHTML = `
+                <td colspan="8" style="text-align: center; padding: 40px;">
+                    <i class="fas fa-search" style="font-size: 3rem; color: #ccc; margin-bottom: 10px;"></i>
+                    <p style="font-size: 1.1rem; color: #666; margin: 0;">No records found</p>
+                    <p style="font-size: 0.9rem; color: #999; margin: 5px 0 0 0;">Try adjusting your search criteria</p>
+                </td>
+            `;
+            tbody.appendChild(noResultsRow);
+            
+            // Update info text
+            const infoBottom = document.getElementById('reviewInfoBottom');
+            if (infoBottom) infoBottom.textContent = 'Showing 0 to 0 of 0 entries';
+            
+            // Hide pagination
+            const pagination = document.getElementById('reviewPagination');
+            if (pagination) pagination.style.display = 'none';
+            
+            return;
+        }
+        
+        const totalPages = Math.ceil(reviewTotalRows / reviewPageSize);
+        
+        // Validate page number
+        if (page < 1) page = 1;
+        if (page > totalPages && totalPages > 0) page = totalPages;
+        reviewCurrentPage = page;
+        
+        // Calculate range
+        const start = (page - 1) * reviewPageSize;
+        const end = start + reviewPageSize;
+        
+        // First, hide ALL original rows
+        reviewOriginalRows.forEach(row => {
+            row.style.display = 'none';
+            row.style.visibility = 'hidden';
+        });
+        
+        // Then show only the filtered rows for current page
+        reviewAllRows.forEach((row, index) => {
+            if (index >= start && index < end) {
+                row.style.display = 'table-row';
+                row.style.visibility = 'visible';
+            } else {
+                row.style.display = 'none';
+                row.style.visibility = 'hidden';
+            }
+        });
+        
+        // Scroll table to top
+        const tableContainer = document.querySelector('.table-responsive');
+        if (tableContainer) {
+            tableContainer.scrollTop = 0;
+        }
+        
+        // Update info text
+        const showing = reviewTotalRows === 0 ? 0 : start + 1;
+        const to = Math.min(end, reviewTotalRows);
+        const infoText = `Showing ${showing} to ${to} of ${reviewTotalRows} entries`;
+        
+        const infoBottom = document.getElementById('reviewInfoBottom');
+        if (infoBottom) infoBottom.textContent = infoText;
+        
+        // Show pagination
+        const pagination = document.getElementById('reviewPagination');
+        if (pagination) pagination.style.display = 'flex';
+        
+        // Update pagination buttons
+        updateReviewPagination(totalPages);
+        
+        // Uncheck "Select All" when changing pages
+        const selectAllCheckbox = document.getElementById('selectAll');
+        if (selectAllCheckbox) {
+            selectAllCheckbox.checked = false;
+        }
+    }
+    
+    function updateReviewPagination(totalPages) {
+        const pagination = document.getElementById('reviewPagination');
+        if (!pagination) return;
+        
+        let html = '';
+        
+        // Previous button
+        html += `<li class="page-item ${reviewCurrentPage === 1 ? 'disabled' : ''}">
+            <a class="page-link" href="javascript:void(0);" onclick="changeReviewPage('prev')">Previous</a>
+        </li>`;
+        
+        // Page numbers
+        for (let i = 1; i <= totalPages; i++) {
+            if (i === 1 || i === totalPages || (i >= reviewCurrentPage - 1 && i <= reviewCurrentPage + 1)) {
+                html += `<li class="page-item ${i === reviewCurrentPage ? 'active' : ''}">
+                    <a class="page-link" href="javascript:void(0);" onclick="changeReviewPage(${i})">${i}</a>
+                </li>`;
+            } else if (i === reviewCurrentPage - 2 || i === reviewCurrentPage + 2) {
+                html += `<li class="page-item disabled"><a class="page-link" href="javascript:void(0);">...</a></li>`;
+            }
+        }
+        
+        // Next button
+        html += `<li class="page-item ${reviewCurrentPage === totalPages ? 'disabled' : ''}">
+            <a class="page-link" href="javascript:void(0);" onclick="changeReviewPage('next')">Next</a>
+        </li>`;
+        
+        pagination.innerHTML = html;
+    }
+    
+    function changeReviewPage(page) {
+        const totalPages = Math.ceil(reviewTotalRows / reviewPageSize);
+        
+        if (page === 'prev') {
+            page = reviewCurrentPage - 1;
+        } else if (page === 'next') {
+            page = reviewCurrentPage + 1;
+        }
+        
+        displayReviewPage(page);
+    }
+    
+    function changeReviewPageSize() {
+        reviewPageSize = parseInt(document.getElementById('reviewPageSize').value);
+        displayReviewPage(1);
+    }
+    
+    function searchReviewTable() {
+        const searchInput = document.getElementById('reviewSearchInput');
+        if (!searchInput) return;
+        
+        const searchTerm = searchInput.value.toLowerCase().trim();
+        
+        // If search is empty, restore all original rows
+        if (searchTerm === '') {
+            reviewAllRows = [...reviewOriginalRows];
+            reviewTotalRows = reviewAllRows.length;
+            displayReviewPage(1);
+            return;
+        }
+        
+        // Filter rows based on search term
+        const filteredRows = reviewOriginalRows.filter(row => {
+            const text = row.textContent.toLowerCase();
+            return text.includes(searchTerm);
+        });
+        
+        // Update the stored rows array with filtered results
+        reviewAllRows = filteredRows;
+        reviewTotalRows = filteredRows.length;
+        
+        // Reset to page 1 and display
+        displayReviewPage(1);
+    }
+    
+    // Real-time refresh function for pending requests
+    window.refreshPendingRequests = function() {
+        // Update the pending count badge and stats
+        fetch('{{ url_for("hr_roles.hr_validator_get_pending_count") }}')
+            .then(response => response.json())
+            .then(data => {
+                // Update sidebar badge (works on ALL tabs)
+                const badge = document.querySelector('.sidebar-nav-item[data-tab="review"] .badge');
+                if (badge) {
+                    badge.textContent = data.count;
+                    if (data.count > 0) {
+                        badge.style.display = 'inline-block';
+                    } else {
+                        badge.style.display = 'none';
+                    }
+                }
+                
+                // Update stats card on overview tab
+                const statsCard = document.querySelector('[data-pending-count]');
+                if (statsCard) {
+                    statsCard.textContent = data.count;
+                }
+            })
+            .catch(error => {});
+        
+        // ALWAYS fetch pending requests data (regardless of current tab)
+        fetch('{{ url_for("hr_roles.hr_validator_get_pending_requests_data") }}')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.requests) {
+                    const allRequests = data.requests.rewards;
+                    
+                    // Store in window for later use
+                    window.cachedPendingRequests = allRequests;
+                    
+                    // Check if we're on review tab
+                    const reviewTab = document.getElementById('review-tab');
+                    const isOnReviewTab = reviewTab && reviewTab.classList.contains('active');
+                    
+                    // Find the table body in review tab
+                    const tableBody = document.querySelector('#review-tab tbody');
+                    
+                    if (tableBody) {
+                        // Table exists - update it
+                        if (allRequests.length > 0) {
+                            updatePendingRequestsTable(tableBody, allRequests);
+                        } else {
+                            // Show "no requests" message
+                            const reviewCard = document.querySelector('#review-tab .card-body');
+                            if (reviewCard) {
+                                reviewCard.innerHTML = `
+                                    <div class="alert alert-info text-center">
+                                        <i class="fas fa-info-circle fa-3x mb-3"></i>
+                                        <h5>No Pending Requests</h5>
+                                        <p class="mb-0">All requests have been reviewed</p>
+                                    </div>
+                                `;
+                            }
+                        }
+                    } else {
+                        // Table doesn't exist
+                        if (isOnReviewTab && allRequests.length > 0) {
+                            // We're on review tab but table doesn't exist (was empty)
+                            // AND we have new requests - reload to render the table
+                            location.reload();
+                        }
+                    }
+                }
+            })
+            .catch(error => {});
+    };
+    
+    // Helper function to update pending requests table
+    function updatePendingRequestsTable(tableBody, requests) {
+        if (!tableBody || !requests) return;
+        
+        // PRESERVE SELECTIONS: Store currently selected request IDs before clearing
+        const selectedRequestIds = new Set();
+        const existingCheckboxes = tableBody.querySelectorAll('input[name="selected_requests"]:checked');
+        existingCheckboxes.forEach(cb => selectedRequestIds.add(cb.value));
+        
+        // Clear existing rows
+        tableBody.innerHTML = '';
+        
+        // Add new rows
+        requests.forEach(req => {
+            const row = document.createElement('tr');
+            row.className = 'review-row';
+            
+            // Check if this request was previously selected
+            const isSelected = selectedRequestIds.has(req.request_id);
+            
+            row.innerHTML = `
+                <td style="padding: 10px 8px;"><input type="checkbox" name="selected_requests" value="${req.request_id}" ${isSelected ? 'checked' : ''}></td>
+                <td style="padding: 10px 8px;">${req.event_date}</td>
+                <td style="padding: 10px 8px;">${req.employee_name} (${req.employee_id})</td>
+                <td style="padding: 10px 8px; text-align: center;">${req.updater_name}</td>
+                <td style="padding: 10px 8px;">${req.category_name}</td>
+                <td style="padding: 10px 8px; text-align: center;">${req.points} pts</td>
+                <td style="padding: 10px 8px; text-align: center;">
+                    <button type="button" class="btn btn-sm btn-info view-notes-btn" style="padding: 4px 12px; white-space: nowrap;" 
+                            data-notes="${(req.submission_notes || 'No notes provided').replace(/"/g, '&quot;').replace(/'/g, '&#39;')}" 
+                            title="View Notes">
+                        View
+                    </button>
+                </td>
+                <td style="padding: 10px 8px; text-align: center;">
+                    <button type="button" class="btn btn-sm btn-success me-1" 
+                            onclick="singleAction('${req.request_id}', 'approve')" style="padding: 4px 8px;">
+                        <i class="fas fa-check"></i>
+                    </button>
+                    <button type="button" class="btn btn-sm btn-danger" 
+                            onclick="singleAction('${req.request_id}', 'reject')" style="padding: 4px 8px;">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </td>
+            `;
+            tableBody.appendChild(row);
+        });
+        
+        // Reinitialize pagination after updating table
+        if (typeof initReviewPagination === 'function') {
+            initReviewPagination();
+        }
+    };
+    
+    // Real-time refresh function for history
+    window.refreshHistory = function() {
+        // Mark that history needs refresh
+        window.historyNeedsRefresh = true;
+        
+        // If currently on history tab, reload immediately
+        const historyTab = document.getElementById('history-tab');
+        if (historyTab && historyTab.classList.contains('active')) {
+            location.reload();
+        }
+    };
+    
+    // Initialize HR Realtime Manager for Validator
+    document.addEventListener('DOMContentLoaded', function() {
+        {% if user and user._id %}
+        const userId = '{{ user._id }}';
+        if (typeof HRRealtimeManager !== 'undefined') {
+            HRRealtimeManager.init(userId, 'validator');
+            setInterval(() => HRRealtimeManager.ping(), 30000);
+        }
+        {% endif %}
+        
+        // Initialize Review Requests Pagination with slight delay to ensure DOM is ready
+        setTimeout(function() {
+            initReviewPagination();
+        }, 100);
+    });
+</script>
+
+<style>
+    .history-tab-pane {
+        display: none;
+    }
+    .history-tab-pane.active {
+        display: block;
+    }
+    .history-nav-tabs .nav-link {
+        border: none;
+        border-bottom: 3px solid transparent;
+        color: #495057;
+        font-weight: 500;
+    }
+    .history-nav-tabs .nav-link.active {
+        background-color: transparent;
+        border-bottom: 3px solid #2c5aa0;
+        color: #2c5aa0;
+        font-weight: 600;
+    }
+    .history-nav-tabs .nav-link:hover {
+        border-bottom: 3px solid #2c5aa0;
+    }
+</style>
+
+{% endblock %}
+
+

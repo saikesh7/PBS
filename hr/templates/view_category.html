@@ -1,0 +1,384 @@
+{% extends "base.html" %}
+
+{% block title %}View Category - HR Portal{% endblock %}
+
+{% block extra_css %}
+<style>
+  .detail-row {
+    padding: 0.75rem;
+    border-bottom: 1px solid #dee2e6;
+  }
+  .detail-row:last-child {
+    border-bottom: none;
+  }
+  .detail-label {
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 0.25rem;
+  }
+  .detail-value {
+    color: #212529;
+  }
+  .section-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem;
+    margin-bottom: 1rem;
+  }
+  .points-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 0.75rem;
+  }
+  .grade-badge {
+    background: #f8f9fa;
+    border: 2px solid #dee2e6;
+    border-radius: 0.5rem;
+    padding: 0.75rem;
+    text-align: center;
+  }
+  .grade-badge .grade-name {
+    font-weight: 700;
+    color: #495057;
+    font-size: 1.1rem;
+    margin-bottom: 0.25rem;
+  }
+  .grade-badge .grade-points {
+    color: #0d6efd;
+    font-weight: 600;
+    font-size: 1.3rem;
+  }
+  .status-indicator {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    border-radius: 2rem;
+    font-weight: 600;
+  }
+  .status-indicator.active {
+    background: #d1e7dd;
+    color: #0f5132;
+  }
+  .status-indicator.inactive {
+    background: #f8d7da;
+    color: #842029;
+  }
+  .metadata-card {
+    background: #f8f9fa;
+    border-left: 4px solid #0d6efd;
+  }
+  .action-bar {
+    position: sticky;
+    bottom: 0;
+    background: white;
+    border-top: 2px solid #dee2e6;
+    padding: 1rem;
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  <!-- Header -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h2 class="mb-1">{{ category.name }}</h2>
+      <p class="text-muted mb-0">Category Details and Configuration</p>
+    </div>
+    <span class="status-indicator {{ category.category_status }}">
+      <i class="fas fa-circle me-2" style="font-size: 0.6rem;"></i>
+      {{ category.category_status|upper }}
+    </span>
+  </div>
+
+  <!-- Quick Actions -->
+  <div class="mb-4">
+    <a href="{{ url_for('hr_categories.categories_dashboard') }}" class="btn btn-outline-secondary">
+      <i class="fas fa-arrow-left me-2"></i>Back to Categories
+    </a>
+    <a href="{{ url_for('hr_categories.edit_category', category_id=category._id) }}" class="btn btn-primary">
+      <i class="fas fa-edit me-2"></i>Edit Category
+    </a>
+  </div>
+
+  <div class="row">
+    <!-- Main Details Column -->
+    <div class="col-lg-8">
+      <!-- Basic Information -->
+      <div class="card mb-4">
+        <div class="section-header">
+          <i class="fas fa-info-circle me-2"></i>Basic Information
+        </div>
+        <div class="card-body p-0">
+          <div class="detail-row">
+            <div class="detail-label">Category Name</div>
+            <div class="detail-value">{{ category.name }}</div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-label">Description</div>
+            <div class="detail-value">{{ category.description }}</div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-label">Category Department</div>
+            <div class="detail-value">
+              <span class="badge bg-primary">{{ category.category_department|replace('_', ' ')|title }}</span>
+            </div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-label">Category Type</div>
+            <div class="detail-value">
+              <span class="badge {% if category.category_type == 'Employee raised' %}bg-info{% else %}bg-warning{% endif %}">
+                {{ category.category_type }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Configuration Details -->
+      <div class="card mb-4">
+        <div class="section-header">
+          <i class="fas fa-cog me-2"></i>Configuration
+        </div>
+        <div class="card-body p-0">
+          <div class="detail-row">
+            <div class="detail-label">PBS Classification</div>
+            <div class="detail-value">
+              <span class="badge bg-secondary">{{ category.pbs }}</span>
+            </div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-label">Frequency</div>
+            <div class="detail-value">
+              <i class="fas fa-clock me-2 text-muted"></i>{{ category.frequency }}
+            </div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-label">Max Points Per Frequency</div>
+            <div class="detail-value">
+              <span class="badge bg-dark">{{ category.max_points_per_frequency }}</span>
+            </div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-label">Workflow</div>
+            <div class="detail-value">
+              <span class="badge bg-success">{{ category.requestor }}</span>
+              <i class="fas fa-arrow-right mx-2 text-muted"></i>
+              <span class="badge bg-info">{{ category.processor }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Points Allocation -->
+      <div class="card mb-4">
+        <div class="section-header">
+          <i class="fas fa-star me-2"></i>Points Allocation
+        </div>
+        <div class="card-body">
+          <div class="mb-4">
+            <h6 class="mb-3">Base Points</h6>
+            <div class="alert alert-info mb-0">
+              <i class="fas fa-info-circle me-2"></i>
+              <strong>{{ category.points_per_unit.base_points }} points</strong>
+            </div>
+          </div>
+
+          <h6 class="mb-3">Grade-Specific Points</h6>
+          <div class="points-grid">
+            {% for grade in grades %}
+              <div class="grade-badge">
+                <div class="grade-name">{{ grade }}</div>
+                <div class="grade-points">
+                  {{ category.points_per_unit[grade] if grade in category.points_per_unit else category.points_per_unit.base_points }}
+                </div>
+                <small class="text-muted">points</small>
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sidebar Column -->
+    <div class="col-lg-4">
+      <!-- Metadata Card -->
+      <div class="card metadata-card mb-4">
+        <div class="card-header bg-transparent">
+          <strong><i class="fas fa-database me-2"></i>Metadata</strong>
+        </div>
+        <div class="card-body p-0">
+          <div class="detail-row">
+            <div class="detail-label">Category ID</div>
+            <div class="detail-value">
+              <code style="font-size: 0.85rem;">{{ category._id }}</code>
+            </div>
+          </div>
+          {% if category.created_at %}
+          <div class="detail-row">
+            <div class="detail-label">Created At</div>
+            <div class="detail-value">
+              <i class="fas fa-calendar me-2 text-muted"></i>
+              {{ category.created_at.strftime('%Y-%m-%d') }}<br>
+              <small class="text-muted">{{ category.created_at.strftime('%H:%M:%S') }}</small>
+            </div>
+          </div>
+          {% endif %}
+          {% if category.created_by %}
+          <div class="detail-row">
+            <div class="detail-label">Created By</div>
+            <div class="detail-value">{{ category.created_by }}</div>
+          </div>
+          {% endif %}
+          {% if category.updated_at %}
+          <div class="detail-row">
+            <div class="detail-label">Last Updated</div>
+            <div class="detail-value">
+              <i class="fas fa-calendar me-2 text-muted"></i>
+              {{ category.updated_at.strftime('%Y-%m-%d') }}<br>
+              <small class="text-muted">{{ category.updated_at.strftime('%H:%M:%S') }}</small>
+            </div>
+          </div>
+          {% endif %}
+          {% if category.updated_by %}
+          <div class="detail-row">
+            <div class="detail-label">Updated By</div>
+            <div class="detail-value">{{ category.updated_by }}</div>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Summary Stats Card -->
+      <div class="card mb-4">
+        <div class="card-header bg-light">
+          <strong><i class="fas fa-chart-bar me-2"></i>Quick Stats</strong>
+        </div>
+        <div class="card-body">
+          <div class="mb-3">
+            <small class="text-muted">Total Grade Levels</small>
+            <h4 class="mb-0">{{ grades|length }}</h4>
+          </div>
+          <div class="mb-3">
+            <small class="text-muted">Average Points</small>
+            <h4 class="mb-0">
+              {% set total_points = namespace(value=0) %}
+              {% set count = namespace(value=0) %}
+              {% for grade in grades %}
+                {% set total_points.value = total_points.value + (category.points_per_unit[grade] if grade in category.points_per_unit else 0) %}
+                {% set count.value = count.value + 1 %}
+              {% endfor %}
+              {{ (total_points.value / count.value)|round|int if count.value > 0 else 0 }}
+            </h4>
+          </div>
+          <div class="mb-0">
+            <small class="text-muted">Points Range</small>
+            <h4 class="mb-0">
+              {% set min_points = namespace(value=999999) %}
+              {% set max_points = namespace(value=0) %}
+              {% for grade in grades %}
+                {% set grade_points = category.points_per_unit[grade] if grade in category.points_per_unit else 0 %}
+                {% if grade_points < min_points.value %}
+                  {% set min_points.value = grade_points %}
+                {% endif %}
+                {% if grade_points > max_points.value %}
+                  {% set max_points.value = grade_points %}
+                {% endif %}
+              {% endfor %}
+              {{ min_points.value }} - {{ max_points.value }}
+            </h4>
+          </div>
+        </div>
+      </div>
+
+      <!-- Actions Card -->
+      <div class="card border-warning">
+        <div class="card-header bg-warning text-dark">
+          <strong><i class="fas fa-tools me-2"></i>Actions</strong>
+        </div>
+        <div class="card-body">
+          <a href="{{ url_for('hr_categories.edit_category', category_id=category._id) }}" 
+             class="btn btn-primary w-100 mb-2">
+            <i class="fas fa-edit me-2"></i>Edit Category
+          </a>
+          <button onclick="toggleStatus('{{ category._id }}', '{{ category.category_status }}')" 
+                  class="btn btn-warning w-100 mb-2">
+            <i class="fas fa-toggle-on me-2"></i>
+            {% if category.category_status == 'active' %}Deactivate{% else %}Activate{% endif %}
+          </button>
+          <button onclick="deleteCategory('{{ category._id }}', '{{ category.name }}')" 
+                  class="btn btn-danger w-100">
+            <i class="fas fa-trash me-2"></i>Delete Category
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title">Confirm Deletion</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p>Are you sure you want to delete the category <strong id="deleteCategoryName"></strong>?</p>
+        <p class="text-danger mb-0"><i class="fas fa-exclamation-triangle me-2"></i>This action cannot be undone and will affect all related awards.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <form id="deleteForm" method="POST" style="display: inline;">
+          <button type="submit" class="btn btn-danger">Delete Category</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+<script>
+  // Delete category confirmation
+  function deleteCategory(categoryId, categoryName) {
+    document.getElementById('deleteCategoryName').textContent = categoryName;
+    document.getElementById('deleteForm').action = `/hr/categories/delete/${categoryId}`;
+    
+    const deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+    deleteModal.show();
+  }
+
+  // Toggle category status
+  function toggleStatus(categoryId, currentStatus) {
+    const action = currentStatus === 'active' ? 'deactivate' : 'activate';
+    if (!confirm(`Are you sure you want to ${action} this category?`)) {
+      return;
+    }
+
+    fetch(`/hr/categories/toggle-status/${categoryId}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        location.reload();
+      } else {
+        alert('Error: ' + data.message);
+      }
+    })
+    .catch(error => {
+      console.error('Error:', error);
+      alert('An error occurred while toggling category status');
+    });
+  }
+</script>
+{% endblock %}

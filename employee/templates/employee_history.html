@@ -1,0 +1,192 @@
+{% extends "employee_base.html" %}
+
+{% block title %}Request History{% endblock %}
+{% block nav_history %}active{% endblock %}
+
+{% block head %}
+{{ super() }}
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <div class="d-flex align-items-center">
+                <i class="fas fa-history me-2"></i>
+                <span>Request History</span>
+            </div>
+        </div>
+        <div class="card-body">
+            {% if employee_submitted_history %}
+            <div class="table-responsive">
+                <table class="table table-hover" id="historyTable">
+                    <thead>
+                        <tr>
+                            <th>Category</th>
+                            <th>Points</th>
+                            <th>Validator/Source</th>
+                            <th>Requested On</th>
+                            <th>Status</th>
+                            <th>Notes</th>
+                            <th>Attachment</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for req in employee_submitted_history %}
+                        <tr>
+                            <td>
+                                {{ req.category_name }}
+                                {% if req.is_bonus %}
+                                <span class="badge bg-warning text-dark">Bonus</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ req.points }}</td>
+                            <td>
+                                {% if req.source == 'employee' %}
+                                    {% if req.status == 'Pending' %}
+                                        {% if req.assigned_validator_name %}
+                                        <span class="badge bg-info">{{ req.assigned_validator_name }}</span>
+                                        {% else %}
+                                        <span class="badge bg-secondary">Pending Assignment</span>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="badge bg-primary">Processed by:</span><br>
+                                        <span class="badge bg-info">{{ req.assigned_validator_name }}</span>
+                                    {% endif %}
+                                {% elif req.source == 'ta' %}
+                                    <span class="badge bg-primary">TA Award</span>
+                                {% elif req.source == 'manager' %}
+                                    <span class="badge bg-success">Manager Award</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">{{ req.source | capitalize }}</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ req.request_date.strftime('%d-%m-%Y') if req.request_date else 'N/A' }}</td>
+                            <td>
+                                {% if req.status == 'Approved' %}
+                                <span class="badge bg-success">Approved</span>
+                                {% elif req.status == 'Rejected' %}
+                                <span class="badge bg-danger">Rejected</span>
+                                {% else %}
+                                <span class="badge bg-warning text-dark">Pending</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% set notes_to_display = req.response_notes or req.submission_notes %}
+                                {% if notes_to_display and notes_to_display != 'N/A' %}
+                                <button class="btn btn-sm btn-outline-primary view-note-btn"
+                                        data-notes="{{ notes_to_display | e }}"
+                                        data-category="{{ req.category_name }}"
+                                        data-status="{{ req.status }}">
+                                    <i class="fas fa-eye me-1"></i> View
+                                </button>
+                                {% else %}
+                                <span class="text-muted">No notes</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if req.has_attachment %}
+                                <a href="{{ url_for('employee_attachments.get_attachment', request_id=req.id) }}"
+                                   class="btn btn-sm btn-primary"
+                                   target="_blank">
+                                    <i class="fas fa-download me-1"></i>Download
+                                </a>
+                                {% else %}
+                                <span class="text-muted">None</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="alert alert-info mb-0">
+                <i class="fas fa-info-circle"></i> You haven't made any self-submitted requests yet.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Notes Modal -->
+<div class="modal fade" id="notesModal" tabindex="-1" aria-labelledby="notesModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="notesModalLabel">
+                    <i class="fas fa-sticky-note me-2"></i>Request Notes
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <strong>Category:</strong> <span id="modalCategory" class="text-primary"></span>
+                </div>
+                <div class="mb-3">
+                    <strong>Status:</strong> <span id="modalStatus"></span>
+                </div>
+                <div>
+                    <strong>Notes:</strong>
+                    <div class="p-3 bg-light rounded mt-2" id="modalNotes" style="white-space: pre-wrap; word-wrap: break-word; max-height: 400px; overflow-y: auto;"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>Close
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    // Initialize DataTable
+    $('#historyTable').DataTable({
+        order: [[3, 'desc']],
+        pageLength: 10,
+        language: {
+            search: "_INPUT_",
+            searchPlaceholder: "Search requests...",
+            lengthMenu: "Show _MENU_ entries",
+            info: "Showing _START_ to _END_ of _TOTAL_ requests",
+            infoEmpty: "No requests to show",
+            infoFiltered: "(filtered from _MAX_ total requests)",
+            zeroRecords: "No matching requests found",
+            emptyTable: "No request history available"
+        }
+    });
+    
+    // ✅ View Notes Button Click Handler
+    $('.view-note-btn').on('click', function() {
+        var notes = $(this).data('notes');
+        var category = $(this).data('category');
+        var status = $(this).data('status');
+        
+        // Populate modal
+        $('#modalCategory').text(category);
+        $('#modalNotes').text(notes);
+        
+        // Set status badge
+        var statusHtml = '';
+        if (status === 'Approved') {
+            statusHtml = '<span class="badge bg-success"><i class="fas fa-check-circle me-1"></i>Approved</span>';
+        } else if (status === 'Rejected') {
+            statusHtml = '<span class="badge bg-danger"><i class="fas fa-times-circle me-1"></i>Rejected</span>';
+        } else {
+            statusHtml = '<span class="badge bg-warning text-dark"><i class="fas fa-clock me-1"></i>Pending</span>';
+        }
+        $('#modalStatus').html(statusHtml);
+        
+        // Show modal
+        $('#notesModal').modal('show');
+    });
+});
+</script>
+{% endblock %}

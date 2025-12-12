@@ -1,0 +1,80 @@
+<div class="tab-pane fade show active" id="assignPointsTab" role="tabpanel">
+    <div class="container mt-4">
+        <div class="card shadow">
+            <div class="card-header bg-warning text-dark">
+                <h4 class="mb-0">
+                    <i class="fas fa-user-check me-2"></i>Pending Approval Requests
+                </h4>
+            </div>
+            <div class="card-body">
+                <div id="pendingRequestsSection" {% if not validator_requests %}style="display:none;"{% endif %}>
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover" id="pendingRequestsTable">
+                            <thead class="table-light">
+                                <tr>
+                                    <th><input type="checkbox" id="select-all" /></th>
+                                    <th>Date</th>
+                                    <th>Event Date</th>
+                                    <th>Employee</th>
+                                    <th>Grade</th>
+                                    <th>Interviews</th>
+                                    <th>Points</th>
+                                    <th>Notes</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for req in validator_requests %}
+                                <tr>
+                                    <td>
+                                        <input type="checkbox" name="selected_requests" 
+                                               value="{{ req.request_id }}" class="select-checkbox"
+                                               form="bulk-form" />
+                                    </td>
+                                    <td>{{ req.request_date }}</td>
+                                    <td>{{ req.event_date }}</td>
+                                    <td>{{ req.employee_name }}</td>
+                                    <td>{{ req.grade }}</td>
+                                    <td>{{ req.interviews_count }}</td>
+                                    <td>{{ req.points }}</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-primary view-notes-btn"
+                                                data-bs-toggle="modal" data-bs-target="#viewNotesModal"
+                                                data-notes="{{ req.notes|e }}">View</button>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex gap-2">
+                                            <button class="btn btn-success btn-sm" 
+                                                    onclick="openSingleConfirmModal('{{ req.request_id }}', 'approve')">
+                                                <i class="fas fa-check"></i>
+                                            </button>
+                                            <button class="btn btn-danger btn-sm" 
+                                                    onclick="openSingleConfirmModal('{{ req.request_id }}', 'reject')">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="d-flex justify-content-end mt-3 gap-2">
+                        <button type="button" class="btn btn-success" onclick="openBulkModal('approve')">
+                            <i class="fas fa-check-double me-1"></i>Bulk Approve
+                        </button>
+                        <button type="button" class="btn btn-danger" onclick="openBulkModal('reject')">
+                            <i class="fas fa-times-circle me-1"></i>Bulk Reject
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="alert alert-info text-center" id="noRequestsAlert" 
+                     {% if validator_requests %}style="display:none;"{% endif %}>
+                    <i class="fas fa-info-circle me-2"></i>No pending requests for approval.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
