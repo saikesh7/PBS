@@ -4,7 +4,7 @@ class Config:
     SECRET_KEY = 'prowess_points_application'
     
     # ✅ UPDATED: Use 127.0.0.1 instead of localhost (fixes eventlet DNS issue)
-    MONGO_URI = 'mongodb://127.0.0.1:27017/prowess_points_application'
+    MONGO_URI = 'mongodb://main_db:12345678@10.0.2.42:27017/admin?authSource=admin'
     
     # Keep your email settings the same
     MAIL_SERVER = 'smtp.outlook.com'
