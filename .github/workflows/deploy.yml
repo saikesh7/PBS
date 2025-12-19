@@ -1,4 +1,4 @@
-name: Python Application Deployment via SSH
+name: Python Application Deployment via SSH (Versioned)
 
 on:
   push:
@@ -8,17 +8,20 @@ on:
 env:
   SSH_PORT: 22
   SSH_USER: prod
-  PM2_APP_NAME: app          # PM2 process name (use process name, not filename)
-  APP_DIRECTORY: /var/www/prod/PBS/project_root
+  PM2_APP_NAME: app
+  # --- ENVIRONMENT VARIABLES ---
+  DEPLOY_ROOT: /var/www/prod/PBS         # Base directory for all releases and the current symlink
+  APP_DIRECTORY: /var/www/prod/PBS/current # This will now be a symlink to the latest working release
   TEMP_ARTIFACT_NAME: deploy-artifact.zip
+  # The HEALT_CHECK variables are removed as they are not used
+  # -----------------------------
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
     permissions:
       contents: read
-
+    
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -27,7 +30,7 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-
+          
       - name: Install Python dependencies (CI-only)
         run: |
           python -m pip install --upgrade pip
@@ -56,10 +59,9 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           source: ${{ env.TEMP_ARTIFACT_NAME }}
           target: ~/
-          # optional: timeout, passphrase, etc
 
-      # ---- Run remote commands via SSH (no source/target here) ----
-      - name: Deploy code and restart application via SSH
+      # ---- Run remote commands via SSH (VERSIONED DEPLOYMENT) ----
+      - name: Deploy code and Restart Application
         uses: appleboy/ssh-action@v0.1.10
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -67,28 +69,52 @@ jobs:
           port: ${{ env.SSH_PORT }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
+            # Exit immediately if a command exits with a non-zero status.
             set -e
-            echo "--- Starting Remote Deployment ---"
+            echo "--- Starting Versioned Remote Deployment ---"
+            
+            # Define version paths
+            TIMESTAMP=$(date +%Y%m%d%H%M%S)
+            RELEASE_PATH="${{ env.DEPLOY_ROOT }}/releases/$TIMESTAMP"
+            CURRENT_SYMLINK="${{ env.DEPLOY_ROOT }}/current"
+            
+            # 1. Prepare new release directory
+            mkdir -p "$RELEASE_PATH"
             TEMP_PATH=~/${{ env.TEMP_ARTIFACT_NAME }}
-
-            mkdir -p "${{ env.APP_DIRECTORY }}"
-            echo "Unzipping ${TEMP_PATH} into ${{ env.APP_DIRECTORY }}"
-            unzip -o "$TEMP_PATH" -d "${{ env.APP_DIRECTORY }}"
+            echo "Unzipping $TEMP_PATH into $RELEASE_PATH"
+            unzip -o "$TEMP_PATH" -d "$RELEASE_PATH"
             rm -f "$TEMP_PATH"
 
-            cd "${{ env.APP_DIRECTORY }}"
-
-            # create/activate venv, install requirements
+            # 2. Setup VENV and Install Dependencies in the new release folder
+            cd "$RELEASE_PATH"
             python3 -m venv venv || echo "venv exists"
-            # ensure venv is executable
             source venv/bin/activate
             if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-
-            # optional: run migrations (uncomment if using django/flask/alembic)
+            
+            # optional: run migrations here, before symlink switch
             # python manage.py migrate
 
+            # 3. SWAP SYMLINK (Atomic switch to the new code base)
+            echo "Switching symlink to $RELEASE_PATH"
+            # ln -sfn ensures an atomic switch
+            ln -sfn "$RELEASE_PATH" "$CURRENT_SYMLINK"
+            
+            # 4. RESTART APP via PM2 (Points to the new symlink)
             echo "Restarting application via pm2..."
-            # prefer using the pm2 process name (or ecosystem file)
-            pm2 restart "${{ env.PM2_APP_NAME }}" || pm2 start app.py --name "${{ env.PM2_APP_NAME }}" --interpreter python3
+            
+            # --- PM2 Logic to restart/start using the 'current' symlink ---
+            if pm2 describe ${{ env.PM2_APP_NAME }} > /dev/null 2>&1; then
+              pm2 reload ${{ env.PM2_APP_NAME }}
+              echo "PM2 process reloaded."
+            else
+              # IMPORTANT: Ensure your PM2 'start' command uses the APP_DIRECTORY symlink
+              pm2 start "$CURRENT_SYMLINK"/app.py --name "${{ env.PM2_APP_NAME }}" --interpreter python3
+              echo "PM2 process started for the first time."
+            fi
+            # -----------------------------------------------------------
 
-            echo "--- Deployment Complete ---"
+            echo "--- Deployment Complete (No Health Check/Rollback after Restart) ---"
+            
+            # 5. Cleanup old releases (Recommended to save disk space)
+            echo "Cleaning up old releases, keeping the last 5..."
+            ls -td "${{ env.DEPLOY_ROOT }}/releases/"*/ | tail -n +6 | xargs rm -rf
