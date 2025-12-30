@@ -1,0 +1,1379 @@
+{% extends "base.html" %}
+
+{% block title %}Update Employee Points - HR Portal{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* ========================================
+       Cross-browser compatibility styles
+       Supports: Chrome, Firefox, Edge, Opera Mini, Safari
+       ======================================== */
+    
+    /* Reset and normalize for cross-browser consistency */
+    *, *::before, *::after {
+        -webkit-box-sizing: border-box;
+        -moz-box-sizing: border-box;
+        box-sizing: border-box;
+    }
+    
+    .filters-section select.form-select {
+        border-radius: 0.5rem;
+        border: 1px solid #ccc;
+        /* Cross-browser appearance */
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+    }
+    
+    .btn-same-size {
+        min-width: 70px;
+    }
+    
+    .card {
+        border: none;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        /* Cross-browser box-shadow */
+        -webkit-box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        -moz-box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .badge-lg {
+        font-size: 1.1rem;
+        padding: 0.5rem 1rem;
+    }
+    
+    .points-summary-card {
+        border-left: 4px solid #4e73df;
+    }
+    
+    .table-actions {
+        white-space: nowrap;
+    }
+    
+    /* Matching Update User styles */
+    .search-card {
+        border-left: 4px solid #4e73df;
+    }
+    
+    .user-card {
+        border-left: 4px solid #1cc88a;
+    }
+    
+    .role-badge {
+        font-size: 0.9rem;
+        padding: 0.4rem 0.8rem;
+    }
+    
+    /* ========================================
+       Cross-browser flexbox support
+       ======================================== */
+    .d-flex {
+        display: -webkit-box !important;
+        display: -webkit-flex !important;
+        display: -moz-box !important;
+        display: -ms-flexbox !important;
+        display: flex !important;
+    }
+    
+    .justify-content-between {
+        -webkit-box-pack: justify !important;
+        -webkit-justify-content: space-between !important;
+        -moz-box-pack: justify !important;
+        -ms-flex-pack: justify !important;
+        justify-content: space-between !important;
+    }
+    
+    .justify-content-center {
+        -webkit-box-pack: center !important;
+        -webkit-justify-content: center !important;
+        -moz-box-pack: center !important;
+        -ms-flex-pack: center !important;
+        justify-content: center !important;
+    }
+    
+    .align-items-center {
+        -webkit-box-align: center !important;
+        -webkit-align-items: center !important;
+        -moz-box-align: center !important;
+        -ms-flex-align: center !important;
+        align-items: center !important;
+    }
+    
+    .align-items-end {
+        -webkit-box-align: end !important;
+        -webkit-align-items: flex-end !important;
+        -moz-box-align: end !important;
+        -ms-flex-align: end !important;
+        align-items: flex-end !important;
+    }
+    
+    .flex-fill {
+        -webkit-box-flex: 1 !important;
+        -webkit-flex: 1 1 auto !important;
+        -moz-box-flex: 1 !important;
+        -ms-flex: 1 1 auto !important;
+        flex: 1 1 auto !important;
+    }
+    
+    /* ========================================
+       Cross-browser modal fixes
+       Opera Mini, Firefox, Edge, Chrome, Safari
+       ======================================== */
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1050;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        outline: 0;
+        /* Cross-browser transitions */
+        -webkit-transition: opacity 0.15s linear;
+        -moz-transition: opacity 0.15s linear;
+        -o-transition: opacity 0.15s linear;
+        transition: opacity 0.15s linear;
+    }
+
+    .modal.show {
+        display: block !important;
+    }
+
+    .modal-dialog {
+        position: relative;
+        width: auto;
+        margin: 0.5rem;
+        pointer-events: none;
+        /* Cross-browser transform */
+        -webkit-transform: translate(0, 0);
+        -moz-transform: translate(0, 0);
+        -ms-transform: translate(0, 0);
+        -o-transform: translate(0, 0);
+        transform: translate(0, 0);
+    }
+
+    @media (min-width: 576px) {
+        .modal-dialog {
+            max-width: 500px;
+            margin: 1.75rem auto;
+        }
+        
+        .modal-dialog-centered {
+            display: -webkit-box;
+            display: -webkit-flex;
+            display: -moz-box;
+            display: -ms-flexbox;
+            display: flex;
+            -webkit-box-align: center;
+            -webkit-align-items: center;
+            -moz-box-align: center;
+            -ms-flex-align: center;
+            align-items: center;
+            min-height: calc(100% - 3.5rem);
+            /* Opera Mini fallback */
+            min-height: -webkit-calc(100% - 3.5rem);
+        }
+    }
+
+    .modal-content {
+        position: relative;
+        display: -webkit-box;
+        display: -webkit-flex;
+        display: -moz-box;
+        display: -ms-flexbox;
+        display: flex;
+        -webkit-box-orient: vertical;
+        -webkit-box-direction: normal;
+        -webkit-flex-direction: column;
+        -moz-box-orient: vertical;
+        -moz-box-direction: normal;
+        -ms-flex-direction: column;
+        flex-direction: column;
+        width: 100%;
+        pointer-events: auto;
+        background-color: #fff;
+        background-clip: padding-box;
+        border: 1px solid rgba(0,0,0,.2);
+        border-radius: 0.3rem;
+        /* Cross-browser border-radius */
+        -webkit-border-radius: 0.3rem;
+        -moz-border-radius: 0.3rem;
+        outline: 0;
+    }
+
+    .modal-backdrop {
+        position: fixed;
+        top: 0;
+        left: 0;
+        z-index: 1040;
+        width: 100vw;
+        height: 100vh;
+        background-color: #000;
+    }
+
+    .modal-backdrop.show {
+        opacity: 0.5;
+        /* Cross-browser opacity */
+        -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=50)";
+        filter: alpha(opacity=50);
+    }
+
+    /* ========================================
+       Cross-browser button styling
+       ======================================== */
+    .btn {
+        cursor: pointer;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+        /* Cross-browser transitions */
+        -webkit-transition: all 0.15s ease-in-out;
+        -moz-transition: all 0.15s ease-in-out;
+        -o-transition: all 0.15s ease-in-out;
+        transition: all 0.15s ease-in-out;
+    }
+
+    .btn-outline-primary {
+        cursor: pointer;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+    }
+
+    .btn-outline-primary:hover {
+        opacity: 0.9;
+    }
+    
+    .btn:focus, .btn:active {
+        outline: none;
+        /* Cross-browser box-shadow for focus */
+        -webkit-box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+        -moz-box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+        box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+    }
+
+    /* ========================================
+       Cross-browser text handling
+       ======================================== */
+    #fullNotesText {
+        white-space: pre-wrap;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        /* Cross-browser word breaking */
+        -webkit-hyphens: auto;
+        -moz-hyphens: auto;
+        -ms-hyphens: auto;
+        hyphens: auto;
+        /* Firefox specific */
+        word-break: break-word;
+    }
+    
+    /* ========================================
+       Cross-browser table styles
+       ======================================== */
+    .table-responsive {
+        display: block;
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        /* Firefox scrollbar styling */
+        scrollbar-width: thin;
+    }
+    
+    /* Webkit scrollbar styling (Chrome, Safari, Edge) */
+    .table-responsive::-webkit-scrollbar {
+        height: 8px;
+    }
+    
+    .table-responsive::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        -webkit-border-radius: 4px;
+        border-radius: 4px;
+    }
+    
+    .table-responsive::-webkit-scrollbar-thumb {
+        background: #888;
+        -webkit-border-radius: 4px;
+        border-radius: 4px;
+    }
+    
+    /* ========================================
+       Cross-browser badge styles
+       ======================================== */
+    .badge {
+        display: inline-block;
+        padding: 0.35em 0.65em;
+        font-size: 0.75em;
+        font-weight: 700;
+        line-height: 1;
+        text-align: center;
+        white-space: nowrap;
+        vertical-align: baseline;
+        /* Cross-browser border-radius */
+        -webkit-border-radius: 0.25rem;
+        -moz-border-radius: 0.25rem;
+        border-radius: 0.25rem;
+    }
+    
+    .rounded-pill {
+        -webkit-border-radius: 50rem !important;
+        -moz-border-radius: 50rem !important;
+        border-radius: 50rem !important;
+    }
+    
+    /* ========================================
+       Cross-browser form controls
+       ======================================== */
+    .form-control, .form-select {
+        display: block;
+        width: 100%;
+        padding: 0.375rem 0.75rem;
+        font-size: 1rem;
+        font-weight: 400;
+        line-height: 1.5;
+        color: #212529;
+        background-color: #fff;
+        background-clip: padding-box;
+        border: 1px solid #ced4da;
+        /* Cross-browser appearance */
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+        /* Cross-browser border-radius */
+        -webkit-border-radius: 0.25rem;
+        -moz-border-radius: 0.25rem;
+        border-radius: 0.25rem;
+        /* Cross-browser transitions */
+        -webkit-transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        -moz-transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        -o-transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    }
+    
+    .form-control:focus, .form-select:focus {
+        color: #212529;
+        background-color: #fff;
+        border-color: #86b7fe;
+        outline: 0;
+        /* Cross-browser box-shadow */
+        -webkit-box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+        -moz-box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+    }
+    
+    /* ========================================
+       Opera Mini specific fixes
+       ======================================== */
+    @media all and (-webkit-min-device-pixel-ratio:0) and (min-resolution: .001dpcm) {
+        /* Opera Mini fallbacks */
+        .modal-dialog-centered {
+            margin-top: 10%;
+        }
+    }
+    
+    /* ========================================
+       Firefox specific fixes
+       ======================================== */
+    @-moz-document url-prefix() {
+        .form-select {
+            text-indent: 0.01px;
+            text-overflow: '';
+        }
+        
+        .btn::-moz-focus-inner {
+            border: 0;
+        }
+    }
+    
+    /* ========================================
+       Edge specific fixes
+       ======================================== */
+    @supports (-ms-ime-align: auto) {
+        .form-control, .form-select {
+            padding-right: 0.75rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+{% if can_access_update_points_page %}
+
+<div class="container-fluid pt-4">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="mb-0">Update Employee Points</h3>
+        <a href="{{ url_for('hr_analytics.pbs_analytics') }}" class="btn btn-outline-primary">
+            <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+        </a>
+    </div>
+
+    <!-- Search Card -->
+    <div class="card mb-4 shadow-sm" style="border-left: 4px solid #4e73df;">
+        <div class="card-header bg-light d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="fas fa-search me-2"></i>Search Employee</h5>
+            <span class="badge bg-primary">Search by Email or ID</span>
+        </div>
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('hr_points_mgmt.update_user_points_page') }}" id="searchForm">
+                <div class="input-group">
+                    <span class="input-group-text"><i class="fas fa-user-search"></i></span>
+                    <input 
+                        type="text" 
+                        name="search_query" 
+                        id="searchInput"
+                        class="form-control" 
+                        placeholder="Enter Email Address or Employee ID" 
+                        value="{{ search_query if search_query else '' }}" 
+                        required
+                        autocomplete="off">
+                    <button 
+                        type="submit" 
+                        name="search_employee" 
+                        class="btn btn-primary">
+                        <i class="fas fa-search me-2"></i>Search Employee
+                    </button>
+                    <button 
+                        type="button" 
+                        class="btn btn-secondary" 
+                        id="clearSearchBtn">
+                        <i class="fas fa-times me-2"></i>Clear
+                    </button>
+                </div>
+                <small class="form-text text-muted mt-2">
+                    <i class="fas fa-info-circle me-1"></i>
+                    Search by email address or employee ID to view and manage points. Supports partial matching.
+                </small>
+            </form>
+        </div>
+    </div>
+
+    {% if show_form and user %}
+    <!-- Employee Details Card -->
+    <div class="card shadow-sm mb-4" style="border-left: 4px solid #1cc88a;">
+        <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">
+                <i class="fas fa-user-edit me-2"></i>
+                Update Points: {{ user.name }}
+            </h5>
+            <span class="badge" style="font-size: 0.9rem; padding: 0.4rem 0.8rem; {% if user.role == 'Manager' %}background-color: #ffc107; color: #000;{% elif user.role == 'HR' %}background-color: #dc3545;{% else %}background-color: #f8f9fa; color: #000;{% endif %}">
+                {{ user.role }}
+            </span>
+        </div> 
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <strong><i class="fas fa-id-card me-2"></i>Employee ID:</strong>
+                        <span id="employee_id_display">{{ user.employee_id }}</span>
+                    </div>
+                    <div class="mb-3">
+                        <strong><i class="fas fa-envelope me-2"></i>Email:</strong>
+                        <span id="email_display">{{ user.email }}</span>
+                    </div>
+                    <div class="mb-3">
+                        <strong><i class="fas fa-layer-group me-2"></i>Grade:</strong>
+                        <span class="badge bg-info" id="grade_display">{{ user.grade | default('N/A') }}</span>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card points-summary-card h-100">
+                        <div class="card-body text-center">
+                            <h6 class="text-muted mb-2">Total Points (All Time)</h6>
+                            <h2 class="mb-0">
+                                <span class="badge bg-success badge-lg" id="total_points_all_time_badge">
+                                    {{ (total_points_all_time | default(0))|int }}
+                                </span>
+                            </h2>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <hr class="my-4">
+
+            <!-- Points Breakdown -->
+            <div class="row">
+                <div class="col-md-6">
+                    <h6 class="fw-semibold mb-3"><i class="fas fa-chart-bar me-2"></i>Quarterly Breakdown</h6>
+                    <ul class="list-group" id="quarterly_breakdown_list">
+                        {% if quarterly_breakdown %}
+                            {% for quarter, points in quarterly_breakdown.items() %}
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                {{ quarter }}
+                                <span>
+                                    {% set bonus = quarterly_bonus.get(quarter, 0) if quarterly_bonus else 0 %}
+                                    {% set base_points = points - bonus %}
+                                    {% if bonus > 0 %}
+                                    <span class="badge bg-primary rounded-pill">{{ base_points }}</span>
+                                    <span class="badge bg-success rounded-pill ms-1" title="Bonus Points (included in total)">(+{{ bonus }} bonus)</span>
+                                    {% else %}
+                                    <span class="badge bg-primary rounded-pill">{{ points }}</span>
+                                    {% endif %}
+                                </span>
+                            </li>
+                            {% endfor %}
+                        {% else %}
+                            <li class="list-group-item text-muted">No quarterly data available</li>
+                        {% endif %}
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    <h6 class="fw-semibold mb-3"><i class="fas fa-calendar-alt me-2"></i>Yearly Summary</h6>
+                    <ul class="list-group" id="yearly_summary_list">
+                        {% if yearly_summary %}
+                            {% for year, points in yearly_summary.items() %}
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                FY {{ year }}
+                                <span>
+                                    {% set bonus = yearly_bonus.get(year, 0) if yearly_bonus else 0 %}
+                                    {% set base_points = points - bonus %}
+                                    {% if bonus > 0 %}
+                                    <span class="badge bg-success rounded-pill">{{ base_points }}</span>
+                                    <span class="badge bg-info rounded-pill ms-1" title="Bonus Points (included in total)">(+{{ bonus }} bonus)</span>
+                                    {% else %}
+                                    <span class="badge bg-success rounded-pill">{{ points }}</span>
+                                    {% endif %}
+                                </span>
+                            </li>
+                            {% endfor %}
+                        {% else %}
+                            <li class="list-group-item text-muted">No yearly data available</li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Points History Card -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-light">
+            <h5 class="mb-0"><i class="fas fa-history me-2"></i>Points History</h5>
+        </div>
+        <div class="card-body">
+            <!-- Filters -->
+            <div class="row mb-4">
+                <div class="col-md-3 mb-2">
+                    <label for="categoryFilter" class="form-label">
+                        <i class="fas fa-tag me-1"></i>Category
+                    </label>
+                    <select class="form-select" id="categoryFilter">
+                        <option value="all">All Categories</option>
+                        {% if unique_categories_for_filter %}
+                            {% for category_name in unique_categories_for_filter %}
+                            <option value="{{ category_name }}">{{ category_name }}</option>
+                            {% endfor %}
+                        {% endif %}
+                    </select>
+                </div>
+                <div class="col-md-3 mb-2">
+                    <label for="awardedByFilter" class="form-label">
+                        <i class="fas fa-user-check me-1"></i>Awarded By
+                    </label>
+                    <select class="form-select" id="awardedByFilter">
+                        <option value="all">All Sources</option>
+                        {% if unique_awarded_by_for_filter %}
+                            {% for awarded_by_name in unique_awarded_by_for_filter %}
+                            <option value="{{ awarded_by_name }}">{{ awarded_by_name }}</option>
+                            {% endfor %}
+                        {% endif %}
+                    </select>
+                </div>
+                <div class="col-md-2 mb-2">
+                    <label for="yearFilter" class="form-label">
+                        <i class="fas fa-calendar-alt me-1"></i>Year
+                    </label>
+                    <select class="form-select" id="yearFilter">
+                        <option value="all">All Years</option>
+                        {% if unique_years_for_filter %}
+                            {% for year in unique_years_for_filter %}
+                            <option value="{{ year }}">{{ year }}</option>
+                            {% endfor %}
+                        {% endif %}
+                    </select>
+                </div>
+                <div class="col-md-2 mb-2">
+                    <label for="quarterFilter" class="form-label">
+                        <i class="fas fa-calendar me-1"></i>Quarter
+                    </label>
+                    <select class="form-select" id="quarterFilter">
+                        <option value="all">All Quarters</option>
+                        <!-- Quarters populated dynamically from data via JS -->
+                    </select>
+                </div>
+                <div class="col-md-2 mb-2 d-flex align-items-end gap-2">
+                    <button type="button" class="btn btn-primary flex-fill" id="applyPointsFiltersBtn">
+                        <i class="fas fa-filter me-1"></i>Apply Filters
+                    </button>
+                    <button type="button" class="btn btn-secondary flex-fill" id="resetPointsFiltersBtn">
+                        <i class="fas fa-undo me-1"></i>Reset
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Filter Status Display -->
+            <div id="filterStatus" class="alert alert-info" style="display: none; padding: 8px 12px; margin-bottom: 15px;">
+                <i class="fas fa-info-circle me-2"></i>
+                <span id="filterStatusText"></span>
+            </div>
+
+            <!-- Points History Table -->
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover table-sm" id="pointsHistoryTable">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Category</th>
+                            <th>Points</th>
+                            <th>Awarded By</th>
+                            <th>Notes</th>
+                            <th>Date / Period</th>
+                            <th style="width: 160px;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if points_history %}
+                            {% for point in points_history %}
+                            <tr data-category="{{ point.category }}" 
+                                data-awarded-by="{{ point.awarded_by }}" 
+                                data-year="{{ point.year }}"
+                                data-quarter="{{ point.quarter }}">
+                                <td>
+                                    {{ point.category }}
+                                </td>
+                                <td>
+                                    {% if point.utilization_percentage is not none %}
+                                    <span class="badge bg-info text-white" style="font-size: 0.95rem; padding: 6px 12px;">{{ point.utilization_percentage }}%</span>
+                                    {% elif point.is_bonus %}
+                                    <span class="badge bg-success text-white" style="font-size: 0.95rem; padding: 6px 12px;">{{ point.points }}</span>
+                                    {% else %}
+                                    <strong>{{ point.points }}</strong>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if point.is_bonus %}
+                                    {{ point.awarded_by }} <span class="badge bg-success">(Central)</span>
+                                    {% if point.bonus_approver_name %}
+                                    <br><small class="text-muted">(Approved: {{ point.bonus_approver_name }})</small>
+                                    {% endif %}
+                                    {% else %}
+                                    {{ point.awarded_by }}
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <button type="button" 
+                                            class="btn btn-outline-primary btn-sm view-notes-btn" 
+                                            data-notes="{{ point.notes | e }}">
+                                        <i class="fas fa-eye"></i> View
+                                    </button>
+                                </td>
+                                <td>
+                                    {{ point.award_date }}
+                                    <br><small class="text-muted">{{ point.period }}</small>
+                                </td>
+                                <td class="table-actions" style="text-align: center;">
+                                    <div class="d-flex gap-2 justify-content-center">
+                                        <button type="button" 
+                                                class="btn btn-warning btn-sm" 
+                                                data-bs-toggle="modal" 
+                                                data-bs-target="#editPointModal{{ point.id }}">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <form method="POST" 
+                                              action="{{ url_for('hr_points_mgmt.update_user_points_page') }}" 
+                                              style="display: inline;">
+                                            <input type="hidden" name="delete_point" value="1">
+                                            <input type="hidden" name="point_id" value="{{ point.id }}">
+                                            <input type="hidden" name="search_query" value="{{ search_query }}">
+                                            <button type="submit" 
+                                                    class="btn btn-danger btn-sm" 
+                                                    onclick="return confirm('Are you sure you want to delete this point transaction?');">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+
+                                    <!-- Edit Point Modal -->
+                                    <div class="modal fade" id="editPointModal{{ point.id }}" tabindex="-1" aria-hidden="true">
+                                        <div class="modal-dialog">
+                                            <div class="modal-content">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title">Edit Point Transaction</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                </div>
+                                                <form method="POST" action="{{ url_for('hr_points_mgmt.update_user_points_page') }}">
+                                                    <div class="modal-body">
+                                                        <input type="hidden" name="update_point" value="1">
+                                                        <input type="hidden" name="point_id" value="{{ point.id }}">
+                                                        <input type="hidden" name="search_query" value="{{ search_query }}">
+                                                        
+                                                        <div class="mb-3">
+                                                            <label for="editPoints{{ point.id }}" class="form-label">Points *</label>
+                                                            <input type="number" 
+                                                                   class="form-control" 
+                                                                   id="editPoints{{ point.id }}" 
+                                                                   name="points" 
+                                                                   value="{{ point.points }}" 
+                                                                   required>
+                                                        </div>
+                                                        <div class="mb-3">
+                                                            <label for="editNotes{{ point.id }}" class="form-label">Notes</label>
+                                                            <textarea class="form-control edit-notes-textarea" 
+                                                                      id="editNotes{{ point.id }}" 
+                                                                      name="notes" 
+                                                                      rows="4"
+                                                                      data-full-notes="{{ point.notes | e }}"></textarea>
+                                                        </div>
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                        <button type="submit" class="btn btn-primary">
+                                                            <i class="fas fa-save me-2"></i>Save Changes
+                                                        </button>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr class="no-data-row">
+                                <td colspan="6" class="text-center py-4">No points history found.</td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Employee List for Quick Access -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-light">
+            <h5 class="mb-0"><i class="fas fa-users me-2"></i>Quick Access - All Employees</h5>
+        </div>
+        <div class="card-body">
+            <!-- Filter Section -->
+            <div class="row mb-3">
+                <div class="col-md-3">
+                    <label for="department-filter" class="form-label">Department</label>
+                    <select id="department-filter" class="form-select">
+                        <option value="">All Departments</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="grade-filter" class="form-label">Grade</label>
+                    <select id="grade-filter" class="form-select">
+                        <option value="">All Grades</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="location-filter" class="form-label">Location</label>
+                    <select id="location-filter" class="form-select">
+                        <option value="">All Locations</option>
+                    </select>
+                </div>
+                <div class="col-md-3 d-flex align-items-end gap-2">
+                    <button id="apply-employee-filters-btn" class="btn btn-primary flex-fill">Apply</button>
+                    <button id="reset-employee-filters-btn" class="btn btn-secondary flex-fill">Reset</button>
+                </div>
+            </div>
+            
+            <div class="mb-2">
+                <small id="employee-results-count" class="text-muted"></small>
+            </div>
+
+            <!-- Employee Table -->
+            <div class="table-responsive">
+                <table class="table table-striped table-hover table-sm">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Name</th>
+                            <th>Employee ID</th>
+                            <th>Grade</th>
+                            <th>Department</th>
+                            <th>Location</th>
+                            <th>Manager</th>
+                            <th>Joining Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="employee-table-body">
+                        {% for employee in employees %}
+                        <tr data-department="{{ employee.department }}" 
+                            data-grade="{{ employee.grade }}" 
+                            data-location="{{ employee.us_non_us }}">
+                            <td>{{ employee.name }}</td>
+                            <td>{{ employee.employee_id }}</td>
+                            <td><span class="badge bg-info">{{ employee.grade }}</span></td>
+                            <td>{{ employee.department }}</td>
+                            <td>{{ employee.us_non_us }}</td>
+                            <td>{{ employee.manager_name }}</td>
+                            <td>{{ employee.joining_date.strftime('%d-%m-%Y') if employee.joining_date else 'N/A' }}</td>
+                            <td>
+                                <a href="{{ url_for('hr_points_mgmt.update_user_points_page', search_query=employee.employee_id) }}" 
+                                   class="btn btn-primary btn-sm">
+                                    <i class="fas fa-edit"></i> Update
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- View Notes Modal -->
+<div class="modal fade" id="viewNotesModal" tabindex="-1" role="dialog" aria-labelledby="viewNotesModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content" style="border-radius: 14px; border: none; box-shadow: 0 8px 24px rgba(0,0,0,0.15);">
+            <div class="modal-header" style="background: linear-gradient(135deg, #1e88e5, #42a5f5); color: white; border-radius: 14px 14px 0 0; padding: 20px 24px; border: none;">
+                <h5 class="modal-title" id="viewNotesModalLabel" style="font-weight: 600; font-size: 1.25rem;">
+                    <i class="fas fa-sticky-note me-2"></i>Notes
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" style="padding: 24px; background: #f8f9fa;">
+                <div id="fullNotesText" style="white-space: pre-wrap; word-break: break-word; word-wrap: break-word; overflow-wrap: break-word; background: white; padding: 16px; border-radius: 8px; border: 1px solid #dee2e6; min-height: 100px; max-height: 400px; overflow-y: auto; color: #333; line-height: 1.6;"></div>
+            </div>
+            <div class="modal-footer" style="border-top: 1px solid #dee2e6; padding: 16px 24px; background: #f8f9fa; border-radius: 0 0 14px 14px;">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal" style="background: linear-gradient(135deg, #1e88e5, #42a5f5); border: none; padding: 8px 20px; font-weight: 500;">
+                    <i class="fas fa-times me-2"></i>Close
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% else %}
+<div class="container mt-5">
+    <div class="alert alert-danger" role="alert">
+        <h4 class="alert-heading"><i class="fas fa-exclamation-triangle me-2"></i>Access Denied!</h4>
+        <p>You do not have the necessary permissions to view or use this page. Please contact the administrator if you believe this is an error.</p>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    
+    // ========================================
+    // Extract Latest Note for Edit Modal Textareas
+    // ========================================
+    function getLatestNote(fullNotes) {
+        if (!fullNotes || fullNotes.trim() === '') return '';
+        
+        // Notes are now stored as single values (no concatenation)
+        return fullNotes.trim();
+    }
+    
+    // Apply to all edit notes textareas
+    document.querySelectorAll('.edit-notes-textarea').forEach(function(textarea) {
+        const fullNotes = textarea.getAttribute('data-full-notes');
+        textarea.value = getLatestNote(fullNotes);
+    });
+    
+    // ========================================
+    // Search Form Enhancement
+    // ========================================
+    const searchInput = document.getElementById('searchInput');
+    const clearSearchBtn = document.getElementById('clearSearchBtn');
+    const searchForm = document.getElementById('searchForm');
+    
+    // Clear button functionality
+    if (clearSearchBtn && searchInput) {
+        clearSearchBtn.addEventListener('click', function() {
+            searchInput.value = '';
+            searchInput.focus();
+            // Redirect to clear the page
+            window.location.href = '{{ url_for("hr_points_mgmt.update_user_points_page") }}';
+        });
+    }
+    
+    // Auto-focus search input if no user is displayed
+    {% if show_form and user %}
+    const isUserDisplayed = true;
+    {% else %}
+    const isUserDisplayed = false;
+    {% endif %}
+    if (!isUserDisplayed && searchInput) {
+        searchInput.focus();
+    }
+    
+    // Clear search input on page load if there was an error
+    {% set danger_messages = get_flashed_messages(category_filter=['danger']) %}
+    {% if danger_messages %}
+    const hasError = true;
+    {% else %}
+    const hasError = false;
+    {% endif %}
+    if (hasError && searchInput && !searchInput.value) {
+        searchInput.value = '';
+    }
+    
+    // ========================================
+    // Points History Table Filtering
+    // ========================================
+    const pointsHistoryTable = document.getElementById('pointsHistoryTable');
+    const categoryFilter = document.getElementById('categoryFilter');
+    const awardedByFilter = document.getElementById('awardedByFilter');
+    const yearFilter = document.getElementById('yearFilter');
+    const quarterFilter = document.getElementById('quarterFilter');
+    const applyPointsFiltersBtn = document.getElementById('applyPointsFiltersBtn');
+    const resetPointsFiltersBtn = document.getElementById('resetPointsFiltersBtn');
+
+    // Dynamically populate quarter filter from data
+    if (pointsHistoryTable && quarterFilter) {
+        const availableQuarters = new Set();
+        const allRows = pointsHistoryTable.querySelectorAll('tbody tr');
+        allRows.forEach(row => {
+            const quarter = row.getAttribute('data-quarter');
+            if (quarter && quarter.trim() !== '') {
+                availableQuarters.add(quarter);
+            }
+        });
+        
+        // Add quarters in order (Q1, Q2, Q3, Q4) - only if they have data
+        const quarterOrder = ['Q1', 'Q2', 'Q3', 'Q4'];
+        quarterOrder.forEach(q => {
+            if (availableQuarters.has(q)) {
+                const option = document.createElement('option');
+                option.value = q;
+                option.textContent = q;
+                quarterFilter.appendChild(option);
+            }
+        });
+    }
+
+    function applyPointsFilters() {
+        console.log('🚀 applyPointsFilters called');
+        
+        if (!pointsHistoryTable) {
+            console.error('❌ Table not found!');
+            return;
+        }
+        
+        const selectedCategory = categoryFilter ? categoryFilter.value : 'all';
+        const selectedAwardedBy = awardedByFilter ? awardedByFilter.value : 'all';
+        const selectedYear = yearFilter ? yearFilter.value : 'all';
+        const selectedQuarter = quarterFilter ? quarterFilter.value : 'all';
+
+        console.log('📊 Selected filters:', {
+            category: selectedCategory,
+            awardedBy: selectedAwardedBy,
+            year: selectedYear,
+            quarter: selectedQuarter
+        });
+
+        const allRows = pointsHistoryTable.querySelectorAll('tbody tr');
+        const dataRows = Array.from(allRows).filter(row => !row.classList.contains('no-data-row'));
+        
+        console.log(`📋 Found ${dataRows.length} data rows`);
+
+        let visibleCount = 0;
+        let filterParts = [];
+        
+        if (selectedCategory !== 'all') filterParts.push(`Category: ${selectedCategory}`);
+        if (selectedAwardedBy !== 'all') filterParts.push(`Awarded By: ${selectedAwardedBy}`);
+        if (selectedYear !== 'all') filterParts.push(`Year: ${selectedYear}`);
+        if (selectedQuarter !== 'all') filterParts.push(`Quarter: ${selectedQuarter}`);
+
+        dataRows.forEach((row, index) => {
+            const rowCategory = row.getAttribute('data-category') || '';
+            const rowAwardedBy = row.getAttribute('data-awarded-by') || '';
+            const rowYear = row.getAttribute('data-year') || '';
+            const rowQuarter = row.getAttribute('data-quarter') || '';
+            
+            if (index === 0) {
+                console.log('�a First row data:', {
+                    category: rowCategory,
+                    awardedBy: rowAwardedBy,
+                    year: rowYear,
+                    quarter: rowQuarter
+                });
+            }
+
+            let matches = true;
+            
+            if (selectedCategory !== 'all' && rowCategory !== selectedCategory) {
+                matches = false;
+            }
+            
+            if (selectedAwardedBy !== 'all' && rowAwardedBy !== selectedAwardedBy) {
+                matches = false;
+            }
+            
+            if (selectedYear !== 'all' && rowYear !== selectedYear) {
+                matches = false;
+            }
+            
+            if (selectedQuarter !== 'all' && rowQuarter !== selectedQuarter) {
+                matches = false;
+            }
+
+            if (matches) {
+                row.style.display = '';
+                visibleCount++;
+            } else {
+                row.style.display = 'none';
+            }
+        });
+
+        console.log(`✅ Showing ${visibleCount} of ${dataRows.length} rows`);
+
+        // Update filter status
+        const filterStatus = document.getElementById('filterStatus');
+        const filterStatusText = document.getElementById('filterStatusText');
+        
+        if (filterStatus && filterStatusText) {
+            if (filterParts.length > 0) {
+                filterStatusText.textContent = `Active Filters: ${filterParts.join(' | ')} - Showing ${visibleCount} of ${dataRows.length} records`;
+                filterStatus.style.display = 'block';
+            } else {
+                filterStatus.style.display = 'none';
+            }
+        }
+
+        // Handle "no results" message
+        let noDataRow = pointsHistoryTable.querySelector('tbody tr.no-data-row');
+        
+        if (visibleCount === 0 && dataRows.length > 0) {
+            if (!noDataRow) {
+                const tbody = pointsHistoryTable.querySelector('tbody');
+                noDataRow = document.createElement('tr');
+                noDataRow.className = 'no-data-row';
+                noDataRow.innerHTML = '<td colspan="6" class="text-center py-4"><i class="fas fa-search text-muted mb-2"></i><br>No matching records found</td>';
+                tbody.appendChild(noDataRow);
+            }
+        } else if (noDataRow && visibleCount > 0) {
+            noDataRow.remove();
+        }
+        
+        // Show toast notification
+        if (filterParts.length > 0 && typeof showFilterToast === 'function') {
+            showFilterToast(`Filters applied: ${visibleCount} records found`);
+        }
+    }
+
+    if (applyPointsFiltersBtn) {
+        applyPointsFiltersBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            applyPointsFilters();
+        });
+    }
+    
+    if (resetPointsFiltersBtn) {
+        resetPointsFiltersBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            if (categoryFilter) categoryFilter.value = 'all';
+            if (awardedByFilter) awardedByFilter.value = 'all';
+            if (yearFilter) yearFilter.value = 'all';
+            if (quarterFilter) quarterFilter.value = 'all';
+            
+            applyPointsFilters();
+        });
+    }
+
+    // ========================================
+    // Employee Table Filtering
+    // ========================================
+    const employeeTableBody = document.getElementById('employee-table-body');
+    const departmentFilter = document.getElementById('department-filter');
+    const gradeFilter = document.getElementById('grade-filter');
+    const locationFilter = document.getElementById('location-filter');
+    const applyEmployeeFiltersBtn = document.getElementById('apply-employee-filters-btn');
+    const resetEmployeeFiltersBtn = document.getElementById('reset-employee-filters-btn');
+    const employeeResultsCount = document.getElementById('employee-results-count');
+
+    if (employeeTableBody) {
+        let allEmployees = [];
+        
+        function initializeEmployeeFilters() {
+            const rows = employeeTableBody.getElementsByTagName('tr');
+            allEmployees = [];
+            
+            const departments = new Set();
+            const grades = new Set();
+            const locations = new Set();
+            
+            for (let i = 0; i < rows.length; i++) {
+                const row = rows[i];
+                const department = row.getAttribute('data-department');
+                const grade = row.getAttribute('data-grade');
+                const location = row.getAttribute('data-location');
+                
+                allEmployees.push({
+                    element: row,
+                    department: department,
+                    grade: grade,
+                    location: location
+                });
+                
+                if (department) departments.add(department);
+                if (grade) grades.add(grade);
+                if (location) locations.add(location);
+            }
+            
+            populateFilterOptions(departmentFilter, departments);
+            populateFilterOptions(gradeFilter, grades);
+            populateFilterOptions(locationFilter, locations);
+            
+            updateEmployeeResultsCount(allEmployees.length, allEmployees.length);
+        }
+        
+        function populateFilterOptions(selectElement, optionsSet) {
+            const currentValue = selectElement.value;
+            const firstOption = selectElement.options[0].text;
+            
+            selectElement.innerHTML = `<option value="">${firstOption}</option>`;
+            
+            Array.from(optionsSet).sort().forEach(option => {
+                const optionElement = document.createElement('option');
+                optionElement.value = option;
+                optionElement.textContent = option;
+                selectElement.appendChild(optionElement);
+            });
+            
+            if (currentValue) selectElement.value = currentValue;
+        }
+        
+        function applyEmployeeFilters() {
+            const departmentValue = departmentFilter.value;
+            const gradeValue = gradeFilter.value;
+            const locationValue = locationFilter.value;
+            
+            let visibleCount = 0;
+            
+            allEmployees.forEach(employee => {
+                const departmentMatch = !departmentValue || employee.department === departmentValue;
+                const gradeMatch = !gradeValue || employee.grade === gradeValue;
+                const locationMatch = !locationValue || employee.location === locationValue;
+                
+                const show = departmentMatch && gradeMatch && locationMatch;
+                employee.element.style.display = show ? '' : 'none';
+                if (show) visibleCount++;
+            });
+            
+            updateEmployeeResultsCount(visibleCount, allEmployees.length);
+        }
+        
+        function resetEmployeeFilters() {
+            departmentFilter.value = '';
+            gradeFilter.value = '';
+            locationFilter.value = '';
+            applyEmployeeFilters();
+        }
+        
+        function updateEmployeeResultsCount(visible, total) {
+            if (employeeResultsCount) {
+                employeeResultsCount.textContent = `Showing ${visible} of ${total} employees`;
+            }
+        }
+        
+        if (applyEmployeeFiltersBtn) {
+            applyEmployeeFiltersBtn.addEventListener('click', applyEmployeeFilters);
+        }
+        
+        if (resetEmployeeFiltersBtn) {
+            resetEmployeeFiltersBtn.addEventListener('click', resetEmployeeFilters);
+        }
+        
+        initializeEmployeeFilters();
+    }
+
+    // ========================================
+    // Auto-refresh User Data
+    // ========================================
+    {% if user and user._id %}
+    const currentUserId = '{{ user._id }}';
+    {% else %}
+    const currentUserId = '';
+    {% endif %}
+    let refreshIntervalId;
+
+    function fetchAndUpdateUserData(userId) {
+        fetch(`/hr/api/user-points-data/${userId}`)
+            .then(response => {
+                if (!response.ok) throw new Error('Network response was not ok');
+                return response.json();
+            })
+            .then(data => {
+                if (data.error) {
+                    console.error('Error fetching user data:', data.error);
+                    return;
+                }
+                
+                // Update summary with explicit integer conversion for cross-browser compatibility
+                const totalPointsBadge = document.getElementById('total_points_all_time_badge');
+                if (totalPointsBadge) totalPointsBadge.textContent = Math.floor(data.total_points_all_time || 0);
+                
+                // Update quarterly breakdown with bonus display
+                const quarterlyList = document.getElementById('quarterly_breakdown_list');
+                if (quarterlyList) {
+                    quarterlyList.innerHTML = '';
+                    if (Object.keys(data.quarterly_breakdown).length > 0) {
+                        for (const quarter in data.quarterly_breakdown) {
+                            const li = document.createElement('li');
+                            li.className = 'list-group-item d-flex justify-content-between align-items-center';
+                            const totalPoints = data.quarterly_breakdown[quarter];
+                            const bonusPoints = (data.quarterly_bonus && data.quarterly_bonus[quarter]) ? data.quarterly_bonus[quarter] : 0;
+                            const basePoints = totalPoints - bonusPoints;
+                            let bonusHtml = '';
+                            if (bonusPoints > 0) {
+                                bonusHtml = `<span class="badge bg-success rounded-pill ms-1" title="Bonus Points (included in total)">(+${bonusPoints} bonus)</span>`;
+                            }
+                            li.innerHTML = `${quarter} <span><span class="badge bg-primary rounded-pill">${bonusPoints > 0 ? basePoints : totalPoints}</span>${bonusHtml}</span>`;
+                            quarterlyList.appendChild(li);
+                        }
+                    } else {
+                        quarterlyList.innerHTML = '<li class="list-group-item text-muted">No quarterly data available</li>';
+                    }
+                }
+                
+                // Update yearly summary with bonus display
+                const yearlyList = document.getElementById('yearly_summary_list');
+                if (yearlyList) {
+                    yearlyList.innerHTML = '';
+                    if (Object.keys(data.yearly_summary).length > 0) {
+                        for (const year in data.yearly_summary) {
+                            const li = document.createElement('li');
+                            li.className = 'list-group-item d-flex justify-content-between align-items-center';
+                            const totalPoints = data.yearly_summary[year];
+                            const bonusPoints = (data.yearly_bonus && data.yearly_bonus[year]) ? data.yearly_bonus[year] : 0;
+                            const basePoints = totalPoints - bonusPoints;
+                            let bonusHtml = '';
+                            if (bonusPoints > 0) {
+                                bonusHtml = `<span class="badge bg-info rounded-pill ms-1" title="Bonus Points (included in total)">(+${bonusPoints} bonus)</span>`;
+                            }
+                            li.innerHTML = `FY ${year} <span><span class="badge bg-success rounded-pill">${bonusPoints > 0 ? basePoints : totalPoints}</span>${bonusHtml}</span>`;
+                            yearlyList.appendChild(li);
+                        }
+                    } else {
+                        yearlyList.innerHTML = '<li class="list-group-item text-muted">No yearly data available</li>';
+                    }
+                }
+            })
+            .catch(error => console.error('Error during fetch operation:', error));
+    }
+
+    if (isUserDisplayed && currentUserId) {
+        refreshIntervalId = setInterval(() => fetchAndUpdateUserData(currentUserId), 30000); // Refresh every 30 seconds
+    }
+
+    // Clear interval on form submission
+    if (searchForm) {
+        searchForm.addEventListener('submit', () => {
+            if (refreshIntervalId) clearInterval(refreshIntervalId);
+        });
+    }
+    
+    // ========================================
+    // View Notes Button Handler - Cross-browser compatible
+    // ========================================
+    document.addEventListener('click', function(e) {
+        if (e.target && (e.target.classList.contains('view-notes-btn') || e.target.closest('.view-notes-btn'))) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const button = e.target.classList.contains('view-notes-btn') ? e.target : e.target.closest('.view-notes-btn');
+            const noteText = button.getAttribute('data-notes') || button.dataset.notes || 'No notes available';
+            
+            console.log('Opening notes modal with text:', noteText);
+            showFullNotes(noteText);
+        }
+    });
+});
+
+// ========================================
+// Helper function to extract only the latest note (notes are now single values)
+// ========================================
+function getLatestNoteForView(fullNotes) {
+    if (!fullNotes || fullNotes.trim() === '') return '';
+    return fullNotes.trim();
+}
+
+// ========================================
+// Show Full Notes Function - Cross-browser compatible (Global scope)
+// ========================================
+function showFullNotes(noteText) {
+    console.log('showFullNotes called with:', noteText);
+    
+    const modalBody = document.getElementById('fullNotesText');
+    if (modalBody) {
+        modalBody.textContent = getLatestNoteForView(noteText) || 'No notes available';
+    }
+    
+    // Show modal with cross-browser support
+    try {
+        const modalElement = document.getElementById('viewNotesModal');
+        if (!modalElement) {
+            console.error('Modal element not found');
+            alert(noteText || 'No notes available');
+            return;
+        }
+        
+        if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+            // Bootstrap 5 method (primary)
+            const modal = new bootstrap.Modal(modalElement);
+            modal.show();
+        } else {
+            // Manual fallback for browsers without Bootstrap
+            console.log('Using manual modal display');
+            modalElement.classList.add('show');
+            modalElement.style.display = 'block';
+            modalElement.setAttribute('aria-modal', 'true');
+            modalElement.removeAttribute('aria-hidden');
+            
+            // Add backdrop
+            let backdrop = document.getElementById('manual-backdrop');
+            if (!backdrop) {
+                backdrop = document.createElement('div');
+                backdrop.className = 'modal-backdrop fade show';
+                backdrop.id = 'manual-backdrop';
+                document.body.appendChild(backdrop);
+            }
+            document.body.classList.add('modal-open');
+            
+            // Close on backdrop click
+            backdrop.addEventListener('click', function closeModal() {
+                modalElement.classList.remove('show');
+                modalElement.style.display = 'none';
+                modalElement.setAttribute('aria-hidden', 'true');
+                modalElement.removeAttribute('aria-modal');
+                backdrop.remove();
+                document.body.classList.remove('modal-open');
+            });
+            
+            // Close on close button click
+            const closeButtons = modalElement.querySelectorAll('[data-bs-dismiss="modal"]');
+            closeButtons.forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    modalElement.classList.remove('show');
+                    modalElement.style.display = 'none';
+                    modalElement.setAttribute('aria-hidden', 'true');
+                    modalElement.removeAttribute('aria-modal');
+                    if (backdrop) backdrop.remove();
+                    document.body.classList.remove('modal-open');
+                });
+            });
+        }
+    } catch (error) {
+        console.error('Error showing modal:', error);
+        alert(noteText || 'No notes available');
+    }
+}
+</script>
+{% endblock %}

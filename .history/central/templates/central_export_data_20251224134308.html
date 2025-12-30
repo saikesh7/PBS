@@ -1,0 +1,560 @@
+{% extends "central_base.html" %}
+
+{% block title %}Export Data - Central Dashboard{% endblock %}
+
+{% block content %}
+<div class="content-wrapper">
+    <!-- Page Header -->
+    <div class="dashboard-header">
+        <h4 class="mb-0">Central Dashboard</h4>
+        <div>
+            <button class="btn btn-outline-success" onclick="window.print()">
+                <i class="fas fa-print"></i> Print
+            </button>
+        </div>
+    </div>
+
+    <!-- Export Data with Date Range -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="card-title mb-0">
+                <i class="fas fa-file-export text-success me-2"></i>Export Data with Date Range
+            </h5>
+        </div>
+        <div class="card-body">
+            {% if use_date_filter %}
+            <div class="alert alert-info mb-3" role="alert">
+                <i class="fas fa-filter me-2"></i>
+                <strong>Filters Active:</strong> Showing data from {{ filter_start_date_display }} to {{ filter_end_date_display }}
+            </div>
+            {% endif %}
+            <div class="row g-3">
+                <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+                    <label for="exportStartDate" class="form-label">Start Date</label>
+                    <input type="date" class="form-control" id="exportStartDate" name="central_export_start_date" value="" required autocomplete="new-password">
+                </div>
+                <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+                    <label for="exportEndDate" class="form-label">End Date</label>
+                    <input type="date" class="form-control" id="exportEndDate" name="central_export_end_date" value="" required autocomplete="new-password">
+                </div>
+                <div class="col-12 col-md-12 col-lg-6">
+                    <label class="form-label d-none d-lg-block">&nbsp;</label>
+                    <div class="d-flex flex-wrap gap-2">
+                        <button type="button" id="applyDateFilters" class="btn btn-primary flex-fill flex-sm-grow-0">
+                            <i class="fas fa-check me-1"></i>Apply Filters
+                        </button>
+                        <button type="button" id="resetDateFilters" class="btn btn-secondary flex-fill flex-sm-grow-0">
+                            <i class="fas fa-undo me-1"></i>Reset Filters
+                        </button>
+                        <button type="button" id="exportToExcel" class="btn btn-success flex-fill flex-sm-grow-0">
+                            <i class="fas fa-file-excel me-1"></i>Export to Excel
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- All Employees Tab -->
+    <div class="card mb-4 card-shadow">
+        <div class="card-header blue-gradient">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <i class="fas fa-users me-2"></i>
+                    <span class="fw-bold">All Employees (<span id="employeeCount">{{ employee_data|length }}</span>)</span>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <div class="input-group input-group-sm" style="width: 250px;">
+                        <input type="text" class="form-control" id="employeeSearch" placeholder="Search employees...">
+                        <span class="input-group-text"><i class="fas fa-search"></i></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0" id="exportTable">
+                    <thead class="thead-dark">
+                        <tr>
+                            <th class="ps-3 sortable" data-sort="name">
+                                <div class="d-flex align-items-center">
+                                    <span>Employee</span>
+                                    <i class="fas fa-sort ms-1 text-muted"></i>
+                                </div>
+                            </th>
+                            <th class="sortable" data-sort="department">
+                                <div class="d-flex align-items-center">
+                                    <span>Department</span>
+                                    <i class="fas fa-sort ms-1 text-muted"></i>
+                                </div>
+                            </th>
+                            <th class="sortable" data-sort="grade">
+                                <div class="d-flex align-items-center">
+                                    <span>Grade</span>
+                                    <i class="fas fa-sort ms-1 text-muted"></i>
+                                </div>
+                            </th>
+                            <th class="sortable" data-sort="points">
+                                <div class="d-flex align-items-center">
+                                    <span>Total Points</span>
+                                    <i class="fas fa-sort ms-1 text-muted"></i>
+                                </div>
+                            </th>
+                            <th>Quarterly Points</th>
+                            <th>Bonus Points</th>
+                            <th>All Quarters</th>
+                            <th>Utilization</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if employee_data and employee_data|length > 0 %}
+                            {% for employee in employee_data %}
+                            <tr class="employee-row"
+                                data-department="{{ employee.department }}"
+                                data-grade="{{ employee.grade }}"
+                                data-name="{{ employee.name }}"
+                                data-points="{{ employee.total_points }}">
+                                
+                                <td class="ps-3">
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar-circle me-2">
+                                            {{ employee.name[:1] }}
+                                        </div>
+                                        <div>
+                                            <div class="fw-bold">{{ employee.name }}</div>
+                                            <div class="text-muted small">{{ employee.email }}</div>
+                                        </div>
+                                    </div>
+                                </td>
+
+                                <td><span class="department-badge">{{ employee.department }}</span></td>
+                                <td><span class="badge bg-secondary">{{ employee.grade }}</span></td>
+
+                                <td>
+                                    <div class="fw-bold">{{ employee.total_points|int }}</div>
+                                    <div class="text-muted small">Quarterly Target: {{ employee.yearly_target|int if not use_date_filter else employee.quarterly_target|int }}</div>
+                                </td>
+
+                                <td>
+                                    <div class="fw-bold">{{ employee.quarterly_points|int }}</div>
+                                    {% if not use_date_filter %}
+                                    <div class="text-muted small">Quarterly Target: {{ employee.quarterly_target|int }}</div>
+                                    {% endif %}
+                                </td>
+
+                                <td>
+                                    {% if employee.bonus_points > 0 %}
+                                    <span class="badge bg-primary">+{{ employee.bonus_points|int }}</span>
+                                    {% else %}
+                                    <span class="text-muted">0</span>
+                                    {% endif %}
+                                </td>
+
+                                <td>
+                                    <div class="quarters-container">
+                                        {% for qtr, qtr_data in employee.all_quarters.items() %}
+                                        <div class="quarter-item {% if qtr == current_quarter %}current-quarter{% endif %}">
+                                            <div class="d-flex justify-content-between">
+                                                <span class="quarter-label">{{ qtr }}</span>
+                                                <span class="quarter-points">
+                                                    <span class="fw-bold">{{ qtr_data.regular }}</span>
+                                                    {% if qtr_data.bonus > 0 %}
+                                                    <span class="text-primary">(+{{ qtr_data.bonus }})</span>
+                                                    {% endif %}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                </td>
+
+                                <td>
+                                    {% if employee.utilization > 0 %}
+                                    <div class="utilization-badge">
+                                        <i class="fas fa-chart-pie me-1"></i> {{ employee.utilization }}%
+                                    </div>
+                                    {% else %}
+                                    <span class="text-muted">N/A</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="8" class="text-center py-5">
+                                    <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                                    <h5>No Data Found</h5>
+                                    <p class="text-muted">
+                                        {% if use_date_filter %}
+                                            No employee data found for the selected date range ({{ filter_start_date_display }} to {{ filter_end_date_display }}).
+                                        {% else %}
+                                            No employee data available.
+                                        {% endif %}
+                                    </p>
+                                    <button class="btn btn-primary mt-2" onclick="window.location.href='/central/export-data'">
+                                        <i class="fas fa-undo me-2"></i>Reset Filters
+                                    </button>
+                                </td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="card-footer">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <span class="text-muted small">Showing <span id="exportVisibleRows">{{ employee_data|length }}</span> employees</span>
+                </div>
+                <div class="export-actions">
+                    <button class="btn btn-sm btn-success me-2" id="exportCSV">
+                        <i class="fas fa-file-csv me-1"></i> Export CSV
+                    </button>
+                    <button class="btn btn-sm btn-light" id="printTable">
+                        <i class="fas fa-print me-1"></i> Print
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Error/Info Modal -->
+<div class="modal fade" id="messageModal" tabindex="-1" aria-labelledby="messageModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius: 16px; border: none; box-shadow: 0 10px 40px rgba(0,0,0,0.2);">
+            <div class="modal-header" id="messageModalHeader" style="border-radius: 16px 16px 0 0; padding: 24px; border: none;">
+                <h5 class="modal-title" id="messageModalLabel" style="font-weight: 600; font-size: 1.3rem; display: flex; align-items-center;">
+                    <i id="messageModalIcon" class="me-3" style="font-size: 1.5rem;"></i>
+                    <span id="messageModalTitle">Message</span>
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" style="padding: 28px; font-size: 1.05rem; line-height: 1.6; color: #333;">
+                <p id="messageModalContent" style="margin: 0;"></p>
+            </div>
+            <div class="modal-footer" style="border-top: 1px solid #e9ecef; padding: 20px 24px; border-radius: 0 0 16px 16px; background: #f8f9fa;">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal" style="padding: 10px 28px; font-weight: 500; border-radius: 8px; font-size: 1rem;">
+                    <i class="fas fa-check me-2"></i>OK
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Check if this is a page refresh (not initial navigation)
+// If refresh with filter params, redirect to clean URL
+(function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const hasFilters = urlParams.has('start_date') || urlParams.has('end_date');
+    
+    if (hasFilters) {
+        // Check navigation type - if reload, clear filters
+        const navEntries = performance.getEntriesByType('navigation');
+        const isReload = navEntries.length > 0 && navEntries[0].type === 'reload';
+        
+        // Also check sessionStorage flag for filter application
+        const filterApplied = sessionStorage.getItem('central_export_filter_applied');
+        
+        if (isReload && !filterApplied) {
+            // This is a refresh - redirect to clean URL
+            window.location.replace('/central/export-data');
+            return;
+        }
+        
+        // Clear the flag after checking (one-time use)
+        sessionStorage.removeItem('central_export_filter_applied');
+    }
+})();
+
+// Modern Modal Message Function (replaces alert())
+window.showMessage = function(message, type = 'error') {
+    const modal = document.getElementById('messageModal');
+    const header = document.getElementById('messageModalHeader');
+    const icon = document.getElementById('messageModalIcon');
+    const title = document.getElementById('messageModalTitle');
+    const content = document.getElementById('messageModalContent');
+    
+    // Configure based on type
+    if (type === 'error') {
+        header.style.background = 'linear-gradient(135deg, #dc3545, #c82333)';
+        header.style.color = 'white';
+        icon.className = 'fas fa-exclamation-circle me-3';
+        title.textContent = 'Error';
+    } else if (type === 'warning') {
+        header.style.background = 'linear-gradient(135deg, #ffc107, #ff9800)';
+        header.style.color = 'white';
+        icon.className = 'fas fa-exclamation-triangle me-3';
+        title.textContent = 'Warning';
+    } else if (type === 'info') {
+        header.style.background = 'linear-gradient(135deg, #17a2b8, #138496)';
+        header.style.color = 'white';
+        icon.className = 'fas fa-info-circle me-3';
+        title.textContent = 'Information';
+    } else if (type === 'success') {
+        header.style.background = 'linear-gradient(135deg, #28a745, #218838)';
+        header.style.color = 'white';
+        icon.className = 'fas fa-check-circle me-3';
+        title.textContent = 'Success';
+    }
+    
+    content.textContent = message;
+    
+    const bsModal = new bootstrap.Modal(modal);
+    bsModal.show();
+};
+
+// Initialize date fields - only populate from URL parameters, clear on reload without params
+function initializeDateFields() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const startDate = urlParams.get('start_date');
+    const endDate = urlParams.get('end_date');
+    
+    const startDateInput = document.getElementById('exportStartDate');
+    const endDateInput = document.getElementById('exportEndDate');
+    
+    // Force clear function - aggressively clears all form values
+    function forceClearInputs() {
+        if (startDateInput) {
+            startDateInput.value = '';
+            startDateInput.defaultValue = '';
+            startDateInput.setAttribute('value', '');
+        }
+        if (endDateInput) {
+            endDateInput.value = '';
+            endDateInput.defaultValue = '';
+            endDateInput.setAttribute('value', '');
+        }
+    }
+    
+    // Force clear immediately
+    forceClearInputs();
+    
+    // Only populate if URL has valid date parameters
+    if (startDate && endDate) {
+        if (startDateInput) startDateInput.value = startDate;
+        if (endDateInput) endDateInput.value = endDate;
+    } else {
+        // No URL params - ensure fields stay cleared with delayed check
+        setTimeout(forceClearInputs, 0);
+        setTimeout(forceClearInputs, 50);
+        setTimeout(forceClearInputs, 100);
+    }
+}
+
+// Also clear on window load (after browser restores form values)
+window.addEventListener('load', function() {
+    initializeDateFields();
+});
+
+// Also clear on pageshow (handles back/forward cache)
+window.addEventListener('pageshow', function(event) {
+    // event.persisted is true if page is loaded from cache (bfcache)
+    if (event.persisted) {
+        // Page was restored from bfcache - check if we should clear filters
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has('start_date') || urlParams.has('end_date')) {
+            // Redirect to clean URL when restored from cache
+            window.location.replace('/central/export-data');
+            return;
+        }
+    }
+    initializeDateFields();
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Clear and initialize date fields based on URL parameters only
+    initializeDateFields();
+    
+    // Update visible rows count
+    const employees = {{ employee_data|tojson }};
+    document.getElementById('exportVisibleRows').textContent = employees.length;
+    document.getElementById('employeeCount').textContent = employees.length;
+    
+    // Search functionality
+    const searchInput = document.getElementById('employeeSearch');
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            const rows = document.querySelectorAll('.employee-row');
+            let visibleCount = 0;
+            
+            rows.forEach(row => {
+                const name = row.dataset.name.toLowerCase();
+                const department = row.dataset.department.toLowerCase();
+                const grade = row.dataset.grade.toLowerCase();
+                
+                if (name.includes(searchTerm) || department.includes(searchTerm) || grade.includes(searchTerm)) {
+                    row.style.display = '';
+                    visibleCount++;
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+            
+            document.getElementById('exportVisibleRows').textContent = visibleCount;
+        });
+    }
+    
+    // Sort functionality
+    const sortableHeaders = document.querySelectorAll('.sortable');
+    let currentSort = { column: null, ascending: true };
+    
+    sortableHeaders.forEach(header => {
+        header.style.cursor = 'pointer';
+        header.addEventListener('click', function() {
+            const sortType = this.dataset.sort;
+            const tbody = document.querySelector('#exportTable tbody');
+            const rows = Array.from(tbody.querySelectorAll('.employee-row'));
+            
+            // Toggle sort direction if clicking same column
+            if (currentSort.column === sortType) {
+                currentSort.ascending = !currentSort.ascending;
+            } else {
+                currentSort.column = sortType;
+                currentSort.ascending = true;
+            }
+            
+            // Sort rows
+            rows.sort((a, b) => {
+                let aVal, bVal;
+                
+                if (sortType === 'name') {
+                    aVal = a.dataset.name.toLowerCase();
+                    bVal = b.dataset.name.toLowerCase();
+                } else if (sortType === 'department') {
+                    aVal = a.dataset.department.toLowerCase();
+                    bVal = b.dataset.department.toLowerCase();
+                } else if (sortType === 'grade') {
+                    aVal = a.dataset.grade.toLowerCase();
+                    bVal = b.dataset.grade.toLowerCase();
+                } else if (sortType === 'points') {
+                    aVal = parseInt(a.dataset.points) || 0;
+                    bVal = parseInt(b.dataset.points) || 0;
+                }
+                
+                if (aVal < bVal) return currentSort.ascending ? -1 : 1;
+                if (aVal > bVal) return currentSort.ascending ? 1 : -1;
+                return 0;
+            });
+            
+            // Re-append rows in sorted order
+            rows.forEach(row => tbody.appendChild(row));
+            
+            // Update sort icons
+            sortableHeaders.forEach(h => {
+                const icon = h.querySelector('i');
+                if (icon) {
+                    icon.className = 'fas fa-sort ms-1 text-muted';
+                }
+            });
+            
+            const icon = this.querySelector('i');
+            if (icon) {
+                icon.className = currentSort.ascending ? 'fas fa-sort-up ms-1' : 'fas fa-sort-down ms-1';
+            }
+        });
+    });
+    
+    // Apply date filters - reload page with date range
+    document.getElementById('applyDateFilters').addEventListener('click', function() {
+        const startDate = document.getElementById('exportStartDate').value;
+        const endDate = document.getElementById('exportEndDate').value;
+        
+        // Get valid date range from server
+        const validStartDate = '{{ valid_start_date }}';
+        const validEndDate = '{{ valid_end_date }}';
+        
+        // Validate dates are selected
+        if (!startDate || !endDate) {
+            showMessage(`Please select valid Start date and End date. Valid date range: ${validStartDate} to ${validEndDate}`, 'warning');
+            return;
+        }
+        
+        // Validate start date is not after end date
+        if (new Date(startDate) > new Date(endDate)) {
+            showMessage('Start date cannot be after end date', 'error');
+            return;
+        }
+        
+        // Set flag to indicate filter was intentionally applied (not a refresh)
+        sessionStorage.setItem('central_export_filter_applied', 'true');
+        
+        // Reload page with date filters
+        window.location.href = `/central/export-data?start_date=${startDate}&end_date=${endDate}`;
+    });
+    
+    // Reset date filters - reload page without filters (clears date inputs)
+    document.getElementById('resetDateFilters').addEventListener('click', function() {
+        // Clear date inputs before redirect
+        document.getElementById('exportStartDate').value = '';
+        document.getElementById('exportEndDate').value = '';
+        window.location.href = '/central/export-data';
+    });
+    
+    // Export to Excel with date range
+    document.getElementById('exportToExcel').addEventListener('click', function() {
+        const startDate = document.getElementById('exportStartDate').value;
+        const endDate = document.getElementById('exportEndDate').value;
+        
+        // Get valid date range from server
+        const validStartDate = '{{ valid_start_date }}';
+        const validEndDate = '{{ valid_end_date }}';
+        
+        // Validate dates are selected
+        if (!startDate || !endDate) {
+            showMessage(`Please select valid Start date and End date. Valid date range: ${validStartDate} to ${validEndDate}`, 'warning');
+            return;
+        }
+        
+        // Validate start date is not after end date
+        if (new Date(startDate) > new Date(endDate)) {
+            showMessage('Start date cannot be after end date', 'error');
+            return;
+        }
+        
+        // ✅ REMOVED: Future date validation - now supports past, current, and future dates
+        
+        window.location.href = `/central/export/excel?start_date=${startDate}&end_date=${endDate}`;
+    });
+    
+    // Export current table to CSV
+    document.getElementById('exportCSV').addEventListener('click', function() {
+        const table = document.getElementById('exportTable');
+        const rows = Array.from(table.querySelectorAll('tbody tr.employee-row')).filter(row => row.style.display !== 'none');
+        
+        let csv = 'Name,Email,Department,Grade,Total Points,Quarterly Points,Bonus Points,Utilization\n';
+        
+        rows.forEach(row => {
+            const cells = row.querySelectorAll('td');
+            if (cells.length > 0) {
+                const name = cells[0].querySelector('.fw-bold')?.textContent || '';
+                const email = cells[0].querySelector('.text-muted')?.textContent || '';
+                const department = cells[1].textContent.trim();
+                const grade = cells[2].textContent.trim();
+                const totalPoints = cells[3].querySelector('.fw-bold')?.textContent || '0';
+                const quarterlyPoints = cells[4].querySelector('.fw-bold')?.textContent || '0';
+                const bonusPoints = cells[5].textContent.trim();
+                const utilization = cells[7].textContent.trim();
+                
+                const rowData = [name, email, department, grade, totalPoints, quarterlyPoints, bonusPoints, utilization];
+                csv += rowData.map(val => `"${val}"`).join(',') + '\n';
+            }
+        });
+        
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'employee_data.csv';
+        link.click();
+    });
+    
+    // Print table
+    document.getElementById('printTable').addEventListener('click', function() {
+        window.print();
+    });
+});
+</script>
+{% endblock %}

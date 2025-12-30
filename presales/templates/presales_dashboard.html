@@ -1,0 +1,275 @@
+{% extends "base_presales.html" %}
+
+{% block title %}Presales Dashboard - Points System{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Quick Stats -->
+    <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+            <div class="card text-white bg-primary h-100">
+                <div class="card-body d-flex flex-column justify-content-center">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title mb-2">Pending Requests</h6>
+                            <h2 class="mb-0 fw-bold">{{ pending_count }}</h2>
+                        </div>
+                        <i class="fas fa-clock fa-2x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3 mb-3">
+            <div class="card text-white bg-success h-100">
+                <div class="card-body d-flex flex-column justify-content-center">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title mb-2">Processed History</h6>
+                            <h2 class="mb-0 fw-bold">{{ processed_count }}</h2>
+                        </div>
+                        <i class="fas fa-check-circle fa-2x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3 mb-3">
+            <div class="card text-white bg-warning h-100">
+                <div class="card-body d-flex flex-column justify-content-center">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title mb-2">Approved Requests</h6>
+                            <h2 class="mb-0 fw-bold">{{ approved_count }}</h2>
+                        </div>
+                        <i class="fas fa-trophy fa-2x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3 mb-3">
+            <div class="card text-white bg-danger h-100">
+                <div class="card-body d-flex flex-column justify-content-center">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title mb-2">Rejected Requests</h6>
+                            <h2 class="mb-0 fw-bold">{{ rejected_count }}</h2>
+                        </div>
+                        <i class="fas fa-times-circle fa-2x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Second Row Stats -->
+    <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+            <div class="card text-white bg-info h-100">
+                <div class="card-body d-flex flex-column justify-content-center">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title mb-2">Total Points Awarded</h6>
+                            <h2 class="mb-0 fw-bold">{{ total_points_awarded }}</h2>
+                        </div>
+                        <i class="fas fa-star fa-2x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Quick Actions -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-prowess">
+                    <h5 class="mb-0"><i class="fas fa-rocket"></i> Quick Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-4 col-sm-6">
+                            <a href="{{ url_for('presales.pending_requests') }}" class="btn btn-primary w-100 d-flex flex-column align-items-center justify-content-center" style="height: 100px; border-radius: 10px;">
+                                <i class="fas fa-clock fa-2x mb-2"></i>
+                                <span class="fw-semibold">View Pending Requests</span>
+                            </a>
+                        </div>
+                        <div class="col-md-4 col-sm-6">
+                            <a href="{{ url_for('presales.processed_requests') }}" class="btn btn-success w-100 d-flex flex-column align-items-center justify-content-center" style="height: 100px; border-radius: 10px;">
+                                <i class="fas fa-check-circle fa-2x mb-2"></i>
+                                <span class="fw-semibold">View Processed History</span>
+                            </a>
+                        </div>
+                        <div class="col-md-4 col-sm-6">
+                            <a href="{{ url_for('presales.switch_to_employee_view') }}" class="btn btn-warning w-100 d-flex flex-column align-items-center justify-content-center" style="height: 100px; border-radius: 10px;">
+                                <i class="fas fa-user fa-2x mb-2"></i>
+                                <span class="fw-semibold">Switch to Employee View</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Pending Requests Section -->
+    {% if pending_requests %}
+    <div class="card mb-4">
+        <div class="card-header bg-warning text-dark d-flex align-items-center justify-content-between">
+            <div>
+                <i class="fas fa-clock me-2"></i>
+                <span>Pending Requests</span>
+            </div>
+            <span class="badge bg-dark">{{ pending_count }}</span>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover" id="pendingTableDashboard">
+                    <thead>
+                        <tr>
+                            <th class="text-center">Employee</th>
+                            <th class="text-center">Grade</th>
+                            <th class="text-center">Category</th>
+                            <th class="text-center">Points</th>
+                            <th class="text-center">Requested On</th>
+                            <th class="text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for req in pending_requests %}
+                        <tr>
+                            <td class="text-center"><strong>{{ req.employee_name }}</strong></td>
+                            <td class="text-center">{{ req.employee_grade }}</td>
+                            <td class="text-center">{{ req.category_name }}</td>
+                            <td class="text-center"><span class="badge bg-primary">{{ req.points }}</span></td>
+                            <td class="text-center">{{ req.request_date[8:10] + '-' + req.request_date[5:7] + '-' + req.request_date[:4] if req.request_date else 'N/A' }}</td>
+                            <td class="text-center">
+                                <a href="{{ url_for('presales.pending_requests') }}" class="btn btn-sm btn-primary">
+                                    <i class="fas fa-eye"></i> View
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <div class="text-center mt-3">
+                <a href="{{ url_for('presales.pending_requests') }}" class="btn btn-primary">
+                    <i class="fas fa-list"></i> View All Pending Requests
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+
+    
+    <!-- Quarterly Statistics -->
+    <div class="card mb-4">
+        <div class="card-header bg-prowess d-flex align-items-center justify-content-between">
+            <div>
+                <i class="fas fa-chart-bar me-2"></i>
+                <span>Quarterly Statistics</span>
+            </div>
+            
+        </div>
+        <div class="card-body">
+            {% include 'components/quarterly_stats_table.html' %}
+        </div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-history"></i> Recent Activity</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped" id="recentActivityTable">
+                            <thead>
+                                <tr>
+                                    <th class="text-center">Date</th>
+                                    <th class="text-center">Employee</th>
+                                    <th class="text-center">Category</th>
+                                    <th class="text-center">Points</th>
+                                    <th class="text-center">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for req in all_records[:5] %}
+                                <tr>
+                                    <td class="text-center">{{ req.processed_date.strftime('%d-%m-%Y') if req.processed_date else 'N/A' }}</td>
+                                    <td class="text-center">{{ req.employee_name }}</td>
+                                    <td class="text-center">{{ req.category_name }}</td>
+                                    <td class="text-center">{{ req.points }}</td>
+                                    <td class="text-center">
+                                        {% if req.status == 'Approved' %}
+                                            <span class="badge bg-success">Approved</span>
+                                        {% else %}
+                                            <span class="badge bg-danger">Rejected</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('presales.static', filename='js/ui_helpers.js') }}"></script>
+<script src="{{ url_for('presales.static', filename='js/presales_realtime_stats.js') }}"></script>
+<script>
+$(document).ready(function() {
+    // Initialize pending requests table on dashboard (no pagination, no filters)
+    {% if pending_requests %}
+    $('#pendingTableDashboard').DataTable({
+        order: [[4, 'desc']],
+        paging: false,
+        searching: false,
+        info: false,
+        lengthChange: false
+    });
+    {% endif %}
+    
+    // Initialize recent activity table (no pagination, keep search only)
+    $('#recentActivityTable').DataTable({
+        order: [[0, 'desc']],
+        paging: false,
+        info: false,
+        lengthChange: false,
+        language: {
+            search: "Search :",
+            searchPlaceholder: "Search activity...",
+        }
+    });
+    
+    // Update timestamp function
+    function updateStatsTimestamp() {
+        const now = new Date();
+        const timeString = now.toLocaleTimeString('en-GB', { 
+            hour: '2-digit', 
+            minute: '2-digit' 
+        });
+        $('#stats-last-updated').text(`Last updated: ${timeString}`);
+    }
+    
+    // Override real-time stats update to include timestamp
+    if (window.PresalesRealtimeStats) {
+        const originalUpdate = window.PresalesRealtimeStats.updateQuarterlyStats;
+        window.PresalesRealtimeStats.updateQuarterlyStats = function() {
+            originalUpdate();
+            updateStatsTimestamp();
+        };
+    }
+});
+</script>
+{% endblock %}

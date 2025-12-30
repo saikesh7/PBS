@@ -1,0 +1,2826 @@
+{% extends "ld_base.html" %}
+
+{% block title %}L&D Validator Dashboard{% endblock %}
+{% block dashboard_title %}L&D Validator Dashboard{% endblock %}
+
+{% block sidebar_nav %}
+<!-- Cross-browser compatibility styles for all browsers and systems -->
+<style>
+    /* ========================================
+       Cross-browser reset and normalize
+       ======================================== */
+    *, *::before, *::after {
+        -webkit-box-sizing: border-box;
+        -moz-box-sizing: border-box;
+        box-sizing: border-box;
+    }
+    
+    /* ========================================
+       Cross-browser flexbox support
+       ======================================== */
+    .d-flex {
+        display: -webkit-box !important;
+        display: -webkit-flex !important;
+        display: -moz-box !important;
+        display: -ms-flexbox !important;
+        display: flex !important;
+    }
+    
+    .justify-content-between {
+        -webkit-box-pack: justify !important;
+        -webkit-justify-content: space-between !important;
+        -moz-box-pack: justify !important;
+        -ms-flex-pack: justify !important;
+        justify-content: space-between !important;
+    }
+    
+    .justify-content-center {
+        -webkit-box-pack: center !important;
+        -webkit-justify-content: center !important;
+        -moz-box-pack: center !important;
+        -ms-flex-pack: center !important;
+        justify-content: center !important;
+    }
+    
+    .justify-content-end {
+        -webkit-box-pack: end !important;
+        -webkit-justify-content: flex-end !important;
+        -moz-box-pack: end !important;
+        -ms-flex-pack: end !important;
+        justify-content: flex-end !important;
+    }
+    
+    .align-items-center {
+        -webkit-box-align: center !important;
+        -webkit-align-items: center !important;
+        -moz-box-align: center !important;
+        -ms-flex-align: center !important;
+        align-items: center !important;
+    }
+    
+    .align-items-end {
+        -webkit-box-align: end !important;
+        -webkit-align-items: flex-end !important;
+        -moz-box-align: end !important;
+        -ms-flex-align: end !important;
+        align-items: flex-end !important;
+    }
+    
+    .flex-grow-1 {
+        -webkit-box-flex: 1 !important;
+        -webkit-flex-grow: 1 !important;
+        -moz-box-flex: 1 !important;
+        -ms-flex-positive: 1 !important;
+        flex-grow: 1 !important;
+    }
+    
+    .gap-1 {
+        gap: 0.25rem !important;
+    }
+    
+    .gap-2 {
+        gap: 0.5rem !important;
+    }
+    
+    /* ========================================
+       Cross-browser form controls & filters
+       ======================================== */
+    .form-control, .form-select {
+        display: block;
+        width: 100%;
+        padding: 0.375rem 0.75rem;
+        font-size: 1rem;
+        font-weight: 400;
+        line-height: 1.5;
+        color: #212529;
+        background-color: #fff;
+        background-clip: padding-box;
+        border: 1px solid #ced4da;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+        -webkit-border-radius: 0.25rem;
+        -moz-border-radius: 0.25rem;
+        border-radius: 0.25rem;
+        -webkit-transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        -moz-transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        -o-transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    }
+    
+    .form-select {
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");
+        background-repeat: no-repeat;
+        background-position: right 0.75rem center;
+        background-size: 16px 12px;
+        padding-right: 2.25rem;
+    }
+    
+    .form-control:focus, .form-select:focus {
+        color: #212529;
+        background-color: #fff;
+        border-color: #86b7fe;
+        outline: 0;
+        -webkit-box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+        -moz-box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+    }
+    
+    .form-select-sm {
+        padding-top: 0.25rem;
+        padding-bottom: 0.25rem;
+        padding-left: 0.5rem;
+        font-size: 0.875rem;
+        -webkit-border-radius: 0.2rem;
+        -moz-border-radius: 0.2rem;
+        border-radius: 0.2rem;
+    }
+    
+    .form-control-sm {
+        min-height: calc(1.5em + 0.5rem + 2px);
+        padding: 0.25rem 0.5rem;
+        font-size: 0.875rem;
+        -webkit-border-radius: 0.2rem;
+        -moz-border-radius: 0.2rem;
+        border-radius: 0.2rem;
+    }
+    
+    /* ========================================
+       Cross-browser button styling
+       ======================================== */
+    .btn {
+        display: inline-block;
+        font-weight: 400;
+        line-height: 1.5;
+        text-align: center;
+        text-decoration: none;
+        vertical-align: middle;
+        cursor: pointer;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+        border: 1px solid transparent;
+        padding: 0.375rem 0.75rem;
+        font-size: 1rem;
+        -webkit-border-radius: 0.25rem;
+        -moz-border-radius: 0.25rem;
+        border-radius: 0.25rem;
+        -webkit-transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        -moz-transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        -o-transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    }
+    
+    .btn:focus, .btn:active {
+        outline: none;
+        -webkit-box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+        -moz-box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+        box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+    }
+    
+    .btn-sm {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.875rem;
+        -webkit-border-radius: 0.2rem;
+        -moz-border-radius: 0.2rem;
+        border-radius: 0.2rem;
+    }
+    
+    /* ========================================
+       Cross-browser table styles
+       ======================================== */
+    .table-responsive {
+        display: block;
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: thin;
+    }
+    
+    .table-responsive::-webkit-scrollbar {
+        height: 8px;
+    }
+    
+    .table-responsive::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        -webkit-border-radius: 4px;
+        border-radius: 4px;
+    }
+    
+    .table-responsive::-webkit-scrollbar-thumb {
+        background: #888;
+        -webkit-border-radius: 4px;
+        border-radius: 4px;
+    }
+    
+    /* Sticky table header - cross-browser */
+    .sticky-top, thead.sticky-top th {
+        position: -webkit-sticky;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+    
+    /* ========================================
+       Cross-browser modal fixes
+       ======================================== */
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1050;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow-x: hidden;
+        overflow-y: auto;
+        outline: 0;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .modal.show {
+        display: block !important;
+    }
+    
+    /* Fix modal backdrop blocking issue */
+    .modal-backdrop {
+        position: fixed;
+        top: 0;
+        left: 0;
+        z-index: 1040;
+        width: 100vw;
+        height: 100vh;
+        background-color: #000;
+        pointer-events: none !important;
+    }
+    
+    .modal-backdrop.show {
+        opacity: 0.5;
+        pointer-events: none !important;
+    }
+    
+    /* Ensure modal dialog is above backdrop and clickable */
+    .modal-dialog {
+        position: relative;
+        z-index: 1050;
+        pointer-events: auto !important;
+    }
+
+    .modal-dialog-centered {
+        display: -webkit-box;
+        display: -webkit-flex;
+        display: -moz-box;
+        display: -ms-flexbox;
+        display: flex;
+        -webkit-box-align: center;
+        -webkit-align-items: center;
+        -moz-box-align: center;
+        -ms-flex-align: center;
+        align-items: center;
+        min-height: calc(100% - 1rem);
+        min-height: -webkit-calc(100% - 1rem);
+    }
+
+    .modal-content {
+        position: relative;
+        display: -webkit-box;
+        display: -webkit-flex;
+        display: -moz-box;
+        display: -ms-flexbox;
+        display: flex;
+        -webkit-box-orient: vertical;
+        -webkit-flex-direction: column;
+        -ms-flex-direction: column;
+        flex-direction: column;
+        width: 100%;
+        pointer-events: auto;
+        background-color: #fff;
+        background-clip: padding-box;
+        border: 1px solid rgba(0,0,0,.2);
+        -webkit-border-radius: 0.3rem;
+        -moz-border-radius: 0.3rem;
+        border-radius: 0.3rem;
+        outline: 0;
+    }
+    
+    /* ========================================
+       Cross-browser badge styles
+       ======================================== */
+    .badge {
+        display: inline-block;
+        padding: 0.35em 0.65em;
+        font-size: 0.75em;
+        font-weight: 700;
+        line-height: 1;
+        text-align: center;
+        white-space: nowrap;
+        vertical-align: baseline;
+        -webkit-border-radius: 0.25rem;
+        -moz-border-radius: 0.25rem;
+        border-radius: 0.25rem;
+    }
+    
+    .rounded-pill {
+        -webkit-border-radius: 50rem !important;
+        -moz-border-radius: 50rem !important;
+        border-radius: 50rem !important;
+    }
+    
+    /* ========================================
+       Cross-browser card styles
+       ======================================== */
+    .card {
+        -webkit-box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+        -moz-box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+        box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+    }
+    
+    .shadow-sm {
+        -webkit-box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075) !important;
+        -moz-box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075) !important;
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075) !important;
+    }
+    
+    /* ========================================
+       Cross-browser row/column grid
+       ======================================== */
+    .row {
+        display: -webkit-box;
+        display: -webkit-flex;
+        display: -moz-box;
+        display: -ms-flexbox;
+        display: flex;
+        -webkit-flex-wrap: wrap;
+        -ms-flex-wrap: wrap;
+        flex-wrap: wrap;
+        margin-right: -0.75rem;
+        margin-left: -0.75rem;
+    }
+    
+    .g-2 {
+        --bs-gutter-x: 0.5rem;
+        --bs-gutter-y: 0.5rem;
+    }
+    
+    .g-2 > * {
+        padding-right: calc(var(--bs-gutter-x, 0.5rem) * 0.5);
+        padding-left: calc(var(--bs-gutter-x, 0.5rem) * 0.5);
+        margin-top: var(--bs-gutter-y, 0);
+    }
+    
+    /* ========================================
+       Firefox specific fixes
+       ======================================== */
+    @-moz-document url-prefix() {
+        .form-select {
+            text-indent: 0.01px;
+            text-overflow: '';
+        }
+        
+        .btn::-moz-focus-inner {
+            border: 0;
+        }
+    }
+    
+    /* ========================================
+       IE/Edge specific fixes
+       ======================================== */
+    @supports (-ms-ime-align: auto) {
+        .form-control, .form-select {
+            padding-right: 0.75rem;
+        }
+    }
+    
+    /* IE11 flexbox fixes */
+    @media all and (-ms-high-contrast: none), (-ms-high-contrast: active) {
+        .d-flex {
+            display: -ms-flexbox !important;
+        }
+        .align-items-center {
+            -ms-flex-align: center !important;
+        }
+        .justify-content-between {
+            -ms-flex-pack: justify !important;
+        }
+    }
+</style>
+
+<!-- Validator Navigation Items -->
+<a href="javascript:void(0);" class="sidebar-nav-item tab-link active" data-tab="overview">
+    <div>
+        <i class="fas fa-tachometer-alt"></i>
+        <span>Dashboard</span>
+    </div>
+</a>
+
+<a href="javascript:void(0);" class="sidebar-nav-item tab-link" data-tab="pending" style="display: flex; align-items: center; justify-content: space-between; white-space: nowrap;">
+    <div style="display: flex; align-items: center; gap: 8px;">
+        <i class="fas fa-clock"></i>
+        <span>Pending Requests</span>
+    </div>
+    <span class="badge bg-warning" id="pending-badge" style="flex-shrink: 0; margin-left: 8px;">{{ pending_count if pending_count else 0 }}</span>
+</a>
+
+<a href="javascript:void(0);" class="sidebar-nav-item tab-link" data-tab="history">
+    <div>
+        <i class="fas fa-history"></i>
+        <span>History</span>
+    </div>
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Overview Tab (Dashboard Summary) -->
+    <div class="tab-content-section active" id="overview-tab">
+        <!-- Stats Cards Row -->
+        <div class="row mb-4">
+            <!-- Total Requests -->
+            <div class="col-md-3 mb-3">
+                <div class="card shadow-sm border-0" style="border-left: 4px solid #17a2b8 !important;">
+                    <div class="card-body p-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="text-uppercase text-muted mb-1" style="font-size: 0.75rem; font-weight: 600;">Total Requests</div>
+                                <div class="h3 mb-0 font-weight-bold" id="total-requests-count">{{ (pending_count|default(0)) + (history_data|length if history_data else 0) }}</div>
+                            </div>
+                            <div class="text-info" style="opacity: 0.3;">
+                                <i class="fas fa-list fa-2x"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Pending Requests -->
+            <div class="col-md-3 mb-3">
+                <div class="card shadow-sm border-0" style="border-left: 4px solid #ffc107 !important;">
+                    <div class="card-body p-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="text-uppercase text-muted mb-1" style="font-size: 0.75rem; font-weight: 600;">Pending Requests</div>
+                                <div class="h3 mb-0 font-weight-bold">{{ pending_count if pending_count else 0 }}</div>
+                            </div>
+                            <div class="text-warning" style="opacity: 0.3;">
+                                <i class="fas fa-clock fa-2x"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Approved -->
+            <div class="col-md-3 mb-3">
+                <div class="card shadow-sm border-0" style="border-left: 4px solid #28a745 !important;">
+                    <div class="card-body p-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="text-uppercase text-muted mb-1" style="font-size: 0.75rem; font-weight: 600;">Approved</div>
+                                <div class="h3 mb-0 font-weight-bold" id="approved-count">{{ history_data|selectattr('status', 'equalto', 'Approved')|list|length if history_data else 0 }}</div>
+                            </div>
+                            <div class="text-success" style="opacity: 0.3;">
+                                <i class="fas fa-check-circle fa-2x"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Rejected -->
+            <div class="col-md-3 mb-3">
+                <div class="card shadow-sm border-0" style="border-left: 4px solid #dc3545 !important;">
+                    <div class="card-body p-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="text-uppercase text-muted mb-1" style="font-size: 0.75rem; font-weight: 600;">Rejected</div>
+                                <div class="h3 mb-0 font-weight-bold" id="rejected-count">{{ history_data|selectattr('status', 'equalto', 'Rejected')|list|length if history_data else 0 }}</div>
+                            </div>
+                            <div class="text-danger" style="opacity: 0.3;">
+                                <i class="fas fa-times-circle fa-2x"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Requests Awaiting Review Section -->
+        {% if pending_count > 0 %}
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card shadow-sm border-0 text-white" style="background: linear-gradient(135deg, #4a5f8f 0%, #5a7ab8 100%);">
+                    <div class="card-body text-center py-4">
+                        <h4 class="mb-3">
+                            <i class="fas fa-bell me-2"></i>
+                            {{ pending_count }} Request(s) Awaiting Your Review
+                        </h4>
+                        <button class="btn btn-light btn-lg px-4" onclick="switchTab('pending')" style="font-weight: 600;">
+                            <i class="fas fa-clipboard-check me-2"></i>
+                            Review Requests
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Recent Activity and Categories Row -->
+        <div class="row">
+            <!-- Recent Activity Section - Shows ALL requests (Pending, Approved, Rejected) -->
+            <div class="col-lg-8 mb-4">
+                <div class="card shadow-sm border-0">
+                    <div class="card-header text-white" style="background: linear-gradient(135deg, #1e5ba8 0%, #2874d4 100%); border-radius: 8px 8px 0 0;">
+                        <h5 class="mb-0">
+                            <i class="fas fa-history me-2"></i> Recent Activity
+                        </h5>
+                    </div>
+                    <div class="card-body p-0" id="recent-activity-container">
+                        {% if recent_activity_data %}
+                            <div class="list-group list-group-flush">
+                                {% for item in recent_activity_data[:5] %}
+                                <div class="list-group-item">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div class="flex-grow-1">
+                                            <div class="d-flex align-items-center mb-1">
+                                                {% if item.status == 'Approved' %}
+                                                <span class="badge bg-success me-2">Approved</span>
+                                                {% elif item.status == 'Rejected' %}
+                                                <span class="badge bg-danger me-2">Rejected</span>
+                                                {% else %}
+                                                <span class="badge bg-warning text-dark me-2">Pending</span>
+                                                {% endif %}
+                                                <strong>{{ item.employee_name }}</strong>
+                                            </div>
+                                            <div class="text-muted small">
+                                                <i class="fas fa-tag me-1"></i>{{ item.category_name }}
+                                                {% if item.quantity > 1 %}
+                                                <span class="mx-2">•</span>
+                                                <i class="fas fa-hashtag me-1"></i>{{ item.quantity }} units
+                                                {% endif %}
+                                                <span class="mx-2">•</span>
+                                                {{ item.points }} points
+                                            </div>
+                                        </div>
+                                        <div class="text-end text-muted small">
+                                            <i class="fas fa-calendar me-1"></i>{{ item.event_date }}
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <div class="p-4 text-center text-muted">
+                                <i class="fas fa-inbox fa-3x mb-3"></i>
+                                <p>No activities yet</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Categories Section -->
+            <div class="col-lg-4 mb-4">
+                <div class="card shadow-sm border-0">
+                    <div class="card-header text-white" style="background: linear-gradient(135deg, #17a2b8 0%, #20c9e0 100%); border-radius: 8px 8px 0 0;">
+                        <h5 class="mb-0">
+                            <i class="fas fa-th-large me-2"></i> Categories
+                        </h5>
+                    </div>
+                    <div class="card-body p-0" id="categories-container">
+                        {% if ld_categories %}
+                            <div class="list-group list-group-flush">
+                                {% set unique_categories = {} %}
+                                {% for category in ld_categories %}
+                                    {% if category.name not in unique_categories %}
+                                        {% set _ = unique_categories.update({category.name: category}) %}
+                                    {% endif %}
+                                {% endfor %}
+                                {% for category_name, category in unique_categories.items() %}
+                                {% set pending_count = validator_requests|selectattr('category_name', 'equalto', category.name)|list|length %}
+                                {% set history_count = history_data|selectattr('category', 'equalto', category.name)|list|length if history_data else 0 %}
+                                {% set total_count = pending_count + history_count %}
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <i class="fas fa-tag text-primary me-2"></i>
+                                        <span>{{ category.name }}</span>
+                                    </div>
+                                    <span class="badge bg-primary rounded-pill">
+                                        {{ total_count }}
+                                    </span>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <div class="p-4 text-center text-muted">
+                                <i class="fas fa-folder-open fa-3x mb-3"></i>
+                                <p>No categories available</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pending Requests Tab -->
+    <div class="tab-content-section" id="pending-tab">
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card shadow-sm border-0">
+                    <div class="card-header text-white" style="background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); border-radius: 8px 8px 0 0;">
+                        <h5 class="mb-0">
+                            <i class="fas fa-clock me-2"></i> Pending Requests
+                        </h5>
+                    </div>
+                    <div class="card-body p-0">
+                        {% if validator_requests %}
+                        <form method="POST" action="{{ url_for('ld.validator_dashboard') }}" id="bulkActionForm">
+                            <!-- Show Entries and Search Bar Row - Outside scrollable area -->
+                            <div class="p-3 d-flex justify-content-between align-items-center" style="background-color: #fff; border-bottom: 1px solid #dee2e6;">
+                                <div>
+                                    <span style="font-size: 13px; color: #495057; margin-right: 10px;">Show</span>
+                                    <select class="form-select form-select-sm" id="pendingPageSize" style="font-size: 14px; width: auto; display: inline-block;">
+                                        <option value="10" selected>10</option>
+                                        <option value="25">25</option>
+                                        <option value="50">50</option>
+                                        <option value="100">100</option>
+                                    </select>
+                                    <span style="font-size: 13px; color: #495057; margin-left: 10px;">entries</span>
+                                </div>
+                                <div style="width: 300px;">
+                                    <label class="form-label mb-1" style="font-size: 13px; font-weight: 600; color: #495057;">Search:</label>
+                                    <input type="text" class="form-control form-control-sm" id="pendingSearchInput" placeholder="Search in table..." style="font-size: 14px;">
+                                </div>
+                            </div>
+                            <div id="pendingTableWrapper">
+                                <div class="table-responsive">
+                                    <table class="table table-hover mb-0" id="pendingTable" style="width:100%; min-width: 1400px;">
+                                    <thead style="background-color: #f8f9fa; border-bottom: 2px solid #dee2e6;">
+                                        <tr>
+                                            <th style="padding: 12px; font-weight: 600; font-size: 13px; color: #495057; white-space: nowrap; text-align: center; width: 50px; min-width: 50px;">
+                                                <input type="checkbox" id="selectAll" class="form-check-input">
+                                            </th>
+                                            <th style="padding: 12px; font-weight: 600; font-size: 13px; color: #495057; white-space: nowrap; text-align: center; min-width: 110px;">Request Date</th>
+                                            <th style="padding: 12px; font-weight: 600; font-size: 13px; color: #495057; white-space: nowrap; text-align: center; min-width: 100px;">Event Date</th>
+                                            <th style="padding: 12px; font-weight: 600; font-size: 13px; color: #495057; text-align: center; min-width: 150px;">Employee</th>
+                                            <th style="padding: 12px; font-weight: 600; font-size: 13px; color: #495057; text-align: center; min-width: 120px;">Submitted By</th>
+                                            <th style="padding: 12px; font-weight: 600; font-size: 13px; color: #495057; text-align: center; min-width: 120px;">Department</th>
+                                            <th style="padding: 12px; font-weight: 600; font-size: 13px; color: #495057; text-align: center; min-width: 70px;">Grade</th>
+                                            <th style="padding: 12px; font-weight: 600; font-size: 13px; color: #495057; text-align: center; min-width: 90px;">Quarter</th>
+                                            <th style="padding: 12px; font-weight: 600; font-size: 13px; color: #495057; text-align: center; min-width: 180px;">Category</th>
+                                            <th style="padding: 12px; font-weight: 600; font-size: 13px; color: #495057; text-align: center; white-space: nowrap; min-width: 130px;">Number of Units</th>
+                                            <th style="padding: 12px; font-weight: 600; font-size: 13px; color: #495057; text-align: center; min-width: 70px;">Points</th>
+                                            <th style="padding: 12px; font-weight: 600; font-size: 13px; color: #495057; text-align: center; min-width: 80px;">Notes</th>
+                                            <th style="padding: 12px; font-weight: 600; font-size: 13px; color: #495057; text-align: center; min-width: 100px;">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for req in validator_requests %}
+                                        <tr style="border-bottom: 1px solid #e9ecef;">
+                                            <td style="padding: 12px; white-space: nowrap; font-size: 14px; text-align: center; width: 50px;">
+                                                <input type="checkbox" name="selected_requests" 
+                                                       value="{{ req.request_id }}" class="form-check-input request-checkbox">
+                                            </td>
+                                            <td style="padding: 12px; white-space: nowrap; font-size: 14px; text-align: center;">{{ req.request_date }}</td>
+                                            <td style="padding: 12px; white-space: nowrap; font-size: 14px; text-align: center;">{{ req.event_date }}</td>
+                                            <td style="padding: 12px; font-size: 14px; text-align: center; word-wrap: break-word; white-space: normal;">
+                                                <strong>{{ req.employee_name }}</strong><br>
+                                                <small class="text-muted">{{ req.employee_id }}</small>
+                                            </td>
+                                            <td style="padding: 12px; text-align: center;">
+                                                {% set updater_lower = req.updater_name|lower if req.updater_name else '' %}
+                                                {% if 'self' in updater_lower or 'employee' in updater_lower %}
+                                                <span class="badge" style="background-color: #6c757d; color: white; padding: 5px 10px; -webkit-border-radius: 4px; -moz-border-radius: 4px; border-radius: 4px; font-size: 11px; font-weight: 600;">{{ req.updater_name }}</span>
+                                                {% elif 'hr' in updater_lower %}
+                                                <span class="badge" style="background-color: #0d6efd; color: white; padding: 5px 10px; -webkit-border-radius: 4px; -moz-border-radius: 4px; border-radius: 4px; font-size: 11px; font-weight: 600;">{{ req.updater_name }}</span>
+                                                {% elif 'pmo' in updater_lower %}
+                                                <span class="badge" style="background-color: #198754; color: white; padding: 5px 10px; -webkit-border-radius: 4px; -moz-border-radius: 4px; border-radius: 4px; font-size: 11px; font-weight: 600;">{{ req.updater_name }}</span>
+                                                {% elif 'ta' in updater_lower or 'talent' in updater_lower %}
+                                                <span class="badge" style="background-color: #fd7e14; color: white; padding: 5px 10px; -webkit-border-radius: 4px; -moz-border-radius: 4px; border-radius: 4px; font-size: 11px; font-weight: 600;">{{ req.updater_name }}</span>
+                                                {% elif 'ld' in updater_lower or 'l&d' in updater_lower or 'learning' in updater_lower %}
+                                                <span class="badge" style="background-color: #6f42c1; color: white; padding: 5px 10px; -webkit-border-radius: 4px; -moz-border-radius: 4px; border-radius: 4px; font-size: 11px; font-weight: 600;">{{ req.updater_name }}</span>
+                                                {% else %}
+                                                <span class="badge" style="background-color: #6f42c1; color: white; padding: 5px 10px; -webkit-border-radius: 4px; -moz-border-radius: 4px; border-radius: 4px; font-size: 11px; font-weight: 600;">{{ req.updater_name }}</span>
+                                                {% endif %}
+                                            </td>
+                                            <td style="padding: 12px; font-size: 14px; text-align: center;">{{ req.department if req.department else 'N/A' }}</td>
+                                            <td style="padding: 12px; text-align: center;">
+                                                <span class="badge" style="background-color: #6c757d; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px;">{{ req.grade }}</span>
+                                            </td>
+                                            <td style="padding: 12px; text-align: center;">
+                                                <span class="badge" style="background-color: #17a2b8; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px;">{{ req.quarter if req.quarter else 'N/A' }}</span>
+                                            </td>
+                                            <td style="padding: 12px; font-size: 14px; text-align: center; word-wrap: break-word; white-space: normal;">{{ req.category_name }}</td>
+                                            <td style="padding: 12px; text-align: center; font-weight: 600; font-size: 14px;">{{ req.quantity }}</td>
+                                            <td style="padding: 12px; text-align: center; font-weight: 600; font-size: 14px;">{{ req.points }}</td>
+                                            <td style="padding: 12px; text-align: center;">
+                                                <button type="button" class="btn btn-sm view-notes-btn" 
+                                                        style="background-color: #17a2b8; color: white; border: none; padding: 6px 16px; border-radius: 20px; font-size: 13px;"
+                                                        data-submission-notes="{{ req.notes|e }}"
+                                                        data-response-notes="">
+                                                    View
+                                                </button>
+                                            </td>
+                                            <td style="padding: 12px; white-space: nowrap; text-align: center;">
+                                                <button type="button" class="btn btn-sm btn-success" 
+                                                        onclick="singleAction('{{ req.request_id }}', 'approve')">
+                                                    <i class="fas fa-check"></i>
+                                                </button>
+                                                <button type="button" class="btn btn-sm btn-danger" 
+                                                        onclick="singleAction('{{ req.request_id }}', 'reject')">
+                                                    <i class="fas fa-times"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            </div>
+                            
+                            <!-- Pagination Row - Outside table, above Response Notes -->
+                            <div class="p-3 d-flex justify-content-between align-items-center" style="background-color: #fff; border-bottom: 1px solid #dee2e6;">
+                                <div id="pendingPaginationInfo" style="font-size: 13px; color: #495057;"></div>
+                                <div id="pendingPaginationControls"></div>
+                            </div>
+                            
+                            <!-- Response Notes and Bulk Action Buttons - Outside table -->
+                            <div class="p-3" style="background-color: #f8f9fa; border-top: 1px solid #dee2e6;">
+                            <div class="row mt-2">
+                                <div class="col-md-6 mb-3">
+                                    <label for="response_notes" class="form-label">
+                                        Response Notes <span class="text-danger">*</span>
+                                    </label>
+                                    <textarea class="form-control" id="response_notes" name="response_notes" 
+                                              rows="2" placeholder="Enter reason for approval/rejection" required></textarea>
+                                </div>
+                                <div class="col-md-6 d-flex align-items-end mb-3">
+                                    <div class="btn-group w-100" role="group">
+                                        <button type="submit" name="action_type" value="bulk_approve" 
+                                                class="btn btn-success btn-lg">
+                                            <i class="fas fa-check"></i> Approve Selected
+                                        </button>
+                                        <button type="submit" name="action_type" value="bulk_reject" 
+                                                class="btn btn-danger btn-lg">
+                                            <i class="fas fa-times"></i> Reject Selected
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                                </div>
+                            </div>
+                        </form>
+                        {% else %}
+                        <div class="alert alert-success m-3">
+                            <i class="fas fa-check-circle"></i> No pending requests at this time.
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- History Tab -->
+    <div class="tab-content-section" id="history-tab">
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card shadow-sm border-0">
+                    <div class="card-header text-white" style="background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); border-radius: 8px 8px 0 0;">
+                        <h5 class="mb-0">
+                            <i class="fas fa-history me-2"></i> L&D Assignment History
+                        </h5>
+                    </div>
+                    <div class="card-body p-0" style="overflow: visible;">
+                        <!-- Filter Section -->
+                        <div class="p-3" style="background-color: #f8f9fa; border-bottom: 1px solid #dee2e6; position: relative; z-index: 100;">
+                            <div class="row g-3 align-items-end">
+                                <div class="col-md-2">
+                                    <label class="form-label mb-1" style="font-size: 13px; font-weight: 600; color: #495057;">Year</label>
+                                    <select class="form-select form-select-sm" id="filterYear" style="font-size: 14px; position: relative; z-index: 101;">
+                                        <option value="">All Years</option>
+                                        <!-- Fiscal years populated dynamically via JS -->
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label mb-1" style="font-size: 13px; font-weight: 600; color: #495057;">Quarter</label>
+                                    <select class="form-select form-select-sm" id="filterQuarter" style="font-size: 14px; position: relative; z-index: 101;">
+                                        <option value="">All Quarters</option>
+                                        <!-- Quarters populated dynamically from data via JS -->
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label mb-1" style="font-size: 13px; font-weight: 600; color: #495057;">Category</label>
+                                    <select class="form-select form-select-sm" id="filterCategory" style="font-size: 14px; position: relative; z-index: 101;">
+                                        <option value="">All Categories</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label mb-1" style="font-size: 13px; font-weight: 600; color: #495057;">Grade</label>
+                                    <select class="form-select form-select-sm" id="filterGrade" style="font-size: 14px; position: relative; z-index: 101;">
+                                        <option value="">All Grades</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label mb-1" style="font-size: 13px; font-weight: 600; color: #495057;">Status</label>
+                                    <select class="form-select form-select-sm" id="filterStatus" style="font-size: 14px; position: relative; z-index: 101;">
+                                        <option value="">All Statuses</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <div class="btn-group w-100" role="group">
+                                        <button type="button" class="btn btn-sm btn-primary" onclick="applyHistoryFilters()" style="font-size: 13px;">
+                                            <i class="fas fa-filter me-1"></i> Apply Filters
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="resetHistoryFilters()" style="font-size: 13px;">
+                                            <i class="fas fa-redo me-1"></i> Reset Filters
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Show Entries and Search Bar Row -->
+                        <div class="p-3 d-flex justify-content-between align-items-center" style="background-color: #fff; border-bottom: 1px solid #dee2e6; position: relative; z-index: 50;">
+                            <div id="historyTableLength"></div>
+                            <div style="width: 300px;">
+                                <label class="form-label mb-1" style="font-size: 13px; font-weight: 600; color: #495057;">Search:</label>
+                                <input type="text" class="form-control form-control-sm" id="historySearchInput" placeholder="Search in table..." style="font-size: 14px;">
+                            </div>
+                        </div>
+                        <div id="historyTableWrapper" style="position: relative; z-index: 1;">
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0" id="historyTable" style="width:100%; min-width: 1300px;">
+                                <thead style="background-color: #f8f9fa; border-bottom: 2px solid #dee2e6;">
+                                    <tr>
+                                        <th style="padding: 12px; font-weight: 600; font-size: 13px; color: #495057; white-space: nowrap; text-align: center; min-width: 100px;">Date</th>
+                                        <th style="padding: 12px; font-weight: 600; font-size: 13px; color: #495057; white-space: nowrap; text-align: center; min-width: 100px;">Event Date</th>
+                                        <th style="padding: 12px; font-weight: 600; font-size: 13px; color: #495057; text-align: center; min-width: 150px;">Employee</th>
+                                        <th style="padding: 12px; font-weight: 600; font-size: 13px; color: #495057; text-align: center; min-width: 120px;">Submitted By</th>
+                                        <th style="padding: 12px; font-weight: 600; font-size: 13px; color: #495057; text-align: center; min-width: 120px;">Department</th>
+                                        <th style="padding: 12px; font-weight: 600; font-size: 13px; color: #495057; text-align: center; min-width: 70px;">Grade</th>
+                                        <th style="padding: 12px; font-weight: 600; font-size: 13px; color: #495057; text-align: center; min-width: 180px;">Category</th>
+                                        <th style="padding: 12px; font-weight: 600; font-size: 13px; color: #495057; text-align: center; min-width: 70px;">Points</th>
+                                        <th style="padding: 12px; font-weight: 600; font-size: 13px; color: #495057; text-align: center; min-width: 90px;">Status</th>
+                                        <th style="padding: 12px; font-weight: 600; font-size: 13px; color: #495057; text-align: center; min-width: 90px;">Quarter</th>
+                                        <th style="padding: 12px; font-weight: 600; font-size: 13px; color: #495057; text-align: center; min-width: 80px;">Notes</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% if history_data %}
+                                    {% for record in history_data %}
+                                    <tr style="border-bottom: 1px solid #e9ecef;" data-quarter="{{ record.quarter if record.quarter else '' }}" data-year="{{ record.fiscal_year if record.fiscal_year else '' }}">
+                                        <td style="padding: 12px; white-space: nowrap; font-size: 14px; text-align: center;">{{ record.date }}</td>
+                                        <td style="padding: 12px; white-space: nowrap; font-size: 14px; text-align: center;">{{ record.event_date }}</td>
+                                        <td style="padding: 12px; font-size: 14px; text-align: center; word-wrap: break-word; white-space: normal;">
+                                            <strong>{{ record.employee_name if record.employee_name else record.employee }}</strong><br>
+                                            {% if record.employee_id and record.employee_id != 'N/A' %}
+                                            <small class="text-muted">{{ record.employee_id }}</small>
+                                            {% endif %}
+                                        </td>
+                                        <td style="padding: 12px; text-align: center;">
+                                            {% if record.updater_name %}
+                                            {% set updater_lower = record.updater_name|lower %}
+                                            {% if 'self' in updater_lower or 'employee' in updater_lower %}
+                                            <span class="badge" style="background-color: #6c757d; color: white; padding: 5px 10px; -webkit-border-radius: 4px; -moz-border-radius: 4px; border-radius: 4px; font-size: 11px; font-weight: 600;">{{ record.updater_name }}</span>
+                                            {% elif 'hr' in updater_lower %}
+                                            <span class="badge" style="background-color: #0d6efd; color: white; padding: 5px 10px; -webkit-border-radius: 4px; -moz-border-radius: 4px; border-radius: 4px; font-size: 11px; font-weight: 600;">{{ record.updater_name }}</span>
+                                            {% elif 'pmo' in updater_lower %}
+                                            <span class="badge" style="background-color: #198754; color: white; padding: 5px 10px; -webkit-border-radius: 4px; -moz-border-radius: 4px; border-radius: 4px; font-size: 11px; font-weight: 600;">{{ record.updater_name }}</span>
+                                            {% elif 'ta' in updater_lower or 'talent' in updater_lower %}
+                                            <span class="badge" style="background-color: #fd7e14; color: white; padding: 5px 10px; -webkit-border-radius: 4px; -moz-border-radius: 4px; border-radius: 4px; font-size: 11px; font-weight: 600;">{{ record.updater_name }}</span>
+                                            {% elif 'ld' in updater_lower or 'l&d' in updater_lower or 'learning' in updater_lower %}
+                                            <span class="badge" style="background-color: #6f42c1; color: white; padding: 5px 10px; -webkit-border-radius: 4px; -moz-border-radius: 4px; border-radius: 4px; font-size: 11px; font-weight: 600;">{{ record.updater_name }}</span>
+                                            {% else %}
+                                            <span class="badge" style="background-color: #6f42c1; color: white; padding: 5px 10px; -webkit-border-radius: 4px; -moz-border-radius: 4px; border-radius: 4px; font-size: 11px; font-weight: 600;">{{ record.updater_name }}</span>
+                                            {% endif %}
+                                            {% else %}
+                                            <span class="badge" style="background-color: #6c757d; color: white; padding: 5px 10px; -webkit-border-radius: 4px; -moz-border-radius: 4px; border-radius: 4px; font-size: 11px; font-weight: 600;">Unknown</span>
+                                            {% endif %}
+                                        </td>
+                                        <td style="padding: 12px; font-size: 14px; text-align: center;">{{ record.department if record.department else 'N/A' }}</td>
+                                        <td style="padding: 12px; text-align: center;">
+                                            <span class="badge" style="background-color: #6c757d; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px;">{{ record.grade }}</span>
+                                        </td>
+                                        <td style="padding: 12px; font-size: 14px; text-align: center; word-wrap: break-word; white-space: normal;">{{ record.category }}</td>
+                                        <td style="padding: 12px; text-align: center; font-weight: 600; font-size: 14px;">{{ record.points }}</td>
+                                        <td style="padding: 12px; text-align: center;">
+                                            {% if record.status == 'Approved' %}
+                                            <span class="badge" style="background-color: #28a745; color: white; padding: 4px 12px; border-radius: 4px; font-size: 12px;">Approved</span>
+                                            {% elif record.status == 'Rejected' %}
+                                            <span class="badge" style="background-color: #dc3545; color: white; padding: 4px 12px; border-radius: 4px; font-size: 12px;">Rejected</span>
+                                            {% else %}
+                                            <span class="badge" style="background-color: #ffc107; color: #000; padding: 4px 12px; border-radius: 4px; font-size: 12px;">Pending</span>
+                                            {% endif %}
+                                        </td>
+                                        <td style="padding: 12px; text-align: center;">
+                                            <span class="badge" style="background-color: #17a2b8; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px;">{{ record.quarter if record.quarter else 'N/A' }}</span>
+                                        </td>
+                                        <td style="padding: 12px; text-align: center;">
+                                            <button type="button" class="btn btn-sm view-notes-btn" 
+                                                    style="background-color: #17a2b8; color: white; border: none; padding: 6px 16px; border-radius: 20px; font-size: 13px;"
+                                                    data-submission-notes="{{ record.notes|e }}"
+                                                    data-response-notes="{{ record.response_notes|e if record.response_notes else '' }}"
+                                                    data-status="{{ record.status|e if record.status else '' }}"
+                                                    data-hr-modified="{{ 'true' if record.hr_modified else 'false' }}">
+                                                View
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                    {% else %}
+                                    <tr>
+                                        <td colspan="11" style="padding: 40px; text-align: center;">
+                                            <i class="fas fa-inbox" style="font-size: 3rem; color: #ccc; margin-bottom: 10px;"></i>
+                                            <p style="font-size: 1.1rem; color: #666; margin: 0;">No history records found</p>
+                                        </td>
+                                    </tr>
+                                    {% endif %}
+                                </tbody>
+                            </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Single Action Modal -->
+<div class="modal fade" id="singleActionModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('ld.validator_dashboard') }}" id="singleActionForm">
+                <input type="hidden" name="action_type" value="single_action">
+                <input type="hidden" name="request_id" id="modal_request_id">
+                <input type="hidden" name="action" id="modal_action">
+                
+                <div class="modal-header" id="modalHeader">
+                    <h5 class="modal-title" id="modalTitle">Confirm Action</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p id="modalMessage"></p>
+                    <div id="notesSection">
+                        <label for="modal_response_notes" class="form-label">
+                            Notes <span class="text-danger">*</span>
+                        </label>
+                        <textarea class="form-control" id="modal_response_notes" 
+                                  name="response_notes" rows="3" required
+                                  placeholder="Enter notes for this action"></textarea>
+                        <small class="text-muted" id="notesHint">Please provide a reason for your decision</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn" id="modalSubmitBtn">Confirm</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Bulk Action Confirmation Modal -->
+<div class="modal fade" id="bulkActionConfirmModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content" style="max-height: 90vh; display: -webkit-box; display: -webkit-flex; display: -moz-box; display: -ms-flexbox; display: flex; -webkit-box-orient: vertical; -webkit-flex-direction: column; -ms-flex-direction: column; flex-direction: column;">
+            <div class="modal-header text-white" id="bulkActionModalHeader" style="-webkit-flex-shrink: 0; -ms-flex-negative: 0; flex-shrink: 0;">
+                <h5 class="modal-title" id="bulkActionModalTitle">
+                    <i class="fas fa-check-circle"></i> Confirm Action
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" style="-webkit-flex: 1 1 auto; -ms-flex: 1 1 auto; flex: 1 1 auto; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch;">
+                <div class="alert alert-info mb-3">
+                    <strong>Selected Requests:</strong> <span id="bulkActionCount">0</span>
+                </div>
+                <div class="table-responsive" id="bulkActionTableContainer" style="overflow-x: auto; overflow-y: visible;">
+                    <table class="table table-sm table-hover">
+                        <thead class="table-light" style="position: -webkit-sticky; position: sticky; top: 0; z-index: 1; background-color: #f8f9fa;">
+                            <tr>
+                                <th style="text-align: center; white-space: nowrap;">Employee ID</th>
+                                <th style="text-align: center; width: 250px; min-width: 250px; max-width: 250px;">Category</th>
+                                <th style="text-align: center; white-space: nowrap;">Points</th>
+                                <th style="text-align: center; white-space: nowrap;">Event Date</th>
+                            </tr>
+                        </thead>
+                        <tbody id="bulkActionPreviewBody">
+                        </tbody>
+                    </table>
+                </div>
+
+            </div>
+            <div class="modal-footer" style="-webkit-flex-shrink: 0; -ms-flex-negative: 0; flex-shrink: 0;">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+                <button type="button" class="btn" id="bulkActionConfirmBtn" onclick="confirmBulkAction()">
+                    <i class="fas fa-check"></i> Confirm
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Notes Modal -->
+<div class="modal fade" id="notesModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header" style="background: linear-gradient(135deg, #17a2b8, #20c997); color: white;">
+                <h5 class="modal-title"><i class="fas fa-file-alt me-2"></i>Submission Notes</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" style="max-height: 70vh; overflow-y: auto; padding: 20px;">
+                <div id="modalNotesContent" style="white-space: pre-wrap; word-wrap: break-word; font-size: 1rem; line-height: 1.8; background: #f8f9fa; padding: 20px; border-radius: 8px; border-left: 4px solid #17a2b8;"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Tab content styling */
+    .tab-content-section {
+        display: none;
+    }
+    
+    .tab-content-section.active {
+        display: block;
+        animation: fadeIn 0.3s;
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+    
+    .border-left-warning {
+        border-left: 4px solid #f6c23e !important;
+    }
+    
+    .border-left-success {
+        border-left: 4px solid #1cc88a !important;
+    }
+    
+    /* ========================================
+       Cross-browser pagination styles
+       ======================================== */
+    .pagination {
+        display: -webkit-box;
+        display: -webkit-flex;
+        display: -moz-box;
+        display: -ms-flexbox;
+        display: flex;
+        padding-left: 0;
+        list-style: none;
+        -webkit-border-radius: 0.25rem;
+        -moz-border-radius: 0.25rem;
+        border-radius: 0.25rem;
+        -webkit-flex-wrap: wrap;
+        -ms-flex-wrap: wrap;
+        flex-wrap: wrap;
+        gap: 2px;
+    }
+    
+    .page-item {
+        margin: 0;
+    }
+    
+    .page-link {
+        position: relative;
+        display: block;
+        padding: 0.375rem 0.75rem;
+        margin-left: -1px;
+        line-height: 1.25;
+        color: #0d6efd;
+        text-decoration: none;
+        background-color: #fff;
+        border: 1px solid #dee2e6;
+        -webkit-transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        -moz-transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        cursor: pointer;
+    }
+    
+    .page-link:hover {
+        z-index: 2;
+        color: #0a58ca;
+        background-color: #e9ecef;
+        border-color: #dee2e6;
+    }
+    
+    .page-link:focus {
+        z-index: 3;
+        color: #0a58ca;
+        background-color: #e9ecef;
+        outline: 0;
+        -webkit-box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+        -moz-box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+    }
+    
+    .page-item:first-child .page-link {
+        margin-left: 0;
+        -webkit-border-top-left-radius: 0.25rem;
+        -moz-border-radius-topleft: 0.25rem;
+        border-top-left-radius: 0.25rem;
+        -webkit-border-bottom-left-radius: 0.25rem;
+        -moz-border-radius-bottomleft: 0.25rem;
+        border-bottom-left-radius: 0.25rem;
+    }
+    
+    .page-item:last-child .page-link {
+        -webkit-border-top-right-radius: 0.25rem;
+        -moz-border-radius-topright: 0.25rem;
+        border-top-right-radius: 0.25rem;
+        -webkit-border-bottom-right-radius: 0.25rem;
+        -moz-border-radius-bottomright: 0.25rem;
+        border-bottom-right-radius: 0.25rem;
+    }
+    
+    .page-item.active .page-link {
+        z-index: 3;
+        color: #fff;
+        background-color: #0d6efd;
+        border-color: #0d6efd;
+    }
+    
+    .page-item.disabled .page-link {
+        color: #6c757d;
+        pointer-events: none;
+        cursor: auto;
+        background-color: #fff;
+        border-color: #dee2e6;
+    }
+    
+    /* ========================================
+       Cross-browser single scrollbar fix for bulk modal
+       ======================================== */
+    #bulkActionConfirmModal .modal-body {
+        /* Firefox scrollbar */
+        scrollbar-width: thin;
+        scrollbar-color: #888 #f1f1f1;
+    }
+    
+    /* Webkit scrollbar (Chrome, Safari, Edge, Opera) */
+    #bulkActionConfirmModal .modal-body::-webkit-scrollbar {
+        width: 8px;
+    }
+    
+    #bulkActionConfirmModal .modal-body::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        -webkit-border-radius: 4px;
+        border-radius: 4px;
+    }
+    
+    #bulkActionConfirmModal .modal-body::-webkit-scrollbar-thumb {
+        background: #888;
+        -webkit-border-radius: 4px;
+        border-radius: 4px;
+    }
+    
+    #bulkActionConfirmModal .modal-body::-webkit-scrollbar-thumb:hover {
+        background: #555;
+    }
+    
+    /* IE/Edge legacy scrollbar */
+    #bulkActionConfirmModal .modal-body {
+        -ms-overflow-style: -ms-autohiding-scrollbar;
+    }
+
+    /* Checkbox Styling - Use default browser checkbox */
+    .form-check-input {
+        cursor: pointer !important;
+    }
+    
+    /* Pending Table Styling */
+    #pendingTable_wrapper {
+        padding: 20px;
+        background-color: #fff;
+    }
+    
+    #pendingTable_wrapper .dataTables_length,
+    #pendingTable_wrapper .dataTables_filter {
+        display: none;
+    }
+    
+    #pendingTable_wrapper .dataTables_filter {
+        text-align: right;
+    }
+    
+    #pendingTable_wrapper .dataTables_filter input {
+        width: 300px;
+        padding: 8px 12px;
+        border: 1px solid #d1d3e2;
+        border-radius: 4px;
+        margin-left: 8px;
+        font-size: 14px;
+    }
+    
+    #pendingTable_wrapper .dataTables_length select {
+        width: 80px;
+        padding: 8px 12px;
+        border: 1px solid #d1d3e2;
+        border-radius: 4px;
+        margin: 0 8px;
+        font-size: 14px;
+    }
+    
+    #pendingTable_wrapper .dataTables_info,
+    #pendingTable_wrapper .dataTables_paginate {
+        padding-top: 15px;
+    }
+    
+    #pendingTable {
+        border-collapse: separate !important;
+        border-spacing: 0;
+        width: 100% !important;
+    }
+    
+    #pendingTable thead th {
+        background-color: #f8f9fa;
+        border-bottom: 2px solid #dee2e6;
+        border-right: none;
+        padding: 12px;
+        font-weight: 600;
+        font-size: 13px;
+        color: #495057;
+        white-space: nowrap;
+        vertical-align: middle;
+        text-align: center;
+        line-height: 1.2;
+    }
+    
+    #pendingTable tbody td {
+        padding: 14px 12px;
+        vertical-align: middle;
+        border-bottom: 1px solid #e3e6f0;
+        border-right: none;
+        font-size: 14px;
+        text-align: center;
+    }
+    
+    #pendingTable tbody tr {
+        transition: background-color 0.2s ease;
+    }
+    
+    #pendingTable tbody tr:hover {
+        background-color: #f8f9fc;
+    }
+    
+    #pendingTable tbody tr:last-child td {
+        border-bottom: none;
+    }
+    
+    /* Table wrapper with fixed height and scrollbars */
+    #pendingTableWrapper .table-responsive {
+        max-height: 450px;
+        overflow-x: auto !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch;
+        display: block;
+    }
+    
+    #historyTableWrapper .table-responsive {
+        max-height: 450px;
+        overflow-x: auto !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch;
+        display: block;
+    }
+    
+    /* Scrollbar styling */
+    #pendingTableWrapper .table-responsive::-webkit-scrollbar,
+    #historyTableWrapper .table-responsive::-webkit-scrollbar {
+        width: 10px;
+        height: 10px;
+    }
+    
+    #pendingTableWrapper .table-responsive::-webkit-scrollbar-track,
+    #historyTableWrapper .table-responsive::-webkit-scrollbar-track {
+        background: #e9ecef;
+        border-radius: 5px;
+    }
+    
+    #pendingTableWrapper .table-responsive::-webkit-scrollbar-thumb,
+    #historyTableWrapper .table-responsive::-webkit-scrollbar-thumb {
+        background: #adb5bd;
+        border-radius: 5px;
+    }
+    
+    #pendingTableWrapper .table-responsive::-webkit-scrollbar-thumb:hover,
+    #historyTableWrapper .table-responsive::-webkit-scrollbar-thumb:hover {
+        background: #6c757d;
+    }
+    
+    /* Firefox scrollbar */
+    #pendingTableWrapper .table-responsive,
+    #historyTableWrapper .table-responsive {
+        scrollbar-width: thin;
+        scrollbar-color: #adb5bd #e9ecef;
+    }
+    
+    /* Sticky table header */
+    #pendingTable thead,
+    #historyTable thead {
+        position: sticky;
+        top: 0;
+        z-index: 5;
+        background-color: #f8f9fa;
+    }
+    
+    /* Fixed table layout for proper alignment */
+    #pendingTable,
+    #historyTable {
+        table-layout: auto;
+        width: 100%;
+        min-width: 1200px;
+    }
+    
+    /* Checkbox column */
+    #pendingTable tbody td:first-child,
+    #pendingTable thead th:first-child {
+        text-align: center;
+        width: 50px;
+        min-width: 50px;
+    }
+    
+    /* Date columns - left align */
+    #pendingTable tbody td:nth-child(2),
+    #pendingTable tbody td:nth-child(3) {
+        text-align: left;
+        white-space: nowrap;
+    }
+    
+    /* Employee name - left align */
+    #pendingTable tbody td:nth-child(4) {
+        text-align: left;
+    }
+    
+    /* Department - left align */
+    #pendingTable tbody td:nth-child(5) {
+        text-align: left;
+    }
+    
+    /* Grade, Quarter, Category - center */
+    #pendingTable tbody td:nth-child(6),
+    #pendingTable tbody td:nth-child(7),
+    #pendingTable tbody td:nth-child(8) {
+        text-align: center;
+    }
+    
+    /* Category column - wider */
+    #pendingTable thead th:nth-child(8),
+    #pendingTable tbody td:nth-child(8) {
+        min-width: 180px;
+        max-width: 250px;
+    }
+    
+    /* Number of Units, Points - center */
+    #pendingTable tbody td:nth-child(9),
+    #pendingTable tbody td:nth-child(10) {
+        text-align: center;
+        font-weight: 600;
+    }
+    
+    /* Notes - center */
+    #pendingTable tbody td:nth-child(11) {
+        text-align: center;
+    }
+    
+    /* Updater - left align */
+    #pendingTable tbody td:nth-child(12) {
+        text-align: left;
+    }
+    
+    /* Actions column */
+    #pendingTable tbody td:last-child {
+        text-align: center;
+        white-space: nowrap;
+        width: 100px;
+        min-width: 100px;
+    }
+    
+    /* History Table Column Alignment - All centered */
+    #historyTable tbody td {
+        text-align: center;
+    }
+    
+    /* Category column - wider */
+    #historyTable thead th:nth-child(6),
+    #historyTable tbody td:nth-child(6) {
+        min-width: 180px;
+        max-width: 250px;
+    }
+    
+    /* Points - bold */
+    #historyTable tbody td:nth-child(7) {
+        font-weight: 600;
+        color: #4e73df;
+    }
+    
+    /* Badge styling in table */
+    #pendingTable .badge {
+        padding: 5px 10px;
+        font-size: 12px;
+        font-weight: 500;
+        border-radius: 4px;
+    }
+    
+    /* Button styling in table */
+    #pendingTable .btn-sm {
+        padding: 6px 12px;
+        font-size: 13px;
+        margin: 0 2px;
+    }
+    
+    /* Info and pagination row */
+    #pendingTable_wrapper .dataTables_info {
+        padding-top: 15px;
+        font-size: 14px;
+        color: #5a5c69;
+    }
+    
+    #pendingTable_wrapper .dataTables_paginate {
+        padding-top: 15px;
+        text-align: right;
+    }
+    
+    #pendingTable_wrapper .dataTables_paginate .pagination {
+        margin: 0;
+    }
+    
+    /* Bulk action section styling */
+    #bulkActionForm {
+        background-color: #fff;
+    }
+    
+    #bulkActionForm hr {
+        margin: 20px 0;
+        border-top: 2px solid #e3e6f0;
+    }
+    
+    #bulkActionForm .row {
+        padding: 0 20px 20px 20px;
+    }
+    
+    #bulkActionForm textarea {
+        border: 1px solid #d1d3e2;
+        border-radius: 4px;
+        padding: 10px;
+    }
+    
+    #bulkActionForm .btn-group {
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    #bulkActionForm .btn-group .btn {
+        padding: 12px 24px;
+        font-size: 15px;
+        font-weight: 500;
+    }
+    
+    /* Responsive adjustments for pending table */
+    @media (max-width: 768px) {
+        #pendingTable_wrapper {
+            padding: 15px;
+        }
+        
+        #pendingTable_wrapper .dataTables_filter input {
+            width: 100%;
+            max-width: 100%;
+        }
+        
+        #pendingTable thead th {
+            font-size: 11px;
+            padding: 8px 6px;
+        }
+        
+        #pendingTable tbody td {
+            font-size: 12px;
+            padding: 8px 6px;
+        }
+        
+        #bulkActionForm .row {
+            padding: 0 15px 15px 15px;
+        }
+    }
+    
+    /* History Table Styling */
+    #historyTable {
+        border-collapse: separate !important;
+        border-spacing: 0;
+        width: 100% !important;
+    }
+    
+    #historyTable thead th {
+        background-color: #f8f9fa;
+        border-bottom: 2px solid #dee2e6;
+        border-right: none;
+        padding: 12px;
+        font-weight: 600;
+        font-size: 13px;
+        color: #495057;
+        white-space: nowrap;
+        vertical-align: middle;
+        text-align: center;
+        line-height: 1.2;
+    }
+    
+    #historyTable thead th:last-child {
+        border-right: none;
+    }
+    
+    #historyTable tbody td {
+        padding: 14px 12px;
+        vertical-align: middle;
+        border-bottom: 1px solid #e3e6f0;
+        border-right: none;
+        font-size: 14px;
+        text-align: center;
+    }
+    
+    #historyTable tbody td:last-child {
+        border-right: none;
+    }
+    
+    #historyTable tbody tr {
+        transition: background-color 0.2s ease;
+    }
+    
+    #historyTable tbody tr:hover {
+        background-color: #f8f9fc;
+    }
+    
+    /* DataTables Controls Styling */
+    #historyTable_wrapper {
+        padding: 20px;
+        background-color: #fff;
+    }
+    
+    #historyTable_wrapper .row {
+        margin-bottom: 20px;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+    
+    #historyTable_wrapper .dataTables_length {
+        flex: 0 0 auto;
+        margin-right: auto;
+        margin-bottom: 0;
+    }
+    
+    #historyTable_wrapper .dataTables_filter {
+        flex: 0 0 auto;
+        margin-left: auto;
+        text-align: right;
+        margin-bottom: 0;
+    }
+    
+    #historyTable_wrapper .dataTables_length label,
+    #historyTable_wrapper .dataTables_filter label {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 0;
+        font-weight: 500;
+        font-size: 14px;
+        white-space: nowrap;
+    }
+    
+    #historyTable_wrapper .dataTables_length select {
+        width: auto;
+        min-width: 70px;
+        display: inline-block;
+        padding: 6px 12px;
+    }
+    
+    #historyTable_wrapper .dataTables_filter input {
+        width: 250px;
+        display: inline-block;
+        padding: 6px 12px;
+    }
+    
+    /* Table wrapper */
+    #historyTable_wrapper .dataTables_scroll {
+        margin-top: 15px;
+    }
+    
+    /* Info and Pagination Row */
+    #historyTable_wrapper .dataTables_info {
+        flex: 0 0 auto;
+        margin-right: auto;
+        padding-top: 15px;
+        margin-bottom: 0;
+        font-size: 14px;
+    }
+    
+    #historyTable_wrapper .dataTables_paginate {
+        flex: 0 0 auto;
+        margin-left: auto;
+        text-align: right;
+        padding-top: 15px;
+        margin-bottom: 0;
+    }
+    
+    /* Pagination buttons */
+    #historyTable_wrapper .dataTables_paginate .pagination {
+        margin-bottom: 0;
+    }
+    
+    /* Clear floats */
+    #historyTable_wrapper .row:after {
+        content: "";
+        display: table;
+        clear: both;
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        #historyTable_wrapper {
+            padding: 15px;
+        }
+        
+        #historyTable_wrapper .row {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        
+        #historyTable_wrapper .dataTables_length,
+        #historyTable_wrapper .dataTables_filter {
+            margin: 0 0 15px 0;
+            text-align: left;
+        }
+        
+        #historyTable_wrapper .dataTables_filter input {
+            width: 100%;
+            max-width: 100%;
+        }
+        
+        #historyTable_wrapper .dataTables_info,
+        #historyTable_wrapper .dataTables_paginate {
+            margin: 10px 0 0 0;
+            text-align: center;
+        }
+    }
+    
+    /* Keep pagination row outside scroll */
+    .pagination-row {
+        background: white;
+        margin: 0 !important;
+        padding: 15px 20px !important;
+        border-top: 1px solid #e3e6f0;
+        display: flex !important;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .pagination-row .col-sm-6 {
+        flex: 0 0 auto;
+        width: auto;
+    }
+    
+    /* ========================================
+       Filter Row Z-Index Fix - Dropdown above table
+       ======================================== */
+    #history-tab .p-3[style*="background-color: #f8f9fa"] {
+        position: relative;
+        z-index: 100;
+    }
+    
+    #history-tab .form-select {
+        position: relative;
+        z-index: 101;
+    }
+    
+    /* Table should be below filter dropdowns */
+    #history-tab .table-responsive,
+    #historyTableWrapper .table-responsive {
+        position: relative;
+        z-index: 1;
+    }
+    
+    /* Sticky header should not overlap dropdown */
+    #history-tab thead,
+    #historyTable thead {
+        z-index: 5 !important;
+    }
+</style>
+{% endblock %}
+
+{% block scripts %}
+<!-- Duplicate Detection Module -->
+<script src="{{ url_for('static', filename='js/duplicate_detection.js') }}"></script>
+
+<script>
+// Store available quarters per year from data (e.g., {2024: ['Q4'], 2025: ['Q1', 'Q2', 'Q3', 'Q4']})
+var quartersByYear = {};
+var quarterLabels = {'Q1': 'Q1 (Apr-Jun)', 'Q2': 'Q2 (Jul-Sep)', 'Q3': 'Q3 (Oct-Dec)', 'Q4': 'Q4 (Jan-Mar)'};
+
+// ✅ HELPER: Update quarter options based on selected year - only show quarters with data for that year
+function updateHistoryQuarterOptions(selectedYear) {
+    const quarterSelect = document.getElementById('filterQuarter');
+    if (!quarterSelect) return;
+    
+    const currentValue = quarterSelect.value;
+    quarterSelect.innerHTML = '<option value="">All Quarters</option>';
+    
+    var quarterOrder = ['Q1', 'Q2', 'Q3', 'Q4'];
+    
+    if (selectedYear && selectedYear !== '') {
+        // Show only quarters that have data for the selected year
+        const year = parseInt(selectedYear);
+        const nextYear = year + 1;
+        const quartersForYear = quartersByYear[year] || [];
+        
+        quarterOrder.forEach(function(q) {
+            if (quartersForYear.includes(q)) {
+                var label = q === 'Q4' ? `${q} (Jan-Mar ${nextYear})` : `${q} (${quarterLabels[q].split('(')[1].split(')')[0]} ${year})`;
+                quarterSelect.innerHTML += `<option value="${q}">${label}</option>`;
+            }
+        });
+    } else {
+        // Show all quarters that have data across all years
+        var allQuarters = new Set();
+        Object.values(quartersByYear).forEach(function(quarters) {
+            quarters.forEach(function(q) { allQuarters.add(q); });
+        });
+        
+        quarterOrder.forEach(function(q) {
+            if (allQuarters.has(q)) {
+                quarterSelect.innerHTML += `<option value="${q}">${quarterLabels[q]}</option>`;
+            }
+        });
+    }
+    
+    if (currentValue && quarterSelect.querySelector(`option[value="${currentValue}"]`)) {
+        quarterSelect.value = currentValue;
+    }
+}
+
+// Initialize quarter options on page load and add year change listener
+document.addEventListener('DOMContentLoaded', function() {
+    // ✅ Reset history filters on page load (fixes browser form caching issue)
+    // This ensures filters are cleared on refresh across all browsers
+    const filterYear = document.getElementById('filterYear');
+    const filterQuarter = document.getElementById('filterQuarter');
+    const filterCategory = document.getElementById('filterCategory');
+    const filterGrade = document.getElementById('filterGrade');
+    const filterStatus = document.getElementById('filterStatus');
+    const historySearchInput = document.getElementById('historySearchInput');
+    
+    if (filterYear) filterYear.value = '';
+    if (filterQuarter) filterQuarter.value = '';
+    if (filterCategory) filterCategory.value = '';
+    if (filterGrade) filterGrade.value = '';
+    if (filterStatus) filterStatus.value = '';
+    if (historySearchInput) historySearchInput.value = '';
+    
+    // Collect available quarters per year from history table
+    document.querySelectorAll('#historyTable tbody tr').forEach(function(row) {
+        var quarter = row.getAttribute('data-quarter');
+        var year = row.getAttribute('data-year');
+        if (quarter && quarter.trim() !== '' && year && year.trim() !== '') {
+            var q = quarter.toUpperCase();
+            var y = parseInt(year);
+            if (!quartersByYear[y]) {
+                quartersByYear[y] = [];
+            }
+            if (!quartersByYear[y].includes(q)) {
+                quartersByYear[y].push(q);
+            }
+        }
+    });
+    
+    const yearFilter = document.getElementById('filterYear');
+    if (yearFilter) {
+        yearFilter.addEventListener('change', function() {
+            updateHistoryQuarterOptions(this.value);
+        });
+        updateHistoryQuarterOptions(yearFilter.value);
+    }
+});
+
+// Helper function to decode HTML entities
+function decodeHtmlEntities(text) {
+    if (!text) return '';
+    const textarea = document.createElement('textarea');
+    textarea.innerHTML = text;
+    return textarea.value;
+}
+
+// Show notes in modal - Make it globally accessible - show full notes with HR Portal styling
+window.showNotesModal = function(submissionNotes, responseNotes = null, status = null, hrModified = false) {
+    const modalElement = document.getElementById('notesModal');
+    if (!modalElement) {
+        return;
+    }
+    
+    const notesContentEl = document.getElementById('modalNotesContent');
+    const modalTitle = modalElement.querySelector('.modal-title');
+    const modalHeader = modalElement.querySelector('.modal-header');
+    
+    if (notesContentEl) {
+        // Decode HTML entities
+        const decodedSubmission = decodeHtmlEntities(submissionNotes);
+        const decodedResponse = decodeHtmlEntities(responseNotes);
+        
+        // Show full notes - prefer response notes if available (for approved/rejected items)
+        let notesText = decodedSubmission || 'No notes provided';
+        
+        // If response notes exist, show them instead (for history records)
+        const responseNotesStr = decodedResponse ? String(decodedResponse).trim() : '';
+        if (responseNotesStr.length > 0) {
+            notesText = responseNotesStr;
+        }
+        
+        // Add HR UPDATED prefix if modified by HR
+        if (hrModified && notesText && notesText !== 'No notes provided') {
+            notesContentEl.textContent = 'HR UPDATED: ' + notesText;
+        } else {
+            notesContentEl.textContent = notesText;
+        }
+        
+        // Update styling based on status
+        if (status === 'Approved') {
+            notesContentEl.style.backgroundColor = '#e8f5e9';
+            notesContentEl.style.borderLeftColor = '#4caf50';
+            if (modalTitle) modalTitle.innerHTML = '<i class="fas fa-file-alt me-2"></i>Approval Notes';
+        } else if (status === 'Rejected') {
+            notesContentEl.style.backgroundColor = '#ffebee';
+            notesContentEl.style.borderLeftColor = '#f44336';
+            if (modalTitle) modalTitle.innerHTML = '<i class="fas fa-file-alt me-2"></i>Rejection Notes';
+        } else {
+            notesContentEl.style.backgroundColor = '#f8f9fa';
+            notesContentEl.style.borderLeftColor = '#17a2b8';
+            if (modalTitle) modalTitle.innerHTML = '<i class="fas fa-file-alt me-2"></i>Submission Notes';
+        }
+        
+        // Update modal header to blue theme
+        if (modalHeader) modalHeader.style.background = '#0d6efd';
+    }
+    
+    try {
+        // Check if there's already a modal instance and dispose it
+        const existingModal = bootstrap.Modal.getInstance(modalElement);
+        if (existingModal) {
+            existingModal.dispose();
+        }
+        
+        // Create and show new modal
+        const modal = new bootstrap.Modal(modalElement, {
+            backdrop: true,
+            keyboard: true,
+            focus: true
+        });
+        modal.show();
+    } catch (error) {
+    }
+};
+</script>
+
+<script>
+// Event delegation for view notes buttons
+$(document).on('click', '.view-notes-btn', function() {
+    const submissionNotes = $(this).data('submission-notes') || '';
+    const responseNotes = $(this).data('response-notes') || '';
+    const status = $(this).data('status') || '';
+    const hrModified = $(this).data('hr-modified') === true || $(this).data('hr-modified') === 'true';
+    window.showNotesModal(submissionNotes, responseNotes || null, status, hrModified);
+});
+
+// TAB PERSISTENCE - Store and restore active tab
+function saveActiveTab(tabName) {
+    localStorage.setItem('ld_validator_active_tab', tabName);
+}
+
+function restoreActiveTab() {
+    const savedTab = localStorage.getItem('ld_validator_active_tab');
+    if (savedTab && savedTab !== 'overview') {
+        switchTab(savedTab);
+    }
+}
+
+// Global function to switch tabs
+function switchTab(targetTab) {
+    // Remove active class from all tabs
+    $('.tab-link').removeClass('active');
+    $('.tab-content-section').removeClass('active');
+    
+    // Add active class to clicked tab
+    $('.tab-link[data-tab="' + targetTab + '"]').addClass('active');
+    $('#' + targetTab + '-tab').addClass('active');
+    
+    // Initialize history table if switching to history tab
+    if (targetTab === 'history' && !$.fn.DataTable.isDataTable('#historyTable')) {
+        initHistoryTable();
+    }
+    
+    // Initialize pending table if switching to pending tab
+    if (targetTab === 'pending' && !$.fn.DataTable.isDataTable('#pendingTable')) {
+        initPendingTable();
+    }
+    
+    // Close sidebar on mobile
+    if (window.innerWidth < 992) {
+        $('#sidebar').removeClass('active');
+        $('#sidebarOverlay').removeClass('active');
+    }
+    
+    // Save active tab
+    saveActiveTab(targetTab);
+    
+    // Update URL to reflect current tab (without page reload)
+    const url = new URL(window.location);
+    if (targetTab === 'overview') {
+        url.searchParams.delete('tab');
+    } else {
+        url.searchParams.set('tab', targetTab);
+    }
+    window.history.replaceState({}, '', url);
+}
+    
+// Restore last active tab on page load
+$(document).ready(function() {
+    // Clear forms on page load (fixes Firefox form persistence issue)
+    if ($('#bulkActionForm').length) {
+        $('#bulkActionForm')[0].reset();
+    }
+    if ($('#singleActionForm').length) {
+        $('#singleActionForm')[0].reset();
+    }
+    
+    // ✅ UNIFIED TAB PERSISTENCE - Dashboard switch detection
+    const urlParams = new URLSearchParams(window.location.search);
+    const tabParam = urlParams.get('tab');
+    const lastDashboard = sessionStorage.getItem('ld_last_dashboard');
+    const currentDashboard = 'ld_validator';
+    
+    // Detect if switching from a different dashboard
+    let isDashboardSwitch = false;
+    if (lastDashboard && lastDashboard !== currentDashboard) {
+        isDashboardSwitch = true;
+    }
+    
+    // Update current dashboard tracker
+    sessionStorage.setItem('ld_last_dashboard', currentDashboard);
+    
+    if (isDashboardSwitch) {
+        // Coming from a different dashboard → force overview tab
+        localStorage.removeItem('ld_validator_active_tab');
+        switchTab('overview');
+    } else if (tabParam) {
+        // If URL has a tab parameter, switch to that tab
+        switchTab(tabParam);
+    } else {
+        // Otherwise, restore the last active tab from localStorage
+        restoreActiveTab();
+    }
+    
+    // Tab switching functionality
+    $('.tab-link').on('click', function(e) {
+        e.preventDefault();
+        const targetTab = $(this).data('tab');
+        switchTab(targetTab);
+    });
+    
+    // Add event listener for year filter to update quarters only (don't apply filters yet)
+    $(document).on('change', '#filterYear', function() {
+        filterQuartersByYear();
+    });
+});
+
+// Function to restore selected checkboxes and update Select All state
+function restoreSelectedCheckboxes() {
+    setTimeout(function() {
+        // Restore checkboxes from selectedRequests Set
+        $('#pendingTable tbody tr:visible .request-checkbox').each(function() {
+            const value = $(this).val();
+            if (selectedRequests.has(value)) {
+                $(this).prop('checked', true);
+            }
+        });
+        
+        // Update Select All checkbox based on CURRENT PAGE ONLY
+        const visibleTotal = $('#pendingTable tbody tr:visible .request-checkbox').length;
+        const visibleChecked = $('#pendingTable tbody tr:visible .request-checkbox:checked').length;
+        const allChecked = visibleTotal > 0 && visibleTotal === visibleChecked;
+        $('#selectAll').prop('checked', allChecked);
+    }, 50);
+}
+
+// Initialize pending table if exists
+function initPendingTable() {
+        try {
+            // Check if table exists first
+            if ($('#pendingTable').length === 0) {
+                return;
+            }
+            
+            // Destroy existing DataTable if it exists
+            if ($.fn.DataTable.isDataTable('#pendingTable')) {
+                $('#pendingTable').DataTable().destroy();
+            }
+            
+            // Always reinitialize (important for real-time updates)
+            const table = $('#pendingTable').DataTable({
+                order: [[1, 'asc']],
+                pageLength: 10,
+                responsive: true,
+                columnDefs: [
+                    { orderable: false, targets: [0, 10, 11] }  // ✅ Fixed: 12 columns (0-11)
+                ],
+                // ✅ Speed up initialization
+                deferRender: true,
+                processing: false,
+                // ✅ Force pagination to show
+                paging: true,
+                pagingType: 'simple_numbers',
+                dom: 'rt',  // No pagination in wrapper, we'll add it manually
+                // ✅ Initialize immediately without delay
+                initComplete: function(settings, json) {
+                    // Restore checkboxes after initialization
+                    restoreSelectedCheckboxes();
+                }
+            });
+            
+            // ✅ Create custom pagination controls
+            table.on('draw.dt', function() {
+                var info = table.page.info();
+                var paginationHtml = '';
+                
+                // Info text
+                $('#pendingPaginationInfo').html('Showing ' + (info.start + 1) + ' to ' + info.end + ' of ' + info.recordsTotal + ' entries');
+                
+                // Pagination buttons - improved for large datasets
+                if (info.pages > 1) {
+                    paginationHtml = '<nav><ul class="pagination mb-0" style="flex-wrap: wrap;">';
+                    
+                    // Previous button
+                    paginationHtml += '<li class="page-item' + (info.page === 0 ? ' disabled' : '') + '">';
+                    paginationHtml += '<a class="page-link" href="#" onclick="$(\'#pendingTable\').DataTable().page(\'previous\').draw(false); return false;">Previous</a></li>';
+                    
+                    // Smart page number display for large datasets
+                    var maxVisiblePages = 7;
+                    var startPage = 0;
+                    var endPage = info.pages;
+                    
+                    if (info.pages > maxVisiblePages) {
+                        var halfVisible = Math.floor(maxVisiblePages / 2);
+                        startPage = Math.max(0, info.page - halfVisible);
+                        endPage = Math.min(info.pages, startPage + maxVisiblePages);
+                        
+                        if (endPage - startPage < maxVisiblePages) {
+                            startPage = Math.max(0, endPage - maxVisiblePages);
+                        }
+                        
+                        // First page and ellipsis
+                        if (startPage > 0) {
+                            paginationHtml += '<li class="page-item"><a class="page-link" href="#" onclick="$(\'#pendingTable\').DataTable().page(0).draw(false); return false;">1</a></li>';
+                            if (startPage > 1) {
+                                paginationHtml += '<li class="page-item disabled"><span class="page-link">...</span></li>';
+                            }
+                        }
+                    }
+                    
+                    // Page numbers
+                    for (var i = startPage; i < endPage; i++) {
+                        if (i === info.page) {
+                            paginationHtml += '<li class="page-item active"><span class="page-link">' + (i + 1) + '</span></li>';
+                        } else {
+                            paginationHtml += '<li class="page-item"><a class="page-link" href="#" onclick="$(\'#pendingTable\').DataTable().page(' + i + ').draw(false); return false;">' + (i + 1) + '</a></li>';
+                        }
+                    }
+                    
+                    // Last page and ellipsis
+                    if (info.pages > maxVisiblePages && endPage < info.pages) {
+                        if (endPage < info.pages - 1) {
+                            paginationHtml += '<li class="page-item disabled"><span class="page-link">...</span></li>';
+                        }
+                        paginationHtml += '<li class="page-item"><a class="page-link" href="#" onclick="$(\'#pendingTable\').DataTable().page(' + (info.pages - 1) + ').draw(false); return false;">' + info.pages + '</a></li>';
+                    }
+                    
+                    // Next button
+                    paginationHtml += '<li class="page-item' + (info.page >= info.pages - 1 ? ' disabled' : '') + '">';
+                    paginationHtml += '<a class="page-link" href="#" onclick="$(\'#pendingTable\').DataTable().page(\'next\').draw(false); return false;">Next</a></li>';
+                    
+                    paginationHtml += '</ul></nav>';
+                }
+                
+                $('#pendingPaginationControls').html(paginationHtml);
+                restoreSelectedCheckboxes();
+            });
+            
+            // ✅ Bind page change event to restore checkboxes
+            table.on('page.dt', function() {
+                restoreSelectedCheckboxes();
+            });
+            
+            // ✅ Connect manual show entries select - use specific ID
+            $('#pendingPageSize').on('change', function() {
+                table.page.len($(this).val()).draw();
+            });
+            
+            // ✅ Connect manual search input
+            $('#pendingSearchInput').on('keyup', function() {
+                table.search(this.value).draw();
+            });
+            
+            // ✅ Trigger initial draw to show pagination
+            table.draw();
+            
+        } catch (error) {
+            // Error initializing DataTable
+        }
+}
+
+// Initialize history table if exists
+function initHistoryTable() {
+        {% if history_data %}
+        var table = $('#historyTable').DataTable({
+            order: [[0, 'desc']],
+            pageLength: 10,
+            lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
+            responsive: true,
+            dom: 'rt<"row pagination-row"<"col-sm-6"i><"col-sm-6"p>>',  // Remove default length and search, add pagination-row
+            language: {
+                lengthMenu: "Show _MENU_ entries"
+            }
+        });
+        
+        // Move pagination outside scrollable area
+        $('#historyTableWrapper .table-responsive').after($('#historyTableWrapper .pagination-row'));
+        
+        // Create custom length menu with "All" first
+        var lengthSelect = $('<label style="font-size: 14px; color: #495057;">Show <select class="form-select form-select-sm d-inline-block" style="width: auto; margin: 0 5px;">' +
+            '<option value="-1">All</option>' +
+            '<option value="10" selected>10</option>' +
+            '<option value="25">25</option>' +
+            '<option value="50">50</option>' +
+            '<option value="100">100</option>' +
+            '</select> entries</label>');
+        
+        // Add to page
+        $('#historyTableLength').html(lengthSelect);
+        
+        // Handle length change
+        $('#historyTableLength select').on('change', function() {
+            table.page.len($(this).val()).draw();
+        });
+        
+        // Connect custom search input to DataTables
+        $('#historySearchInput').on('keyup', function() {
+            table.search(this.value).draw();
+        });
+        
+        // Store table reference globally for filter functions
+        window.historyTableInstance = table;
+        
+        // Populate filter dropdowns from table data with a delay to ensure data is loaded
+        setTimeout(function() {
+            try {
+                populateHistoryFilters(table);
+            } catch (error) {
+                console.error('Error populating filters:', error);
+            }
+        }, 500);
+        {% endif %}
+}
+
+// Populate filter dropdowns dynamically
+function populateHistoryFilters(table) {
+        var quarters = new Set();
+        var categories = new Set();
+        var grades = new Set();
+        var years = new Set();
+        var statuses = new Set();
+        
+        // Reset quartersByYear for fresh population
+        quartersByYear = {};
+        
+        table.rows().every(function() {
+            var data = this.data();
+            
+            // Extract quarter from column 9 (inside badge) - extract only Q1, Q2, Q3, Q4
+            var quarterText = '';
+            var quarterOnly = null;
+            if (data[9]) {
+                quarterText = $(data[9]).text().trim();
+                if (!quarterText) {
+                    quarterText = data[9];
+                }
+            }
+            if (quarterText && quarterText !== 'N/A' && quarterText.length > 0) {
+                // Extract only the quarter part (Q1, Q2, Q3, Q4) from "Q4 2025" format
+                var quarterMatch = quarterText.match(/Q[1-4]/);
+                if (quarterMatch) {
+                    quarterOnly = quarterMatch[0];
+                    quarters.add(quarterOnly);
+                }
+            }
+            
+            // Extract category from column 6 (plain text, not in badge)
+            var categoryText = data[6];
+            if (typeof categoryText === 'string') {
+                categoryText = categoryText.trim();
+            } else {
+                categoryText = $(categoryText).text().trim();
+            }
+            if (categoryText && categoryText !== 'N/A') {
+                categories.add(categoryText);
+            }
+            
+            // Extract grade from column 5 (inside badge)
+            var gradeText = $(data[5]).text().trim();
+            if (gradeText && gradeText !== 'N/A') {
+                grades.add(gradeText);
+            }
+            
+            // Extract fiscal year from Event Date column (column 1) - DD-MM-YYYY format
+            // For Q4 (Jan, Feb, Mar), fiscal year is previous year
+            var eventDateText = data[1];
+            if (typeof eventDateText === 'string') {
+                eventDateText = eventDateText.trim();
+            } else {
+                eventDateText = $(eventDateText).text().trim();
+            }
+            if (eventDateText && eventDateText.length >= 10) {
+                var parts = eventDateText.split('-');
+                if (parts.length === 3) {
+                    var month = parseInt(parts[1]); // DD-MM-YYYY -> MM
+                    var year = parseInt(parts[2]); // DD-MM-YYYY -> YYYY
+                    // For Q4 (Jan, Feb, Mar), fiscal year is previous year
+                    var fiscalYear = (month >= 1 && month <= 3) ? (year - 1) : year;
+                    if (fiscalYear) {
+                        years.add(fiscalYear.toString());
+                        
+                        // Build quartersByYear mapping for dynamic quarter filtering
+                        if (quarterOnly) {
+                            if (!quartersByYear[fiscalYear]) {
+                                quartersByYear[fiscalYear] = [];
+                            }
+                            if (!quartersByYear[fiscalYear].includes(quarterOnly)) {
+                                quartersByYear[fiscalYear].push(quarterOnly);
+                            }
+                        }
+                    }
+                }
+            }
+            
+            // Extract status from column 8 (inside badge)
+            var statusText = '';
+            if (typeof data[8] === 'string') {
+                statusText = data[8].trim();
+            } else {
+                statusText = $(data[8]).text().trim();
+            }
+            // Extract only the status word (Approved, Rejected, Pending)
+            if (statusText) {
+                var statusMatch = statusText.match(/Approved|Rejected|Pending/);
+                if (statusMatch) {
+                    statuses.add(statusMatch[0]);
+                }
+            }
+        });
+        
+        // Clear existing options (keep only the default "All" option)
+        $('#filterQuarter').find('option:not(:first)').remove();
+        $('#filterCategory').find('option:not(:first)').remove();
+        $('#filterGrade').find('option:not(:first)').remove();
+        $('#filterYear').find('option:not(:first)').remove();
+        $('#filterStatus').find('option:not(:first)').remove();
+        
+        // Populate Quarter dropdown with all quarters initially
+        var quarterOrder = ['Q1', 'Q2', 'Q3', 'Q4'];
+        quarterOrder.forEach(function(q) {
+            if (quarters.has(q)) {
+                $('#filterQuarter').append($('<option>', { value: q, text: quarterLabels[q] }));
+            }
+        });
+        
+        // Populate Category dropdown
+        Array.from(categories).sort().forEach(function(category) {
+            $('#filterCategory').append($('<option>', { value: category, text: category }));
+        });
+        
+        // Populate Grade dropdown
+        Array.from(grades).sort().forEach(function(grade) {
+            $('#filterGrade').append($('<option>', { value: grade, text: grade }));
+        });
+        
+        // Populate Year dropdown
+        Array.from(years).sort().reverse().forEach(function(year) {
+            var nextYear = (parseInt(year) + 1).toString().slice(-2);
+            $('#filterYear').append($('<option>', { value: year, text: year + '-' + nextYear }));
+        });
+        
+        // Populate Status dropdown
+        var statusArray = Array.from(statuses).sort();
+        statusArray.forEach(function(status) {
+            $('#filterStatus').append($('<option>', { value: status, text: status }));
+        });
+        
+        // Store all quarters for year-based filtering
+        window.allQuarters = Array.from(quarters);
+    }
+    
+    // Filter quarters based on selected year - dynamically show only quarters with data for selected year
+    function filterQuartersByYear() {
+        var quarterDropdown = $('#filterQuarter');
+        var selectedYear = $('#filterYear').val();
+        
+        // Clear current quarter options (keep the "All" option)
+        quarterDropdown.find('option:not(:first)').remove();
+        
+        var quarterOrder = ['Q1', 'Q2', 'Q3', 'Q4'];
+        
+        if (selectedYear && selectedYear !== '') {
+            // Show only quarters that have data for the selected year
+            var year = parseInt(selectedYear);
+            var nextYear = year + 1;
+            var quartersForYear = quartersByYear[year] || [];
+            
+            quarterOrder.forEach(function(q) {
+                if (quartersForYear.includes(q)) {
+                    var label = q === 'Q4' ? q + ' (Jan-Mar ' + nextYear + ')' : q + ' (' + quarterLabels[q].split('(')[1].split(')')[0] + ' ' + year + ')';
+                    quarterDropdown.append($('<option>', { value: q, text: label }));
+                }
+            });
+        } else {
+            // Show all quarters that have data across all years
+            var allQuartersSet = new Set();
+            Object.values(quartersByYear).forEach(function(quarters) {
+                quarters.forEach(function(q) { allQuartersSet.add(q); });
+            });
+            
+            quarterOrder.forEach(function(q) {
+                if (allQuartersSet.has(q)) {
+                    quarterDropdown.append($('<option>', { value: q, text: quarterLabels[q] }));
+                }
+            });
+        }
+        
+        // Clear quarter selection if it doesn't exist in the new options
+        var currentQuarter = quarterDropdown.val();
+        if (currentQuarter && !quarterDropdown.find('option[value="' + currentQuarter + '"]').length) {
+            quarterDropdown.val('');
+        }
+    }
+    
+    // Apply filters to table
+    window.applyHistoryFilters = function() {
+        var table = window.historyTableInstance;
+        if (!table) return;
+        var quarterFilter = $('#filterQuarter').val();
+        var categoryFilter = $('#filterCategory').val();
+        var gradeFilter = $('#filterGrade').val();
+        var yearFilter = $('#filterYear').val();
+        var statusFilter = $('#filterStatus').val();
+        
+        // Clear any existing custom search functions
+        $.fn.dataTable.ext.search = [];
+        
+        // Add custom search function that works with DataTables pagination
+        $.fn.dataTable.ext.search.push(
+            function(settings, data, dataIndex) {
+                // Only apply to history table
+                if (settings.nTable.id !== 'historyTable') {
+                    return true;
+                }
+                
+                // Extract text content from HTML or string - Updated column indices
+                // Column 9 = Quarter, Column 6 = Category, Column 5 = Grade, Column 1 = Event Date, Column 8 = Status
+                var quarterText = (typeof data[9] === 'string') ? data[9].trim() : $(data[9]).text().trim();
+                var categoryText = (typeof data[6] === 'string') ? data[6].trim() : $(data[6]).text().trim();
+                var gradeText = (typeof data[5] === 'string') ? data[5].trim() : $(data[5]).text().trim();
+                var eventDateText = (typeof data[1] === 'string') ? data[1].trim() : $(data[1]).text().trim();
+                var statusRaw = (typeof data[8] === 'string') ? data[8].trim() : $(data[8]).text().trim();
+                
+                // Extract only the status word (Approved, Rejected, Pending)
+                var statusText = '';
+                var statusMatch = statusRaw.match(/Approved|Rejected|Pending/);
+                if (statusMatch) {
+                    statusText = statusMatch[0];
+                }
+                
+                // Filter by quarter - extract Q1-Q4 from "Q4 2025" format
+                if (quarterFilter) {
+                    var quarterMatch = quarterText.match(/Q[1-4]/);
+                    var quarterOnly = quarterMatch ? quarterMatch[0] : '';
+                    if (quarterOnly !== quarterFilter) {
+                        return false;
+                    }
+                }
+                
+                // Filter by category
+                if (categoryFilter && categoryText.indexOf(categoryFilter) === -1) {
+                    return false;
+                }
+                
+                // Filter by grade
+                if (gradeFilter && gradeText.indexOf(gradeFilter) === -1) {
+                    return false;
+                }
+                
+                // Filter by year (using fiscal year based on Event Date)
+                if (yearFilter && eventDateText) {
+                    var parts = eventDateText.split('-');
+                    if (parts.length === 3) {
+                        var month = parseInt(parts[1]); // DD-MM-YYYY format
+                        var year = parseInt(parts[2]);
+                        // For Q4 (Jan, Feb, Mar), fiscal year is previous year
+                        var fiscalYear = (month >= 1 && month <= 3) ? (year - 1) : year;
+                        if (fiscalYear.toString() !== yearFilter) {
+                            return false;
+                        }
+                    } else {
+                        return false;
+                    }
+                }
+                
+                // Filter by status - exact match
+                if (statusFilter && statusText !== statusFilter) {
+                    return false;
+                }
+                
+                return true;
+            }
+        );
+        
+        table.draw();
+    }
+    
+    // Reset all filters
+    window.resetHistoryFilters = function() {
+        // Clear filter dropdowns
+        $('#filterQuarter, #filterCategory, #filterGrade, #filterYear, #filterStatus').val('');
+        
+        // Repopulate quarter dropdown with all quarters
+        filterQuartersByYear();
+        
+        // Get table instance
+        var table = window.historyTableInstance;
+        if (!table) return;
+        
+        // Clear DataTables custom search
+        $.fn.dataTable.ext.search = [];
+        
+        // Clear DataTables search box and visible input field
+        table.search('').draw();
+        
+        // Clear the custom search input field
+        $('#historySearchInput').val('');
+    }
+    
+    // Initialize tables on page load for active tab
+    initPendingTable();
+    
+    // Store selected checkboxes across pages and persist to localStorage
+    let selectedRequests = new Set();
+    
+    // Load previously selected requests from localStorage
+    function loadSelectedRequests() {
+        try {
+            // Check if this is a real-time reload or manual refresh
+            const isRealtimeReload = sessionStorage.getItem('ld_realtime_reload') === 'true';
+            
+            if (isRealtimeReload) {
+                // Real-time reload: restore selections
+                const saved = localStorage.getItem('ld_selected_requests');
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    selectedRequests = new Set(parsed);
+                }
+                // Clear the flag
+                sessionStorage.removeItem('ld_realtime_reload');
+            } else {
+                // Manual refresh: clear selections
+                selectedRequests = new Set();
+                localStorage.removeItem('ld_selected_requests');
+            }
+        } catch (e) {
+            // Silent error handling
+        }
+    }
+    
+    // Save selected requests to localStorage
+    function saveSelectedRequests() {
+        try {
+            localStorage.setItem('ld_selected_requests', JSON.stringify(Array.from(selectedRequests)));
+        } catch (e) {
+            // Silent error handling
+        }
+    }
+    
+    // Initialize: Load saved selections
+    loadSelectedRequests();
+    
+    // Select All checkbox - only affects visible rows on current page
+    // Use event delegation to handle dynamically replaced checkboxes
+    $(document).on('change', '#selectAll', function() {
+        const isChecked = this.checked;
+        
+        // Only check/uncheck visible checkboxes on current page
+        $('#pendingTable tbody tr:visible .request-checkbox').each(function() {
+            $(this).prop('checked', isChecked);
+            const value = $(this).val();
+            if (isChecked) {
+                selectedRequests.add(value);
+            } else {
+                selectedRequests.delete(value);
+            }
+        });
+        saveSelectedRequests(); // Save to localStorage
+    });
+    
+    // Update select all based on visible checkboxes
+    $(document).on('change', '.request-checkbox', function() {
+        const value = $(this).val();
+        if ($(this).is(':checked')) {
+            selectedRequests.add(value);
+        } else {
+            selectedRequests.delete(value);
+        }
+        saveSelectedRequests(); // Save to localStorage
+        
+        const visibleTotal = $('#pendingTable tbody tr:visible .request-checkbox').length;
+        const visibleChecked = $('#pendingTable tbody tr:visible .request-checkbox:checked').length;
+        $('#selectAll').prop('checked', visibleTotal > 0 && visibleTotal === visibleChecked);
+    });
+    
+    // Note: Page change event is now bound inside initPendingTable() function
+    // This ensures it persists after table reinitialization
+    
+    // Store action type globally
+    let pendingBulkAction = null;
+    
+    // Bulk action form validation
+    // Handle bulk action buttons with event delegation
+    $(document).on('click', 'button[name="action_type"][value="bulk_approve"], button[name="action_type"][value="bulk_reject"]', function(e) {
+        e.preventDefault();
+        
+        const actionType = $(this).val();
+        const checkedCount = $('.request-checkbox:checked').length;
+        
+        if (checkedCount === 0) {
+            showCustomAlert('Please select at least one request.', 'warning');
+            return false;
+        }
+        
+        // Check response notes are mandatory for both approve and reject
+        if (!$('#response_notes').val().trim()) {
+            const actionName = actionType === 'bulk_approve' ? 'approval' : 'rejection';
+            showCustomAlert(`Response notes are required for bulk ${actionName}.`, 'danger');
+            $('#response_notes').focus();
+            return false;
+        }
+        
+        // Store action type
+        pendingBulkAction = actionType;
+        
+        // Show confirmation modal
+        showBulkActionConfirmation(actionType, checkedCount);
+        
+        return false;
+    });
+    
+    // Show bulk action confirmation modal
+    function showBulkActionConfirmation(actionType, count) {
+        // Check for duplicates only for bulk approve (not bulk reject)
+        if (window.DuplicateDetection && actionType === 'bulk_approve') {
+            const requestIds = [];
+            $('.request-checkbox:checked').each(function() {
+                requestIds.push($(this).val());
+            });
+            
+            window.DuplicateDetection.checkBulkValidatorAction(requestIds, actionType, function(duplicates) {
+                if (duplicates.length > 0) {
+                    // Show bulk duplicates warning with action type for proper button labels
+                    window.DuplicateDetection.showBulkDuplicatesWarning(
+                        duplicates,
+                        function() {
+                            // User confirmed - proceed with bulk action
+                            showLDBulkActionModal(actionType, count);
+                        },
+                        function() {
+                            // User cancelled - do nothing
+                        },
+                        { actionType: actionType }
+                    );
+                } else {
+                    // No duplicates - proceed with bulk action
+                    showLDBulkActionModal(actionType, count);
+                }
+            });
+        } else {
+            // For bulk reject or if DuplicateDetection not available, proceed directly
+            showLDBulkActionModal(actionType, count);
+        }
+    }
+    
+    function showLDBulkActionModal(actionType, count) {
+        const isApprove = actionType === 'bulk_approve';
+        const modalHeader = $('#bulkActionModalHeader');
+        const modalTitle = $('#bulkActionModalTitle');
+        const confirmBtn = $('#bulkActionConfirmBtn');
+        
+        // Set modal styling based on action
+        if (isApprove) {
+            modalHeader.css('background', 'linear-gradient(135deg, #28a745 0%, #20c997 100%)');
+            modalTitle.html('<i class="fas fa-check-circle"></i> Confirm Approval');
+            confirmBtn.removeClass('btn-danger').addClass('btn-success');
+            confirmBtn.html('<i class="fas fa-check"></i> Approve ' + count + ' Request(s)');
+        } else {
+            modalHeader.css('background', 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)');
+            modalTitle.html('<i class="fas fa-times-circle"></i> Confirm Rejection');
+            confirmBtn.removeClass('btn-success').addClass('btn-danger');
+            confirmBtn.html('<i class="fas fa-times"></i> Reject ' + count + ' Request(s)');
+        }
+        
+        // Update count
+        $('#bulkActionCount').text(count);
+        
+        // Populate preview table
+        let previewHtml = '';
+        $('.request-checkbox:checked').each(function() {
+            const row = $(this).closest('tr');
+            const employeeCell = row.find('td:eq(3)');
+            const employeeName = employeeCell.find('strong').text().trim();
+            const employeeId = employeeCell.find('small').text().trim();
+            const category = row.find('td:eq(8)').text().trim(); // Category column (index 8)
+            const points = row.find('td:eq(10)').text().trim(); // Points column (index 10)
+            const eventDate = row.find('td:eq(2)').text().trim(); // Event Date column
+            
+            previewHtml += `
+                <tr>
+                    <td style="text-align: center;">
+                        <strong>${employeeName}</strong><br>
+                        <small class="text-muted">${employeeId}</small>
+                    </td>
+                    <td style="text-align: center; word-wrap: break-word; white-space: normal; max-width: 250px;">${category}</td>
+                    <td style="text-align: center; white-space: nowrap;" class="text-primary"><strong>${points}</strong></td>
+                    <td style="text-align: center; white-space: nowrap;">${eventDate}</td>
+                </tr>
+            `;
+        });
+        $('#bulkActionPreviewBody').html(previewHtml);
+        
+        // Apply scroll only if more than 10 records
+        const container = $('#bulkActionTableContainer');
+        if (count > 10) {
+            container.css({
+                'max-height': '400px',
+                'overflow-y': 'auto'
+            });
+        } else {
+            container.css({
+                'max-height': 'none',
+                'overflow-y': 'visible'
+            });
+        }
+        
+        // Show modal - Get or create instance
+        const modalElement = document.getElementById('bulkActionConfirmModal');
+        let modal = bootstrap.Modal.getInstance(modalElement);
+        
+        if (!modal) {
+            modal = new bootstrap.Modal(modalElement, {
+                backdrop: 'static',
+                keyboard: false
+            });
+        }
+        
+        modal.show();
+    }
+    
+    // Confirm bulk action - Make it globally accessible
+    window.confirmBulkAction = function() {
+        
+        // Close modal
+        const modalElement = document.getElementById('bulkActionConfirmModal');
+        const modal = bootstrap.Modal.getInstance(modalElement);
+        
+        if (modal) {
+            modal.hide();
+        } else {
+            $(modalElement).modal('hide');
+        }
+        
+        // Submit form
+        const form = $('#bulkActionForm')[0];
+        const submitBtn = pendingBulkAction === 'bulk_approve' ? 
+            $('button[name="action_type"][value="bulk_approve"]')[0] : 
+            $('button[name="action_type"][value="bulk_reject"]')[0];
+        
+        // Create a hidden input to preserve the action type
+        const hiddenInput = $('<input>').attr({
+            type: 'hidden',
+            name: 'action_type',
+            value: pendingBulkAction
+        });
+        $(form).append(hiddenInput);
+        
+        // Submit form
+        form.submit();
+    }
+    
+    // Custom alert function
+    function showCustomAlert(message, type = 'info') {
+        const alertDiv = $('<div>')
+            .addClass(`alert alert-${type} alert-dismissible fade show`)
+            .css({
+                position: 'fixed',
+                top: '80px',
+                right: '20px',
+                zIndex: 9999,
+                minWidth: '300px'
+            })
+            .html(`
+                <i class="fas fa-${type === 'warning' ? 'exclamation-triangle' : 'info-circle'}"></i>
+                <strong>${message}</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `);
+        
+        $('body').append(alertDiv);
+        
+        setTimeout(() => alertDiv.remove(), 5000);
+    }
+    
+    // Single action form validation
+    $('#singleActionForm').on('submit', function(e) {
+        const notes = $('#modal_response_notes').val().trim();
+        
+        if (!notes) {
+            e.preventDefault();
+            showCustomAlert('Please provide notes for your decision.', 'warning');
+            $('#modal_response_notes').focus();
+            return false;
+        }
+        
+        return true;
+    });
+
+// Single action handler
+function singleAction(requestId, action) {
+    // Check for duplicates only for approve action (not reject)
+    if (window.DuplicateDetection && action === 'approve') {
+        window.DuplicateDetection.checkValidatorAction(requestId, action, function(isDuplicate, duplicateInfo) {
+            if (isDuplicate) {
+                // Show duplicate warning
+                window.DuplicateDetection.showDuplicateWarning(
+                    duplicateInfo,
+                    function() {
+                        // User confirmed - proceed with action
+                        showLDActionModal(requestId, action);
+                    },
+                    function() {
+                        // User cancelled - do nothing
+                    }
+                );
+            } else {
+                // No duplicate - proceed with action
+                showLDActionModal(requestId, action);
+            }
+        });
+    } else {
+        // For reject or if DuplicateDetection not available, proceed directly
+        showLDActionModal(requestId, action);
+    }
+}
+
+function showLDActionModal(requestId, action) {
+    $('#modal_request_id').val(requestId);
+    $('#modal_action').val(action);
+    $('#modal_response_notes').val('');
+    
+    if (action === 'approve') {
+        $('#modalTitle').text('Approve Request');
+        $('#modalMessage').text('Are you sure you want to approve this request?');
+        $('#modalSubmitBtn').removeClass('btn-danger').addClass('btn-success').text('Approve');
+        $('#notesHint').text('Please provide notes explaining your approval');
+        // Set green header for approve
+        $('#modalHeader').css('background-color', '#28a745').css('color', 'white');
+        $('.btn-close', '#modalHeader').addClass('btn-close-white');
+    } else {
+        $('#modalTitle').text('Reject Request');
+        $('#modalMessage').text('Are you sure you want to reject this request?');
+        $('#modalSubmitBtn').removeClass('btn-success').addClass('btn-danger').text('Reject');
+        $('#notesHint').text('Please provide a reason for rejection');
+        // Set red header for reject
+        $('#modalHeader').css('background-color', '#dc3545').css('color', 'white');
+        $('.btn-close', '#modalHeader').addClass('btn-close-white');
+    }
+    
+    const modal = new bootstrap.Modal(document.getElementById('singleActionModal'));
+    modal.show();
+}
+
+
+</script>
+{% endblock %}

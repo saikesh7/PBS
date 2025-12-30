@@ -1,0 +1,866 @@
+{% extends "base.html" %}
+
+{% block title %}Category Management - HR Portal{% endblock %}
+
+{% block extra_css %}
+<style>
+  .category-card {
+    transition: transform 0.2s, box-shadow 0.2s;
+    border-left: 4px solid #0d6efd;
+  }
+  .category-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  }
+  .category-card.inactive {
+    border-left-color: #6c757d;
+    opacity: 0.7;
+  }
+  .status-badge {
+    font-size: 0.85rem;
+    padding: 0.35rem 0.65rem;
+  }
+  .filter-section {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 1.5rem;
+    border-radius: 0.75rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  }
+  
+  .filter-section label {
+    color: white;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+  }
+  
+  .filter-section .form-select {
+    border: none;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  }
+  
+  /* Reset/Clear Filters Button Styling */
+  .reset-filters-btn {
+    background-color: white !important;
+    color: #667eea !important;
+    border: 2px solid white !important;
+    font-weight: 600 !important;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  }
+  
+  .reset-filters-btn:hover {
+    background-color: #f8f9fc !important;
+    color: #5568d3 !important;
+    border-color: white !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3) !important;
+  }
+  
+  .reset-filters-btn:active {
+    transform: translateY(0);
+  }
+  .points-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 1rem;
+  }
+  .grade-input-group {
+    background: #f8f9fa;
+    padding: 0.75rem;
+    border-radius: 0.5rem;
+    border: 1px solid #dee2e6;
+  }
+  .grade-input-group label {
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 0.25rem;
+    font-size: 0.9rem;
+  }
+  .grade-input-group input {
+    text-align: center;
+    font-weight: 600;
+  }
+  .grade-badge {
+    background: #f8f9fa;
+    border: 2px solid #dee2e6;
+    border-radius: 0.5rem;
+    padding: 0.75rem;
+    text-align: center;
+  }
+  .grade-badge .grade-name {
+    font-weight: 700;
+    color: #495057;
+    font-size: 1.1rem;
+    margin-bottom: 0.25rem;
+  }
+  .grade-badge .grade-points {
+    color: #0d6efd;
+    font-weight: 600;
+    font-size: 1.3rem;
+  }
+  .section-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem;
+    margin-bottom: 1rem;
+  }
+  .required-field::after {
+    content: " *";
+    color: red;
+  }
+  .info-badge {
+    background: #e7f3ff;
+    border: 1px solid #b3d7ff;
+    color: #004085;
+    padding: 0.5rem 1rem;
+    border-radius: 0.25rem;
+    margin-bottom: 1rem;
+  }
+  .view-section {
+    display: none;
+  }
+  .view-section.active {
+    display: block;
+  }
+  .detail-row {
+    padding: 0.75rem;
+    border-bottom: 1px solid #dee2e6;
+  }
+  .detail-row:last-child {
+    border-bottom: none;
+  }
+  .detail-label {
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 0.25rem;
+  }
+  .detail-value {
+    color: #212529;
+  }
+  .action-buttons {
+    display: flex;
+    gap: 0.5rem;
+  }
+  .status-indicator {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    border-radius: 2rem;
+    font-weight: 600;
+  }
+  .status-indicator.active {
+    background: #d1e7dd;
+    color: #0f5132;
+  }
+  .status-indicator.inactive {
+    background: #f8d7da;
+    color: #842029;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+
+  <!-- LIST VIEW -->
+  <div class="view-section active" id="listView">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h2 class="mb-1">Category Management</h2>
+        <p class="text-muted mb-0">Manage and configure award categories</p>
+      </div>
+      <button onclick="showCreateForm()" class="btn btn-primary">
+        <i class="fas fa-plus me-2"></i>Create New Category
+      </button>
+    </div>
+
+    <!-- Filters -->
+    <div class="filter-section">
+      <form method="GET" class="row g-3">
+        <div class="col-md-3">
+          <label class="form-label">Status</label>
+          <select name="status" class="form-select" onchange="this.form.submit()">
+            <option value="all" {% if status_filter == 'all' %}selected{% endif %}>All Status</option>
+            <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Active</option>
+            <option value="inactive" {% if status_filter == 'inactive' %}selected{% endif %}>Inactive</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Department</label>
+          <select name="department" class="form-select" onchange="this.form.submit()">
+            <option value="all" {% if department_filter == 'all' %}selected{% endif %}>All Departments</option>
+            {% for dept in departments %}
+              <option value="{{ dept }}" {% if department_filter == dept %}selected{% endif %}>
+                {{ dept|replace('_', ' ')|title }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Category Type</label>
+          <select name="category_type" class="form-select" onchange="this.form.submit()">
+            <option value="all" {% if category_type_filter == 'all' %}selected{% endif %}>All Types</option>
+            <option value="Employee raised" {% if category_type_filter == 'Employee raised' %}selected{% endif %}>Employee Raised</option>
+            <option value="Direct award" {% if category_type_filter == 'Direct award' %}selected{% endif %}>Direct Award</option>
+          </select>
+        </div>
+        <div class="col-md-3 d-flex align-items-end">
+          <a href="{{ url_for('hr_categories.categories_dashboard') }}" class="btn btn-light w-100 reset-filters-btn">
+            <i class="fas fa-redo me-2"></i>Clear Filters
+          </a>
+        </div>
+      </form>
+    </div>
+
+    <!-- Statistics -->
+    <div class="row mb-4">
+      <div class="col-md-3">
+        <div class="card bg-primary text-white">
+          <div class="card-body">
+            <h3 class="mb-0">{{ categories|length }}</h3>
+            <p class="mb-0">Total Categories</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card bg-success text-white">
+          <div class="card-body">
+            <h3 class="mb-0">{{ categories|selectattr('category_status', 'equalto', 'active')|list|length }}</h3>
+            <p class="mb-0">Active Categories</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card bg-warning text-white">
+          <div class="card-body">
+            <h3 class="mb-0">{{ categories|selectattr('category_status', 'equalto', 'inactive')|list|length }}</h3>
+            <p class="mb-0">Inactive Categories</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card bg-info text-white">
+          <div class="card-body">
+            <h3 class="mb-0">{{ departments|length }}</h3>
+            <p class="mb-0">Departments</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Categories List -->
+    {% if categories %}
+      <div class="row">
+        {% for category in categories %}
+          <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card category-card h-100 {% if category.category_status == 'inactive' %}inactive{% endif %}">
+              <div class="card-header d-flex justify-content-between align-items-center">
+                <strong>{{ category.name }}</strong>
+                <span class="badge status-badge {% if category.category_status == 'active' %}bg-success{% else %}bg-secondary{% endif %}">
+                  {{ category.category_status|upper }}
+                </span>
+              </div>
+              <div class="card-body">
+                <p class="text-muted mb-2">{{ category.description[:100] }}{% if category.description|length > 100 %}...{% endif %}</p>
+                <div class="mb-2">
+                  <strong>Department:</strong>
+                  <span class="badge bg-primary ms-1">{{ category.category_department|replace('_', ' ')|title }}</span>
+                </div>
+                <div class="mb-2">
+                  <strong>Type:</strong>
+                  <span class="badge {% if category.category_type == 'Employee raised' %}bg-info{% else %}bg-warning{% endif %} ms-1">
+                    {{ category.category_type }}
+                  </span>
+                </div>
+                <div class="mb-2"><strong>Frequency:</strong> {{ category.frequency }}</div>
+                <div><strong>Base Points Per Unit:</strong> {{ category.points_per_unit.base if category.points_per_unit is mapping else category.points_per_unit }}</div>
+              </div>
+              <div class="card-footer bg-transparent">
+                <div class="action-buttons">
+                  <button onclick='viewCategory({{ category|tojson }})' class="btn btn-sm btn-outline-info flex-fill">
+                    <i class="fas fa-eye"></i> View
+                  </button>
+                  <button onclick='editCategory({{ category|tojson }})' class="btn btn-sm btn-outline-primary flex-fill">
+                    <i class="fas fa-edit"></i> Edit
+                  </button>
+                  <button onclick="toggleStatus('{{ category._id }}', '{{ category.category_status }}')" class="btn btn-sm btn-outline-warning flex-fill">
+                    <i class="fas fa-toggle-on"></i>
+                  </button>
+                  <button onclick="deleteCategory('{{ category._id }}', '{{ category.name }}')" class="btn btn-sm btn-outline-danger flex-fill">
+                    <i class="fas fa-trash"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="alert alert-info text-center">
+        <i class="fas fa-info-circle fa-3x mb-3"></i>
+        <h5>No Categories Found</h5>
+        <p class="mb-3">No categories match your current filters.</p>
+        <button onclick="showCreateForm()" class="btn btn-primary">
+          <i class="fas fa-plus me-2"></i>Create Your First Category
+        </button>
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- CREATE VIEW -->
+  <div class="view-section" id="createView">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h2 class="mb-1">Create New Category</h2>
+        <p class="text-muted mb-0">Configure a new award category</p>
+      </div>
+      <button onclick="showListView()" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-left me-2"></i>Back to Categories
+      </button>
+    </div>
+
+    <div class="info-badge">
+      <i class="fas fa-info-circle me-2"></i>
+      Fields marked with <span class="text-danger">*</span> are required.
+    </div>
+
+    <form method="POST" action="{{ url_for('hr_categories.create_category') }}">
+      <div class="card mb-4">
+        <div class="section-header"><i class="fas fa-info-circle me-2"></i>Basic Information</div>
+        <div class="card-body">
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label class="form-label required-field">Category Name</label>
+              <input type="text" name="name" class="form-control" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label required-field">Category Status</label>
+              <select name="category_status" class="form-select" required>
+                <option value="active" selected>Active</option>
+                <option value="inactive">Inactive</option>
+              </select>
+            </div>
+          </div>
+          <div class="row mb-3">
+            <div class="col-md-12">
+              <label class="form-label required-field">Description</label>
+              <textarea name="description" class="form-control" rows="3" required></textarea>
+            </div>
+          </div>
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label class="form-label required-field">Category Department</label>
+              <select name="category_department" class="form-select" required>
+                <option value="">-- Select Department --</option>
+                {% for dept in departments %}
+                  <option value="{{ dept }}">{{ dept|replace('_', ' ')|title }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label required-field">Category Type</label>
+              <select name="category_type" class="form-select" required>
+                <option value="">-- Select Type --</option>
+                <option value="Employee raised">Employee Raised</option>
+                <option value="Direct award">Direct Award</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card mb-4">
+        <div class="section-header"><i class="fas fa-cog me-2"></i>Configuration</div>
+        <div class="card-body">
+          <div class="row mb-3">
+            <div class="col-md-12">
+              <label class="form-label required-field">Frequency</label>
+              <select name="frequency" class="form-select" required>
+                <option value="">-- Select Frequency --</option>
+                <option value="Daily">Daily</option>
+                <option value="Weekly">Weekly</option>
+                <option value="Monthly">Monthly</option>
+                <option value="Quarterly">Quarterly</option>
+                <option value="Quarterly">Half-yearly</option>
+                <option value="Yearly">Yearly</option>
+                <option value="One-time">One-time</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card mb-4">
+        <div class="section-header"><i class="fas fa-star me-2"></i>Points Per Unit</div>
+        <div class="card-body">
+          <div class="mb-3">
+            <label class="form-label">Base Points Per Unit</label>
+            <input type="number" name="base_points_per_unit" class="form-control" min="0" value="0">
+            <small class="text-muted">Default points if no grade-specific value is set</small>
+          </div>
+          <h6 class="mb-3">Grade-Specific Points Per Unit</h6>
+          <div class="points-grid">
+            {% for grade in grades %}
+              <div class="grade-input-group">
+                <label>{{ grade }}</label>
+                <input type="number" name="points_per_unit_{{ grade }}" class="form-control form-control-sm" min="0" value="0">
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+
+      <div class="card mb-4">
+        <div class="section-header"><i class="fas fa-chart-line me-2"></i>Min Points Per Frequency (Grade-wise)</div>
+        <div class="card-body">
+          <p class="text-muted mb-3">Set minimum points required per frequency for each grade</p>
+          <div class="points-grid">
+            {% for grade in grades %}
+              <div class="grade-input-group">
+                <label>{{ grade }}</label>
+                <input type="number" name="min_points_{{ grade }}" class="form-control form-control-sm" min="0" value="0">
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-body">
+          <div class="d-flex justify-content-between">
+            <button type="button" onclick="showListView()" class="btn btn-outline-secondary">
+              <i class="fas fa-times me-2"></i>Cancel
+            </button>
+            <div>
+              <button type="reset" class="btn btn-outline-warning me-2">
+                <i class="fas fa-redo me-2"></i>Reset
+              </button>
+              <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save me-2"></i>Create Category
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <!-- EDIT VIEW -->
+  <div class="view-section" id="editView">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h2 class="mb-1">Edit Category</h2>
+        <p class="text-muted mb-0">Modify category configuration</p>
+      </div>
+      <button onclick="showListView()" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-left me-2"></i>Back to Categories
+      </button>
+    </div>
+
+    <form method="POST" id="editForm">
+      <div class="card mb-4">
+        <div class="section-header"><i class="fas fa-info-circle me-2"></i>Basic Information</div>
+        <div class="card-body">
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label class="form-label required-field">Category Name</label>
+              <input type="text" name="name" id="edit_name" class="form-control" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label required-field">Category Status</label>
+              <select name="category_status" id="edit_category_status" class="form-select" required>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+              </select>
+            </div>
+          </div>
+          <div class="row mb-3">
+            <div class="col-md-12">
+              <label class="form-label required-field">Description</label>
+              <textarea name="description" id="edit_description" class="form-control" rows="3" required></textarea>
+            </div>
+          </div>
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label class="form-label required-field">Category Department</label>
+              <select name="category_department" id="edit_category_department" class="form-select" required>
+                <option value="">-- Select Department --</option>
+                {% for dept in departments %}
+                  <option value="{{ dept }}">{{ dept|replace('_', ' ')|title }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label required-field">Category Type</label>
+              <select name="category_type" id="edit_category_type" class="form-select" required>
+                <option value="Employee raised">Employee Raised</option>
+                <option value="Direct award">Direct Award</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card mb-4">
+        <div class="section-header"><i class="fas fa-cog me-2"></i>Configuration</div>
+        <div class="card-body">
+          <div class="row mb-3">
+            <div class="col-md-12">
+              <label class="form-label required-field">Frequency</label>
+              <select name="frequency" id="edit_frequency" class="form-select" required>
+                <option value="Daily">Daily</option>
+                <option value="Weekly">Weekly</option>
+                <option value="Monthly">Monthly</option>
+                <option value="Half-yearly">Half-yearly</option>
+                <option value="Quarterly">Quarterly</option>
+                <option value="Yearly">Yearly</option>
+                <option value="One-time">One-time</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card mb-4">
+        <div class="section-header"><i class="fas fa-star me-2"></i>Points Per Unit</div>
+        <div class="card-body">
+          <div class="mb-3">
+            <label class="form-label">Base Points Per Unit</label>
+            <input type="number" name="base_points_per_unit" id="edit_base_points_per_unit" class="form-control" min="0">
+            <small class="text-muted">Default points if no grade-specific value is set</small>
+          </div>
+          <h6 class="mb-3">Grade-Specific Points Per Unit</h6>
+          <div class="points-grid" id="edit_points_per_unit_grid">
+            {% for grade in grades %}
+              <div class="grade-input-group">
+                <label>{{ grade }}</label>
+                <input type="number" id="edit_points_per_unit_{{ grade }}" name="points_per_unit_{{ grade }}" class="form-control form-control-sm" min="0" value="0">
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+
+      <div class="card mb-4">
+        <div class="section-header"><i class="fas fa-chart-line me-2"></i>Min Points Per Frequency (Grade-wise)</div>
+        <div class="card-body">
+          <p class="text-muted mb-3">Set minimum points required per frequency for each grade</p>
+          <div class="points-grid" id="edit_min_points_grid">
+            {% for grade in grades %}
+              <div class="grade-input-group">
+                <label>{{ grade }}</label>
+                <input type="number" id="edit_min_points_{{ grade }}" name="min_points_{{ grade }}" class="form-control form-control-sm" min="0" value="0">
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-body">
+          <div class="d-flex justify-content-between">
+            <button type="button" onclick="showListView()" class="btn btn-outline-secondary">
+              <i class="fas fa-times me-2"></i>Cancel
+            </button>
+            <button type="submit" class="btn btn-primary">
+              <i class="fas fa-save me-2"></i>Update Category
+            </button>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <!-- DETAIL VIEW -->
+  <div class="view-section" id="detailView">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h2 class="mb-1" id="view_name"></h2>
+        <p class="text-muted mb-0">Category Details</p>
+      </div>
+      <span class="status-indicator" id="view_status_indicator"></span>
+    </div>
+
+    <div class="mb-4">
+      <button onclick="showListView()" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-left me-2"></i>Back to Categories
+      </button>
+      <button onclick="editFromView()" class="btn btn-primary">
+        <i class="fas fa-edit me-2"></i>Edit Category
+      </button>
+    </div>
+
+    <div class="row">
+      <div class="col-lg-8">
+        <div class="card mb-4">
+          <div class="section-header"><i class="fas fa-info-circle me-2"></i>Basic Information</div>
+          <div class="card-body p-0" id="view_basic_info"></div>
+        </div>
+        <div class="card mb-4">
+          <div class="section-header"><i class="fas fa-cog me-2"></i>Configuration</div>
+          <div class="card-body p-0" id="view_config"></div>
+        </div>
+        <div class="card mb-4">
+          <div class="section-header"><i class="fas fa-star me-2"></i>Points Allocation</div>
+          <div class="card-body" id="view_points"></div>
+        </div>
+      </div>
+      <div class="col-lg-4">
+        <div class="card">
+          <div class="card-header bg-warning text-dark">
+            <strong><i class="fas fa-tools me-2"></i>Actions</strong>
+          </div>
+          <div class="card-body" id="view_actions"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title">Confirm Deletion</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p>Are you sure you want to delete <strong id="deleteCategoryName"></strong>?</p>
+        <p class="text-danger mb-0"><i class="fas fa-exclamation-triangle me-2"></i>This action cannot be undone.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <form id="deleteForm" method="POST" style="display: inline;">
+          <button type="submit" class="btn btn-danger">Delete Category</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+<script>
+let currentCategory = null;
+const grades = {{ grades|tojson }};
+
+// Define updater and standalone validator departments
+const updaterDepartments = ['hr_up', 'pmo_up', 'ta_up', 'ld_up'];
+const standaloneValidatorDepartments = ['hr_va', 'pmo_va', 'ta_va', 'ld_va'];
+const allDepartments = {{ departments|tojson }};
+
+console.log('All departments from backend:', allDepartments);
+
+// Function to filter departments based on category type
+function filterDepartmentsByType(categoryType, selectElement) {
+  const currentValue = selectElement.value;
+  
+  // Clear existing options except the first one (placeholder)
+  selectElement.innerHTML = '<option value="">-- Select Department --</option>';
+  
+  let departmentsToShow = [];
+  
+  if (categoryType === 'Employee raised') {
+    // Employee Raised: Show validator departments (hr_va, pmo_va, ta_va, ld_va) + other departments
+    // Exclude: hr_up, pmo_up, ta_up, ld_up (updater departments - they use Direct Award)
+    departmentsToShow = allDepartments.filter(dept => {
+      const deptLower = dept.toLowerCase();
+      return !updaterDepartments.includes(deptLower);
+    });
+  } else if (categoryType === 'Direct award') {
+    // Direct Award: Show updater departments + other departments
+    // Exclude: hr_va, pmo_va, ta_va, ld_va (standalone validators - they use Employee Raised)
+    departmentsToShow = allDepartments.filter(dept => {
+      const deptLower = dept.toLowerCase();
+      return !standaloneValidatorDepartments.includes(deptLower);
+    });
+  } else {
+    // No category type selected: show all departments
+    departmentsToShow = allDepartments;
+  }
+  
+  console.log('Category type:', categoryType);
+  console.log('Filtered departments:', departmentsToShow);
+  
+  // Add filtered departments to dropdown
+  departmentsToShow.forEach(dept => {
+    const option = document.createElement('option');
+    option.value = dept;
+    option.textContent = dept.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+    if (dept === currentValue) {
+      option.selected = true;
+    }
+    selectElement.appendChild(option);
+  });
+}
+
+// Add event listeners for category type changes in CREATE form
+document.addEventListener('DOMContentLoaded', function() {
+  const createCategoryType = document.querySelector('#createView select[name="category_type"]');
+  const createDepartment = document.querySelector('#createView select[name="category_department"]');
+  
+  if (createCategoryType && createDepartment) {
+    createCategoryType.addEventListener('change', function() {
+      filterDepartmentsByType(this.value, createDepartment);
+    });
+  }
+  
+  // Add event listener for EDIT form
+  const editCategoryType = document.getElementById('edit_category_type');
+  const editDepartment = document.getElementById('edit_category_department');
+  
+  if (editCategoryType && editDepartment) {
+    editCategoryType.addEventListener('change', function() {
+      filterDepartmentsByType(this.value, editDepartment);
+    });
+  }
+});
+
+function showListView() {
+  hideAllViews();
+  document.getElementById('listView').classList.add('active');
+}
+
+function showCreateForm() {
+  hideAllViews();
+  document.getElementById('createView').classList.add('active');
+  
+  // Initialize department dropdown with all departments
+  const createDepartment = document.querySelector('#createView select[name="category_department"]');
+  const createCategoryType = document.querySelector('#createView select[name="category_type"]');
+  if (createDepartment && createCategoryType) {
+    // Trigger filter based on current category type value
+    filterDepartmentsByType(createCategoryType.value, createDepartment);
+  }
+}
+
+function showEditView() {
+  hideAllViews();
+  document.getElementById('editView').classList.add('active');
+}
+
+function showDetailView() {
+  hideAllViews();
+  document.getElementById('detailView').classList.add('active');
+}
+
+function hideAllViews() {
+  document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active'));
+}
+
+function editCategory(category) {
+  currentCategory = category;
+  document.getElementById('editForm').action = `/hr/categories/edit/${category._id}`;
+  document.getElementById('edit_name').value = category.name;
+  document.getElementById('edit_description').value = category.description;
+  document.getElementById('edit_category_status').value = category.category_status;
+  document.getElementById('edit_category_type').value = category.category_type;
+  document.getElementById('edit_frequency').value = category.frequency;
+  
+  // Filter departments based on category type before setting value
+  const editDepartment = document.getElementById('edit_category_department');
+  filterDepartmentsByType(category.category_type, editDepartment);
+  editDepartment.value = category.category_department;
+  
+  // Populate points_per_unit
+  if (typeof category.points_per_unit === 'object') {
+    document.getElementById('edit_base_points_per_unit').value = category.points_per_unit.base || 0;
+    grades.forEach(grade => {
+      const input = document.getElementById(`edit_points_per_unit_${grade}`);
+      if (input) input.value = category.points_per_unit[grade] || 0;
+    });
+  } else {
+    document.getElementById('edit_base_points_per_unit').value = category.points_per_unit || 0;
+  }
+  
+  // Populate min_points_per_frequency
+  if (typeof category.min_points_per_frequency === 'object') {
+    grades.forEach(grade => {
+      const input = document.getElementById(`edit_min_points_${grade}`);
+      if (input) input.value = category.min_points_per_frequency[grade] || 0;
+    });
+  }
+  
+  showEditView();
+}
+
+function viewCategory(category) {
+  currentCategory = category;
+  document.getElementById('view_name').textContent = category.name;
+  const statusIndicator = document.getElementById('view_status_indicator');
+  statusIndicator.textContent = category.category_status.toUpperCase();
+  statusIndicator.className = `status-indicator ${category.category_status}`;
+  
+  document.getElementById('view_basic_info').innerHTML = `
+    <div class="detail-row"><div class="detail-label">Category Name</div><div class="detail-value">${category.name}</div></div>
+    <div class="detail-row"><div class="detail-label">Description</div><div class="detail-value">${category.description}</div></div>
+    <div class="detail-row"><div class="detail-label">Department</div><div class="detail-value"><span class="badge bg-primary">${category.category_department.replace(/_/g, ' ')}</span></div></div>
+    <div class="detail-row"><div class="detail-label">Type</div><div class="detail-value"><span class="badge ${category.category_type === 'Employee raised' ? 'bg-info' : 'bg-warning'}">${category.category_type}</span></div></div>
+  `;
+  
+  document.getElementById('view_config').innerHTML = `
+    <div class="detail-row"><div class="detail-label">Frequency</div><div class="detail-value">${category.frequency}</div></div>
+  `;
+  
+  // Display Points Per Unit
+  let pointsHtml = '<h6 class="mb-3">Points Per Unit</h6>';
+  if (typeof category.points_per_unit === 'object') {
+    pointsHtml += `<div class="mb-3"><strong>Base:</strong> <span class="badge bg-primary">${category.points_per_unit.base || 0}</span> points</div>`;
+    pointsHtml += '<div class="points-grid">';
+    grades.forEach(grade => {
+      const points = category.points_per_unit[grade] || 0;
+      pointsHtml += `<div class="grade-badge"><div class="grade-name">${grade}</div><div class="grade-points">${points}</div><small class="text-muted">points</small></div>`;
+    });
+    pointsHtml += '</div>';
+  } else {
+    pointsHtml += `<div class="alert alert-info">${category.points_per_unit || 0} points</div>`;
+  }
+  
+  // Display Min Points Per Frequency
+  pointsHtml += '<h6 class="mb-3 mt-4">Min Points Per Frequency (Grade-wise)</h6>';
+  if (typeof category.min_points_per_frequency === 'object') {
+    pointsHtml += '<div class="points-grid">';
+    grades.forEach(grade => {
+      const minPoints = category.min_points_per_frequency[grade] || 0;
+      pointsHtml += `<div class="grade-badge"><div class="grade-name">${grade}</div><div class="grade-points">${minPoints}</div><small class="text-muted">min points</small></div>`;
+    });
+    pointsHtml += '</div>';
+  }
+  
+  document.getElementById('view_points').innerHTML = pointsHtml;
+  
+  document.getElementById('view_actions').innerHTML = `
+    <button onclick="editFromView()" class="btn btn-primary w-100 mb-2"><i class="fas fa-edit me-2"></i>Edit</button>
+    <button onclick="toggleStatus('${category._id}', '${category.category_status}')" class="btn btn-warning w-100 mb-2"><i class="fas fa-toggle-on me-2"></i>${category.category_status === 'active' ? 'Deactivate' : 'Activate'}</button>
+    <button onclick="deleteCategory('${category._id}', '${category.name}')" class="btn btn-danger w-100"><i class="fas fa-trash me-2"></i>Delete</button>
+  `;
+  showDetailView();
+}
+
+function editFromView() {
+  if (currentCategory) editCategory(currentCategory);
+}
+
+function deleteCategory(categoryId, categoryName) {
+  document.getElementById('deleteCategoryName').textContent = categoryName;
+  document.getElementById('deleteForm').action = `/hr/categories/delete/${categoryId}`;
+  new bootstrap.Modal(document.getElementById('deleteModal')).show();
+}
+
+function toggleStatus(categoryId, currentStatus) {
+  if (!confirm(`Are you sure you want to ${currentStatus === 'active' ? 'deactivate' : 'activate'} this category?`)) return;
+  fetch(`/hr/categories/toggle-status/${categoryId}`, {method: 'POST'})
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) location.reload();
+      else alert('Error: ' + data.message);
+    })
+    .catch(error => alert('An error occurred'));
+}
+</script>
+{% endblock %}

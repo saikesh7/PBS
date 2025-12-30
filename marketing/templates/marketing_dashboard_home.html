@@ -1,0 +1,317 @@
+{% extends "marketing_base.html" %}
+
+{% block title %}Dashboard - Marketing{% endblock %}
+{% block topbar_title %}Marketing Dashboard{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Card styling */
+    .card {
+        border: none;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        margin-bottom: 0;
+    }
+    
+    .card-header {
+        background: rgb(0, 32, 96);
+        color: white;
+        padding: 15px 20px;
+        border-radius: 8px 8px 0 0 !important;
+        border: none;
+        font-size: 16px;
+        font-weight: 600;
+    }
+    
+    /* Table styling */
+    .table {
+        margin-bottom: 0;
+    }
+    
+    .table thead th {
+        background-color: #f8f9fc;
+        color: #5a5c69;
+        font-weight: 600;
+        font-size: 13px;
+        padding: 12px 15px;
+        border-bottom: 1px solid #e3e6f0;
+        text-align: center !important;
+        vertical-align: middle;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+    
+    .table tbody td {
+        padding: 12px 15px;
+        vertical-align: middle;
+        font-size: 14px;
+        border-bottom: 1px solid #e3e6f0;
+        text-align: center !important;
+    }
+    
+    /* Ensure all table cells are centered */
+    .table th,
+    .table td {
+        text-align: center !important;
+    }
+    
+    .table tbody tr:hover {
+        background-color: #f8f9fc;
+    }
+    
+    .badge {
+        padding: 6px 12px;
+        font-size: 13px;
+        font-weight: 500;
+        border-radius: 4px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-3">
+    <!-- Stats Cards - Row 1 -->
+    <div class="row mb-3">
+        <div class="col-md-3 mb-3">
+            <div class="card text-white bg-primary h-100">
+                <div class="card-body d-flex flex-column justify-content-center">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title mb-2">Pending Requests</h6>
+                            <h2 class="mb-0 fw-bold">{{ pending_count }}</h2>
+                        </div>
+                        <i class="fas fa-clock fa-2x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3 mb-3">
+            <div class="card text-white bg-success h-100">
+                <div class="card-body d-flex flex-column justify-content-center">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title mb-2">Processed History</h6>
+                            <h2 class="mb-0 fw-bold">{{ processed_this_quarter }}</h2>
+                        </div>
+                        <i class="fas fa-check-circle fa-2x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3 mb-3">
+            <div class="card text-white bg-warning h-100">
+                <div class="card-body d-flex flex-column justify-content-center">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title mb-2">Approved Requests</h6>
+                            <h2 class="mb-0 fw-bold">{{ approved_this_quarter }}</h2>
+                        </div>
+                        <i class="fas fa-trophy fa-2x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3 mb-3">
+            <div class="card text-white bg-danger h-100">
+                <div class="card-body d-flex flex-column justify-content-center">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title mb-2">Rejected Requests</h6>
+                            <h2 class="mb-0 fw-bold">{{ processed_this_quarter - approved_this_quarter }}</h2>
+                        </div>
+                        <i class="fas fa-times-circle fa-2x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Stats Cards - Row 2 -->
+    <div class="row mb-3">
+        <div class="col-md-3 mb-3">
+            <div class="card text-white bg-info h-100">
+                <div class="card-body d-flex flex-column justify-content-center">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title mb-2">Total Points Awarded</h6>
+                            <h2 class="mb-0 fw-bold">{{ total_points_awarded }}</h2>
+                        </div>
+                        <i class="fas fa-star fa-2x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Quick Actions -->
+    <div class="card mb-3">
+        <div class="card-header">
+            <i class="fas fa-rocket me-2"></i>Quick Actions
+        </div>
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-4 col-sm-6">
+                    <a href="{{ url_for('marketing_dashboard.pending_requests') }}" class="btn btn-primary w-100 d-flex flex-column align-items-center justify-content-center text-white" style="height: 100px; border-radius: 10px; text-decoration: none;">
+                        <i class="fas fa-clock fa-2x mb-2"></i>
+                        <span class="fw-semibold">View Pending Requests</span>
+                    </a>
+                </div>
+                <div class="col-md-4 col-sm-6">
+                    <a href="{{ url_for('marketing_dashboard.processed_requests') }}" class="btn btn-success w-100 d-flex flex-column align-items-center justify-content-center text-white" style="height: 100px; border-radius: 10px; text-decoration: none;">
+                        <i class="fas fa-check-circle fa-2x mb-2"></i>
+                        <span class="fw-semibold">View Processed History</span>
+                    </a>
+                </div>
+                <div class="col-md-4 col-sm-6">
+                    <a href="{{ url_for('marketing_dashboard.switch_to_employee_view') }}" class="btn btn-warning w-100 d-flex flex-column align-items-center justify-content-center text-dark" style="height: 100px; border-radius: 10px; text-decoration: none;">
+                        <i class="fas fa-user fa-2x mb-2"></i>
+                        <span class="fw-semibold">Switch to Employee View</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Pending Requests on Dashboard -->
+    <div class="card mb-3">
+        <div class="card-header d-flex align-items-center justify-content-between">
+            <div>
+                <i class="fas fa-clock me-2"></i>
+                <span>Pending Requests</span>
+            </div>
+            <span class="badge bg-warning text-dark" style="font-size: 14px; padding: 8px 15px;">{{ pending_count }}</span>
+        </div>
+        <div class="card-body">
+            {% if pending_requests and pending_requests|length > 0 %}
+            <div class="table-responsive">
+                <table class="table table-hover" id="dashboardPendingTable">
+                    <thead>
+                        <tr>
+                            <th>Employee</th>
+                            <th>Grade</th>
+                            <th>Category</th>
+                            <th>Points</th>
+                            <th>Requested On</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for req in pending_requests %}
+                        <tr>
+                            <td><strong>{{ req.employee_name }}</strong></td>
+                            <td>{{ req.employee_grade }}</td>
+                            <td>{{ req.category_name }}</td>
+                            <td><strong>{{ req.points }}</strong></td>
+                            <td>{{ req.request_date.strftime('%d-%m-%Y') if req.request_date else 'N/A' }}</td>
+                            <td>
+                                <a href="{{ url_for('marketing_dashboard.pending_requests') }}" class="btn btn-sm btn-primary">
+                                    <i class="fas fa-eye"></i> View
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <div class="text-center mt-3">
+                <a href="{{ url_for('marketing_dashboard.pending_requests') }}" class="btn btn-primary">
+                    <i class="fas fa-list me-1"></i>View All Pending Requests
+                </a>
+            </div>
+            {% else %}
+            <div class="alert alert-info mb-0 text-center">
+                <i class="fas fa-info-circle me-2"></i>No pending requests at this time.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Recent Activity -->
+    <div class="card">
+        <div class="card-header">
+            <i class="fas fa-history me-2"></i>Recent Activity
+        </div>
+                <div class="card-body">
+                    {% if all_records %}
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="recentActivityTable">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Employee</th>
+                                    <th>Category</th>
+                                    <th>Points</th>
+                                    <th>Status</th>
+                                    <th>Type</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for record in all_records[:5] %}
+                                <tr>
+                                    <td style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                        {{ record.processed_date.strftime('%d-%m-%Y') if record.processed_date else 'N/A' }}
+                                    </td>
+                                    <td style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                        {{ record.employee_name }}
+                                    </td>
+
+                                    <td style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ record.category_name }}</td>
+                                    <td><strong>{{ record.points }}</strong></td>
+                                    <td>
+                                        {% if record.status == 'Approved' %}
+                                            <span class="badge bg-success">Approved</span>
+                                        {% else %}
+                                            <span class="badge bg-danger">Rejected</span>
+                                        {% endif %}
+                                    </td>
+                                    <td><span class="badge bg-info">{{ record.type }}</span></td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info mb-0 text-center">
+                        <i class="fas fa-info-circle me-2"></i>No recent activity to display.
+                    </div>
+                    {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Initialize pending requests table on dashboard (no pagination, no filters)
+    {% if pending_requests and pending_requests|length > 0 %}
+    $('#dashboardPendingTable').DataTable({
+        order: [[4, 'desc']],
+        paging: false,
+        searching: false,
+        info: false,
+        lengthChange: false
+    });
+    {% endif %}
+    
+    // Initialize recent activity table (no pagination, keep search only)
+    {% if all_records %}
+    $('#recentActivityTable').DataTable({
+        order: [[0, 'desc']],
+        paging: false,
+        info: false,
+        lengthChange: false,
+        language: {
+            search: "Search:",
+            searchPlaceholder: "Search activity..."
+        }
+    });
+    {% endif %}
+});
+</script>
+{% endblock %}

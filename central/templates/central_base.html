@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Central Dashboard{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('central.static', filename='central.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <img src="https://www.prowesssoft.com/wp-content/uploads/2023/06/Prowess_soft_logo1.png" alt="Prowess Soft Logo" class="sidebar-logo">
+        </div>
+        <div class="pt-2 pb-2 ps-3 pe-3 text-white">
+            <div>Dashboard</div>
+        </div>
+        <div class="sidebar-nav">
+            <a href="{{ url_for('central.dashboard') }}" class="sidebar-nav-item {% if request.endpoint == 'central.dashboard' %}active{% endif %}">
+                <div><i class="fas fa-users"></i><span>All Employees</span></div>
+            </a>
+            {% if user and user.dashboard_access %}
+                {% set dashboard_list = user.dashboard_access if user.dashboard_access is iterable and user.dashboard_access is not string else [user.dashboard_access] %}
+                {% if 'central' in dashboard_list %}
+            <a href="{{ url_for('central.export_data') }}" class="sidebar-nav-item {% if request.endpoint == 'central.export_data' %}active{% endif %}">
+                <div><i class="fas fa-file-export"></i><span>Export Data</span></div>
+            </a>
+                {% endif %}
+            {% endif %}
+            <div class="sidebar-divider"></div>
+            <a href="{{ url_for('central.reward_config') }}" class="sidebar-nav-item">
+                <div><i class="fas fa-cog"></i><span>Configure Rewards</span></div>
+            </a>
+            <a href="{{ url_for('central.leaderboard') }}" class="sidebar-nav-item">
+                <div><i class="fas fa-trophy"></i><span>Leaderboard</span></div>
+            </a>
+            <a href="#" class="sidebar-nav-item" data-bs-toggle="modal" data-bs-target="#helpModal">
+                <div><i class="fas fa-question-circle"></i><span>Help</span></div>
+            </a>
+            <div class="sidebar-divider"></div>
+            <div class="pt-2 pb-2 ps-3 pe-3 text-white-50 small">
+                <div><i class="fas fa-exchange-alt me-2"></i>SWITCH DASHBOARD</div>
+            </div>
+            
+            <!-- ALWAYS show Employee View as first option -->
+            <a href="{{ url_for('employee_dashboard.dashboard') }}" class="sidebar-nav-item">
+                <div><i class="fas fa-user"></i><span>Employee View</span></div>
+            </a>
+            
+            <!-- Show other dashboards if user has access -->
+            {% if user and user.dashboard_access %}
+                {% set dashboard_list = user.dashboard_access if user.dashboard_access is iterable and user.dashboard_access is not string else [user.dashboard_access] %}
+                
+                {% for dashboard in dashboard_list %}
+                    {# Don't show current dashboard (central) in switcher #}
+                    {% if dashboard == 'hr_up' %}
+                    <a href="{{ url_for('hr_roles.updater_dashboard') }}" class="sidebar-nav-item">
+                        <div><i class="fas fa-user-edit"></i><span>HR Updater</span></div>
+                    </a>
+                    {% elif dashboard == 'hr_va' %}
+                    <a href="{{ url_for('hr_roles.validator_dashboard') }}" class="sidebar-nav-item">
+                        <div><i class="fas fa-user-check"></i><span>HR Validator</span></div>
+                    </a>
+                    {% elif dashboard == 'hr' %}
+                    <a href="{{ url_for('hr_analytics.pbs_analytics') }}" class="sidebar-nav-item">
+                        <div><i class="fas fa-chart-line"></i><span>HR Analytics</span></div>
+                    </a>
+                    {% elif dashboard == 'pm_arch' or dashboard == 'pmarch' %}
+                    <a href="{{ url_for('pm_arch.dashboard') }}" class="sidebar-nav-item">
+                        <div><i class="fas fa-drafting-compass"></i><span>PM/Arch Dashboard</span></div>
+                    </a>
+                    {% elif dashboard == 'pmo_up' %}
+                    <a href="{{ url_for('pmo.updater_dashboard') }}" class="sidebar-nav-item">
+                        <div><i class="fas fa-tasks"></i><span>PMO Updater</span></div>
+                    </a>
+                    {% elif dashboard == 'pmo_va' %}
+                    <a href="{{ url_for('pmo.validator_dashboard') }}" class="sidebar-nav-item">
+                        <div><i class="fas fa-clipboard-check"></i><span>PMO Validator</span></div>
+                    </a>
+                    {% elif dashboard == 'pm' %}
+                    <a href="{{ url_for('pm.dashboard') }}" class="sidebar-nav-item">
+                        <div><i class="fas fa-project-diagram"></i><span>PM Dashboard</span></div>
+                    </a>
+                    {% elif dashboard == 'ta_up' %}
+                    <a href="{{ url_for('ta.updater_dashboard') }}" class="sidebar-nav-item">
+                        <div><i class="fas fa-user-plus"></i><span>TA Updater</span></div>
+                    </a>
+                    {% elif dashboard == 'ta_va' %}
+                    <a href="{{ url_for('ta.validator_dashboard') }}" class="sidebar-nav-item">
+                        <div><i class="fas fa-user-check"></i><span>TA Validator</span></div>
+                    </a>
+                    {% elif dashboard == 'ld' %}
+                    <a href="{{ url_for('ld.dashboard') }}" class="sidebar-nav-item">
+                        <div><i class="fas fa-graduation-cap"></i><span>L&D Dashboard</span></div>
+                    </a>
+                    {% elif dashboard == 'ld_up' %}
+                    <a href="{{ url_for('ld.updater_dashboard') }}" class="sidebar-nav-item">
+                        <div><i class="fas fa-user-edit"></i><span>L&D Updater</span></div>
+                    </a>
+                    {% elif dashboard == 'ld_va' %}
+                    <a href="{{ url_for('ld.validator_dashboard') }}" class="sidebar-nav-item">
+                        <div><i class="fas fa-book-reader"></i><span>L&D Validator</span></div>
+                    </a>
+                    {% elif dashboard == 'marketing' %}
+                    <a href="{{ url_for('marketing_dashboard.dashboard') }}" class="sidebar-nav-item">
+                        <div><i class="fas fa-bullhorn"></i><span>Marketing Dashboard</span></div>
+                    </a>
+                    {% elif dashboard == 'presales' %}
+                    <a href="{{ url_for('presales.dashboard') }}" class="sidebar-nav-item">
+                        <div><i class="fas fa-handshake"></i><span>Presales Dashboard</span></div>
+                    </a>
+                    {% elif dashboard == 'dp' %}
+                    <a href="{{ url_for('dp.dashboard') }}" class="sidebar-nav-item">
+                        <div><i class="fas fa-hands-helping"></i><span>DP Dashboard</span></div>
+                    </a>
+                    {% endif %}
+                {% endfor %}
+            {% endif %}
+            
+            <div class="sidebar-divider"></div>
+            <a href="{{ url_for('auth.logout') }}" class="sidebar-nav-item">
+                <div><i class="fas fa-sign-out-alt"></i><span>Logout</span></div>
+            </a>
+        </div>
+    </div>
+
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- Topbar -->
+    <div class="topbar">
+        <div class="topbar-left">
+            <button class="sidebar-toggle d-lg-none" id="sidebarToggle">
+                <i class="fas fa-bars"></i>
+            </button>
+            <div class="topbar-icon"><i class="fas fa-tachometer-alt"></i></div>
+            <div class="topbar-info">
+                <div class="topbar-title">Central Dashboard</div>
+                <div class="topbar-subtitle">
+                    <span class="topbar-badge bg-primary">Admin View</span>
+                </div>
+            </div>
+        </div>
+        <div class="topbar-center">
+            <h6 class="topbar-heading">
+                <i class="fas fa-award me-2" style="color: gold;"></i>
+                <span>POINTS BASED SYSTEM</span>
+            </h6>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    {% block content %}{% endblock %}
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Sidebar toggle functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const sidebar = document.getElementById('sidebar');
+            const sidebarToggle = document.getElementById('sidebarToggle');
+            const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+            if (sidebarToggle) {
+                sidebarToggle.addEventListener('click', function() {
+                    sidebar.classList.toggle('show');
+                    sidebarOverlay.classList.toggle('show');
+                });
+            }
+
+            if (sidebarOverlay) {
+                sidebarOverlay.addEventListener('click', function() {
+                    sidebar.classList.remove('show');
+                    sidebarOverlay.classList.remove('show');
+                });
+            }
+        });
+    </script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,2729 @@
+{% extends "ld_base.html" %}
+
+{% block title %}L&D Updater Dashboard{% endblock %}
+{% block dashboard_title %}L&D Updater Dashboard{% endblock %}
+
+{% block sidebar_nav %}
+<!-- Cross-browser compatibility styles for all browsers and systems -->
+<style>
+    /* Cross-browser reset */
+    *, *::before, *::after {
+        -webkit-box-sizing: border-box;
+        -moz-box-sizing: border-box;
+        box-sizing: border-box;
+    }
+    
+    /* Cross-browser flexbox */
+    .d-flex {
+        display: -webkit-box !important;
+        display: -webkit-flex !important;
+        display: -moz-box !important;
+        display: -ms-flexbox !important;
+        display: flex !important;
+    }
+    
+    .justify-content-between {
+        -webkit-box-pack: justify !important;
+        -webkit-justify-content: space-between !important;
+        -ms-flex-pack: justify !important;
+        justify-content: space-between !important;
+    }
+    
+    .align-items-center {
+        -webkit-box-align: center !important;
+        -webkit-align-items: center !important;
+        -ms-flex-align: center !important;
+        align-items: center !important;
+    }
+    
+    .align-items-end {
+        -webkit-box-align: end !important;
+        -webkit-align-items: flex-end !important;
+        -ms-flex-align: end !important;
+        align-items: flex-end !important;
+    }
+    
+    /* Cross-browser form controls */
+    .form-control, .form-select {
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+        -webkit-border-radius: 0.25rem;
+        -moz-border-radius: 0.25rem;
+        border-radius: 0.25rem;
+        -webkit-transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        -moz-transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    }
+    
+    .form-select {
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");
+        background-repeat: no-repeat;
+        background-position: right 0.75rem center;
+        background-size: 16px 12px;
+        padding-right: 2.25rem;
+    }
+    
+    /* Cross-browser button */
+    .btn {
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+        -webkit-border-radius: 0.25rem;
+        -moz-border-radius: 0.25rem;
+        border-radius: 0.25rem;
+        -webkit-transition: all 0.15s ease-in-out;
+        -moz-transition: all 0.15s ease-in-out;
+        transition: all 0.15s ease-in-out;
+    }
+    
+    /* Cross-browser table */
+    .table-responsive {
+        display: block;
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    /* Cross-browser modal */
+    .modal-dialog-centered {
+        display: -webkit-box;
+        display: -webkit-flex;
+        display: -ms-flexbox;
+        display: flex;
+        -webkit-box-align: center;
+        -webkit-align-items: center;
+        -ms-flex-align: center;
+        align-items: center;
+    }
+    
+    /* Cross-browser card shadows */
+    .card {
+        -webkit-box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+        -moz-box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+        box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+    }
+    
+    .row {
+        display: -webkit-box;
+        display: -webkit-flex;
+        display: -ms-flexbox;
+        display: flex;
+        -webkit-flex-wrap: wrap;
+        -ms-flex-wrap: wrap;
+        flex-wrap: wrap;
+    }
+    
+    /* Firefox fixes */
+    @-moz-document url-prefix() {
+        .form-select { text-indent: 0.01px; }
+        .btn::-moz-focus-inner { border: 0; }
+    }
+</style>
+
+<!-- Updater Navigation Items -->
+<a href="javascript:void(0);" class="sidebar-nav-item tab-link active" data-tab="overview">
+    <div>
+        <i class="fas fa-tachometer-alt"></i>
+        <span>Dashboard</span>
+    </div>
+</a>
+
+<a href="javascript:void(0);" class="sidebar-nav-item tab-link" data-tab="single-request">
+    <div>
+        <i class="fas fa-plus-circle"></i>
+        <span>Single Request</span>
+    </div>
+</a>
+
+<a href="javascript:void(0);" class="sidebar-nav-item tab-link" data-tab="bulk-upload">
+    <div>
+        <i class="fas fa-upload"></i>
+        <span>Bulk Upload</span>
+    </div>
+</a>
+
+<a href="javascript:void(0);" class="sidebar-nav-item tab-link" data-tab="history">
+    <div>
+        <i class="fas fa-history"></i>
+        <span>History</span>
+    </div>
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Overview Tab (Dashboard Summary) -->
+    <div class="tab-content-section active" id="overview-tab">
+        <!-- Stats Cards Row -->
+        <div class="row mb-4">
+            <!-- Total Submitted -->
+            <div class="col-md-3 mb-3">
+                <div class="card shadow-sm border-0" style="border-left: 4px solid #6c757d !important;">
+                    <div class="card-body p-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="text-uppercase text-muted mb-1" style="font-size: 0.75rem; font-weight: 600;">Total Submitted</div>
+                                <div class="h3 mb-0 font-weight-bold">{{ history_data|length if history_data else 0 }}</div>
+                            </div>
+                            <div class="text-muted" style="opacity: 0.3;">
+                                <i class="fas fa-paper-plane fa-2x"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Approved -->
+            <div class="col-md-3 mb-3">
+                <div class="card shadow-sm border-0" style="border-left: 4px solid #28a745 !important;">
+                    <div class="card-body p-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="text-uppercase text-muted mb-1" style="font-size: 0.75rem; font-weight: 600;">Approved</div>
+                                <div class="h3 mb-0 font-weight-bold">{{ history_data|selectattr('status', 'equalto', 'Approved')|list|length if history_data else 0 }}</div>
+                            </div>
+                            <div class="text-success" style="opacity: 0.3;">
+                                <i class="fas fa-check-circle fa-2x"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Rejected -->
+            <div class="col-md-3 mb-3">
+                <div class="card shadow-sm border-0" style="border-left: 4px solid #dc3545 !important;">
+                    <div class="card-body p-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="text-uppercase text-muted mb-1" style="font-size: 0.75rem; font-weight: 600;">Rejected</div>
+                                <div class="h3 mb-0 font-weight-bold">{{ history_data|selectattr('status', 'equalto', 'Rejected')|list|length if history_data else 0 }}</div>
+                            </div>
+                            <div class="text-danger" style="opacity: 0.3;">
+                                <i class="fas fa-times-circle fa-2x"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Pending -->
+            <div class="col-md-3 mb-3">
+                <div class="card shadow-sm border-0" style="border-left: 4px solid #ffc107 !important;">
+                    <div class="card-body p-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="text-uppercase text-muted mb-1" style="font-size: 0.75rem; font-weight: 600;">Pending</div>
+                                <div class="h3 mb-0 font-weight-bold">{{ history_data|selectattr('status', 'equalto', 'Pending')|list|length if history_data else 0 }}</div>
+                            </div>
+                            <div class="text-warning" style="opacity: 0.3;">
+                                <i class="fas fa-clock fa-2x"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Activity and Categories Row -->
+        <div class="row">
+            <!-- Recent Activity Section - Shows ALL requests (Pending, Approved, Rejected) -->
+            <div class="col-lg-8 mb-4">
+                <div class="card shadow-sm border-0">
+                    <div class="card-header text-white" style="background: linear-gradient(135deg, #1e5ba8 0%, #2874d4 100%); border-radius: 8px 8px 0 0;">
+                        <h5 class="mb-0">
+                            <i class="fas fa-history me-2"></i> Recent Activity
+                        </h5>
+                    </div>
+                    <div class="card-body p-0" id="updater-recent-activity-container">
+                        {% if history_data %}
+                            <div class="list-group list-group-flush">
+                                {% for item in history_data[:5] %}
+                                <div class="list-group-item">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div class="flex-grow-1">
+                                            <div class="d-flex align-items-center mb-1">
+                                                {% if item.status == 'Approved' %}
+                                                <span class="badge bg-success me-2">Approved</span>
+                                                {% elif item.status == 'Rejected' %}
+                                                <span class="badge bg-danger me-2">Rejected</span>
+                                                {% else %}
+                                                <span class="badge bg-warning text-dark me-2">Pending</span>
+                                                {% endif %}
+                                                <strong>{{ item.employee_name }}</strong>
+                                            </div>
+                                            <div class="text-muted small">
+                                                <i class="fas fa-tag me-1"></i>{{ item.category_name }}
+                                                {% if item.quantity > 1 %}
+                                                <span class="mx-2">•</span>
+                                                <i class="fas fa-hashtag me-1"></i>{{ item.quantity }} units
+                                                {% endif %}
+                                                <span class="mx-2">•</span>
+                                                {{ item.points }} points
+                                            </div>
+                                        </div>
+                                        <div class="text-end text-muted small">
+                                            <i class="fas fa-calendar me-1"></i>{{ item.event_date }}
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <div class="p-4 text-center text-muted">
+                                <i class="fas fa-inbox fa-3x mb-3"></i>
+                                <p>No activities yet. Start submitting requests!</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Categories Section -->
+            <div class="col-lg-4 mb-4">
+                <div class="card shadow-sm border-0">
+                    <div class="card-header text-white" style="background: linear-gradient(135deg, #17a2b8 0%, #20c9e0 100%); border-radius: 8px 8px 0 0;">
+                        <h5 class="mb-0">
+                            <i class="fas fa-th-large me-2"></i> Categories
+                        </h5>
+                    </div>
+                    <div class="card-body p-0" id="categories-container">
+                        {% if ld_categories %}
+                            <div class="list-group list-group-flush">
+                                {% for category in ld_categories %}
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <i class="fas fa-tag text-primary me-2"></i>
+                                        <span>{{ category.name }}</span>
+                                    </div>
+                                    <span class="badge bg-primary rounded-pill">
+                                        {{ history_data|selectattr('category_name', 'equalto', category.name)|list|length if history_data else 0 }}
+                                    </span>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <div class="p-4 text-center text-muted">
+                                <i class="fas fa-folder-open fa-3x mb-3"></i>
+                                <p>No categories available</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Single Request Tab -->
+    <div class="tab-content-section" id="single-request-tab">
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card shadow-sm border-0">
+                    <!-- Blue Header with Icon -->
+                    <div class="card-header text-white" style="background: linear-gradient(135deg, #1e5ba8 0%, #2874d4 100%); border-radius: 8px 8px 0 0; padding: 20px;">
+                        <h5 class="mb-0 d-flex align-items-center">
+                            <i class="fas fa-award me-2" style="font-size: 1.3rem;"></i>
+                            <span style="font-weight: 600;">Assign New Learning Activity</span>
+                        </h5>
+                    </div>
+                    <div class="card-body" style="background-color: #f8f9fa; padding: 30px;">
+                        <form method="POST" action="{{ url_for('ld.updater_dashboard') }}" id="singleRequestForm">
+                            <input type="hidden" name="action_type" value="assign_points">
+                            
+                            <!-- Alert for ineligible category -->
+                            <div class="row g-3" id="category_eligibility_alert" style="display: none;">
+                                <div class="col-12">
+                                    <div class="alert alert-warning d-flex align-items-center" role="alert" style="border-left: 4px solid #ffc107; background-color: #fff3cd;">
+                                        <i class="fas fa-exclamation-triangle me-2" style="font-size: 1.2rem;"></i>
+                                        <div>
+                                            <strong>Category Not Eligible!</strong>
+                                            <span id="eligibility_message"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row g-3">
+                                <!-- Category Selection -->
+                                <div class="col-md-6">
+                                    <label for="category_id" class="form-label fw-semibold text-dark mb-2" style="font-size: 0.9rem;">
+                                        Category <span class="text-danger">*</span>
+                                    </label>
+                                    <select class="form-select" id="category_id" name="category_id" required 
+                                            style="border: 1px solid #ced4da; border-radius: 6px; padding: 8px 12px; font-size: 0.95rem;">
+                                        <option value="" disabled selected hidden>Select category</option>
+                                        {% for category in ld_categories %}
+                                        <option value="{{ category._id }}" 
+                                                data-points="{{ category.points_per_unit.base if category.points_per_unit is mapping else category.points_per_unit }}"
+                                                data-points-json='{{ category.points_per_unit | tojson }}'
+                                                data-name="{{ category.name }}">
+                                            {{ category.name }} ({{ category.points_per_unit.base if category.points_per_unit is mapping else category.points_per_unit }} pts/unit)
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                
+                                <!-- Department Filter -->
+                                <div class="col-md-6">
+                                    <label for="department_filter" class="form-label fw-semibold text-dark mb-2" style="font-size: 0.9rem;">
+                                        Select Department
+                                    </label>
+                                    <select class="form-select" id="department_filter"
+                                            style="border: 1px solid #ced4da; border-radius: 6px; padding: 8px 12px; font-size: 0.95rem;">
+                                        <option value="" disabled selected hidden>Select Department</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="row g-3 mt-1">
+                                <!-- Grade Filter -->
+                                <div class="col-md-6">
+                                    <label for="grade_filter" class="form-label fw-semibold text-dark mb-2" style="font-size: 0.9rem;">
+                                        Select Grade
+                                    </label>
+                                    <select class="form-select" id="grade_filter"
+                                            style="border: 1px solid #ced4da; border-radius: 6px; padding: 8px 12px; font-size: 0.95rem;">
+                                        <option value="" disabled selected>Select Grade</option>
+                                    </select>
+                                </div>
+                                
+                                <!-- Employee Selection -->
+                                <div class="col-md-6">
+                                    <label for="employee_select" class="form-label fw-semibold text-dark mb-2" style="font-size: 0.9rem;">
+                                        Select Employee <span class="text-danger">*</span>
+                                    </label>
+                                    <select class="form-select" id="employee_select" required
+                                            style="border: 1px solid #ced4da; border-radius: 6px; padding: 8px 12px; font-size: 0.95rem;">
+                                        <option value="" disabled selected hidden>Select employee</option>
+                                    </select>
+                                    <input type="hidden" id="employee_id" name="employee_id" required>
+                                </div>
+                            </div>
+                            
+                            <div class="row g-3 mt-1">
+                                <!-- Number of Units -->
+                                <div class="col-md-6">
+                                    <label for="quantity" class="form-label fw-semibold text-dark mb-2" style="font-size: 0.9rem;">
+                                        Number of Units <span class="text-danger">*</span>
+                                    </label>
+                                    <input type="number" class="form-control" id="quantity" 
+                                           name="quantity" required min="1" value="1" placeholder="Enter the number of units"
+                                           style="border: 1px solid #ced4da; border-radius: 6px; padding: 8px 12px; font-size: 0.95rem;">
+                                    <small class="text-muted mt-1 d-block" id="points_preview" style="font-size: 0.85rem;">Please select a category first</small>
+                                </div>
+                                
+                                <!-- Event Date -->
+                                <div class="col-md-6">
+                                    <label for="event_date" class="form-label fw-semibold text-dark mb-2" style="font-size: 0.9rem;">
+                                        Event Date <span class="text-danger">*</span>
+                                    </label>
+                                    <input type="date" class="form-control" id="event_date" 
+                                           name="event_date"
+                                           style="border: 1px solid #ced4da; border-radius: 6px; padding: 8px 12px; font-size: 0.95rem;">
+                                </div>
+                            </div>
+                            
+                            <div class="row g-3 mt-1">
+                                <!-- Award Month for Backdating -->
+                                <div class="col-md-6">
+                                    <label for="award_month_year" class="form-label fw-semibold text-dark mb-2" style="font-size: 0.9rem;">
+                                        Award Month (for backdating)
+                                    </label>
+                                    <select class="form-select" id="award_month_year" name="award_month_year"
+                                            style="border: 1px solid #ced4da; border-radius: 6px; padding: 8px 12px; font-size: 0.95rem;">
+                                        <option value="">-- Use Event Date --</option>
+                                        {% for month_opt in month_year_options %}
+                                        <option value="{{ month_opt.value }}">{{ month_opt.label }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                
+                                <!-- Validator Selection -->
+                                <div class="col-md-6">
+                                    <label for="validator_id" class="form-label fw-semibold text-dark mb-2" style="font-size: 0.9rem;">
+                                        Validator <span class="text-danger">*</span>
+                                    </label>
+                                    <select class="form-select" id="validator_id" name="validator_id" required
+                                            style="border: 1px solid #ced4da; border-radius: 6px; padding: 8px 12px; font-size: 0.95rem;">
+                                        <option value="" disabled selected hidden>Select validator</option>
+                                        {% for validator in ld_validators %}
+                                        <option value="{{ validator._id }}" 
+                                                data-name="{{ validator.name }}"
+                                                data-emp-id="{{ validator.employee_id }}">
+                                            {{ validator.name }} - {{ validator.employee_id }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                    {% if not ld_validators %}
+                                    <small class="text-danger">No other validators available</small>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="row g-3 mt-1">
+                                <!-- Notes/Reason -->
+                                <div class="col-12">
+                                    <label for="notes" class="form-label fw-semibold text-dark mb-2" style="font-size: 0.9rem;">
+                                        Notes/Reason <span class="text-danger">*</span>
+                                    </label>
+                                    <textarea class="form-control" id="notes" name="notes" 
+                                              rows="3" required placeholder="Enter reason for this learning activity"
+                                              style="border: 1px solid #ced4da; border-radius: 6px; padding: 10px 12px; resize: vertical; font-size: 0.95rem;"></textarea>
+                                </div>
+                            </div>
+                            
+                            <!-- Submit Button -->
+                            <div class="row mt-3">
+                                <div class="col-12 text-end">
+                                    <button type="reset" class="btn btn-secondary me-2" style="padding: 8px 24px; border-radius: 6px; font-size: 0.95rem;">
+                                        <i class="fas fa-undo me-1"></i> Reset
+                                    </button>
+                                    <button type="button" class="btn text-white" onclick="confirmSingleRequest()"
+                                            style="background: linear-gradient(135deg, #1e5ba8 0%, #2874d4 100%); padding: 8px 30px; border-radius: 6px; border: none; font-size: 0.95rem;">
+                                        <i class="fas fa-paper-plane me-1"></i> Review & Assign
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bulk Upload Tab -->
+    <div class="tab-content-section" id="bulk-upload-tab">
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card shadow-sm border-0">
+                    <div class="card-header text-white" style="background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); border-radius: 8px 8px 0 0; padding: 1.25rem;">
+                        <h5 class="mb-0">
+                            <i class="fas fa-file-upload me-2"></i> Bulk Upload L&D Records
+                        </h5>
+                    </div>
+                    <div class="card-body" style="padding: 2rem;">
+                        <div class="alert" style="background-color: #e7f3ff; border-left: 4px solid #2196F3; border-radius: 8px; padding: 1.25rem;">
+                            <h6 style="color: #1976D2; font-weight: 600; margin-bottom: 1rem;">
+                                <i class="fas fa-info-circle me-2"></i>CSV Format Instructions
+                            </h6>
+                            <p style="color: #555; margin-bottom: 0.75rem;">Your CSV file should include the following columns:</p>
+                            <ul style="color: #555; margin-bottom: 1rem; line-height: 1.8;">
+                                <li><strong>employee_id</strong> - Employee ID exactly as it appears in the system</li>
+                                <li><strong>validator_employee_id</strong> - Employee ID of the L&D Validator who will approve</li>
+                                <li><strong>category_code</strong> - Category name (case insensitive)</li>
+                                <li><strong>event_date</strong> - Date in DD-MM-YYYY format</li>
+                                <li><strong>quantity</strong> - Number of units (integer)</li>
+                                <li><strong>notes</strong> - (Required) Any additional notes</li>
+                            </ul>
+                            
+                            <div style="background-color: #fff; border: 1px solid #ddd; border-radius: 6px; padding: 1rem; margin-top: 1rem;">
+                                <strong style="color: #555;"><i class="fas fa-tags me-2"></i>Available Categories/ Category code:</strong>
+                                <div class="mt-2">
+                                    {% if ld_categories %}
+                                        {% for category in ld_categories %}
+                                        <span class="badge bg-primary me-2 mb-2" style="font-size: 0.85rem; padding: 0.5rem 0.75rem;">
+                                            {{ category.name }}
+                                        </span>
+                                        {% endfor %}
+                                    {% else %}
+                                        <span class="text-muted">No categories available</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <button type="button" class="btn btn-outline-primary mt-3" onclick="downloadTemplate()"
+                                    style="padding: 0.5rem 1.25rem; font-size: 0.9rem; border-radius: 6px; font-weight: 500;">
+                                <i class="fas fa-download me-2"></i> Download Template
+                            </button>
+                        </div>
+                        
+                        <form id="bulkUploadForm" enctype="multipart/form-data" style="margin-top: 1.5rem;">
+                            <!-- CSV File Upload -->
+                            <div class="mb-3">
+                                <label for="csv_file" class="form-label" style="font-weight: 600; color: #333; font-size: 0.95rem;">
+                                    Upload CSV File <span class="text-danger">*</span>
+                                </label>
+                                <input type="file" class="form-control" id="csv_file" 
+                                       name="csv_file" accept=".csv" required
+                                       style="padding: 0.75rem; border: 2px solid #ddd; border-radius: 8px; font-size: 0.95rem;">
+                                <small class="text-muted" style="font-size: 0.875rem;">
+                                    File must be CSV format with columns: employee_id, category_code, title, date (DD-MM-YYYY), number_of_units, notes.
+                                </small>
+                            </div>
+                            
+                            <div class="d-flex gap-2 justify-content-end">
+                                <button type="button" class="btn btn-primary" onclick="validateBulkUploadOnly()"
+                                        style="padding: 0.65rem 1.5rem; font-size: 0.95rem; border-radius: 6px; font-weight: 500;">
+                                    <i class="fas fa-check-circle me-2"></i> Validate CSV
+                                </button>
+                                <button type="button" class="btn btn-success" onclick="validateAndUploadBulk()"
+                                        style="padding: 0.65rem 1.5rem; font-size: 0.95rem; border-radius: 6px; font-weight: 500;">
+                                    <i class="fas fa-upload me-2"></i> Upload Records
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- History Tab -->
+    <div class="tab-content-section" id="history-tab">
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card shadow-sm border-0">
+                    <div class="card-header text-white" style="background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); border-radius: 8px 8px 0 0;">
+                        <h5 class="mb-0">
+                            <i class="fas fa-history me-2"></i> L&D Assignment History
+                        </h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <!-- Filter Section -->
+                        <div class="p-3" style="background-color: #f8f9fa; border-bottom: 1px solid #dee2e6;">
+                            <div class="row g-3 align-items-end">
+                                <div class="col-md-2">
+                                    <label class="form-label mb-1" style="font-size: 13px; font-weight: 600; color: #495057;">Year</label>
+                                    <select class="form-select form-select-sm" id="filterYear" style="font-size: 14px;">
+                                        <option value="">All Years</option>
+                                        <!-- Fiscal years populated dynamically via JS -->
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label mb-1" style="font-size: 13px; font-weight: 600; color: #495057;">Quarter</label>
+                                    <select class="form-select form-select-sm" id="filterQuarter" style="font-size: 14px;">
+                                        <option value="">All Quarters</option>
+                                        <!-- Quarters populated dynamically from data via JS -->
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label mb-1" style="font-size: 13px; font-weight: 600; color: #495057;">Category</label>
+                                    <select class="form-select form-select-sm" id="filterCategory" style="font-size: 14px;">
+                                        <option value="">All Categories</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label mb-1" style="font-size: 13px; font-weight: 600; color: #495057;">Grade</label>
+                                    <select class="form-select form-select-sm" id="filterGrade" style="font-size: 14px;">
+                                        <option value="">All Grades</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label mb-1" style="font-size: 13px; font-weight: 600; color: #495057;">Status</label>
+                                    <select class="form-select form-select-sm" id="filterStatus" style="font-size: 14px;">
+                                        <option value="">All Statuses</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <div class="btn-group w-100" role="group">
+                                        <button type="button" class="btn btn-sm btn-primary" onclick="applyHistoryFilters()" style="font-size: 13px;">
+                                            <i class="fas fa-filter me-1"></i> Apply Filters
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="resetHistoryFilters()" style="font-size: 13px;">
+                                            <i class="fas fa-redo me-1"></i> Reset Filters
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Show Entries and Search Bar Row -->
+                        <div class="p-3 d-flex justify-content-between align-items-center" style="background-color: #fff; border-bottom: 1px solid #dee2e6;">
+                            <div id="historyTableLength"></div>
+                            <div style="width: 300px;">
+                                <label class="form-label mb-1" style="font-size: 13px; font-weight: 600; color: #495057;">Search:</label>
+                                <input type="text" class="form-control form-control-sm" id="historySearchInput" placeholder="Search in table..." style="font-size: 14px;">
+                            </div>
+                        </div>
+                        <div id="historyTableWrapper">
+                            <div class="table-responsive" style="overflow-x: auto; -webkit-overflow-scrolling: touch;">
+                                <table class="table table-hover mb-0" id="historyTable" style="width:100%; min-width: 1400px;">
+                                <thead style="background-color: #f8f9fa; border-bottom: 2px solid #dee2e6;">
+                                    <tr>
+                                        <th style="padding: 12px; font-weight: 600; font-size: 13px; color: #495057; white-space: nowrap; text-align: center;">Date</th>
+                                        <th style="padding: 12px; font-weight: 600; font-size: 13px; color: #495057; white-space: nowrap; text-align: center;">Event Date</th>
+                                        <th style="padding: 12px; font-weight: 600; font-size: 13px; color: #495057; text-align: center; width: 200px; min-width: 200px; max-width: 200px;">Employee</th>
+                                        <th style="padding: 12px; font-weight: 600; font-size: 13px; color: #495057; text-align: center;">Department</th>
+                                        <th style="padding: 12px; font-weight: 600; font-size: 13px; color: #495057; text-align: center;">Grade</th>
+                                        <th style="padding: 12px; font-weight: 600; font-size: 13px; color: #495057; text-align: center; width: 200px; min-width: 200px; max-width: 200px;">Category</th>
+                                        <th style="padding: 12px; font-weight: 600; font-size: 13px; color: #495057; text-align: center;">Points</th>
+                                        <th style="padding: 12px; font-weight: 600; font-size: 13px; color: #495057; text-align: center;">Status</th>
+                                        <th style="padding: 12px; font-weight: 600; font-size: 13px; color: #495057; text-align: center;">Submitted To</th>
+                                        <th style="padding: 12px; font-weight: 600; font-size: 13px; color: #495057; text-align: center; min-width: 100px;">Quarter</th>
+                                        <th style="padding: 12px; font-weight: 600; font-size: 13px; color: #495057; text-align: center;">Notes</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% if history_data %}
+                                    {% for record in history_data %}
+                                    <tr style="border-bottom: 1px solid #e9ecef;" data-quarter="{{ record.quarter if record.quarter else '' }}" data-year="{{ record.fiscal_year if record.fiscal_year else '' }}">
+                                        <td style="padding: 12px; white-space: nowrap; font-size: 14px; text-align: center;">{{ record.request_date }}</td>
+                                        <td style="padding: 12px; white-space: nowrap; font-size: 14px; text-align: center;">{{ record.event_date }}</td>
+                                        <td style="padding: 12px; font-size: 14px; text-align: center; width: 200px; min-width: 200px; max-width: 200px; word-wrap: break-word; white-space: normal;">
+                                            <strong>{{ record.employee_name }}</strong><br>
+                                            {% if record.employee_id and record.employee_id != 'N/A' %}
+                                            <small class="text-muted">{{ record.employee_id }}</small>
+                                            {% endif %}
+                                        </td>
+                                        <td style="padding: 12px; font-size: 14px; text-align: center;">{{ record.department if record.department else 'N/A' }}</td>
+                                        <td style="padding: 12px; text-align: center;">
+                                            <span class="badge" style="background-color: #6c757d; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px;">{{ record.grade }}</span>
+                                        </td>
+                                        <td style="padding: 12px; font-size: 14px; text-align: center; width: 200px; min-width: 200px; max-width: 200px; word-wrap: break-word; white-space: normal;">{{ record.category_name }}</td>
+                                        <td style="padding: 12px; text-align: center; font-weight: 600; font-size: 14px;">{{ record.points }}</td>
+                                        <td style="padding: 12px; text-align: center;">
+                                            {% if record.status == 'Approved' %}
+                                            <span class="badge" style="background-color: #28a745; color: white; padding: 4px 12px; border-radius: 4px; font-size: 12px;">Approved</span>
+                                            {% elif record.status == 'Rejected' %}
+                                            <span class="badge" style="background-color: #dc3545; color: white; padding: 4px 12px; border-radius: 4px; font-size: 12px;">Rejected</span>
+                                            {% else %}
+                                            <span class="badge" style="background-color: #ffc107; color: #000; padding: 4px 12px; border-radius: 4px; font-size: 12px;">Pending</span>
+                                            {% endif %}
+                                        </td>
+                                        <td style="padding: 12px; font-size: 14px; text-align: center;">{{ record.submitted_to if record.submitted_to else 'N/A' }}</td>
+                                        <td style="padding: 12px; text-align: center; min-width: 100px; white-space: nowrap;">
+                                            <span class="badge" style="background-color: #17a2b8; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 600;">{{ record.quarter if record.quarter else 'N/A' }}</span>
+                                        </td>
+                                        <td style="padding: 12px; text-align: center;">
+                                            <button type="button" class="btn btn-sm view-notes-btn" 
+                                                    style="background-color: #17a2b8; color: white; border: none; padding: 6px 16px; border-radius: 20px; font-size: 13px;"
+                                                    data-submission-notes="{{ record.notes|e }}"
+                                                    data-response-notes="{{ record.response_notes|e if record.response_notes else '' }}"
+                                                    data-status="{{ record.status }}"
+                                                    data-hr-modified="{{ 'true' if record.hr_modified else 'false' }}">
+                                                View
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                    {% else %}
+                                    <tr>
+                                        <td colspan="11" style="padding: 40px; text-align: center;">
+                                            <i class="fas fa-inbox" style="font-size: 3rem; color: #ccc; margin-bottom: 10px;"></i>
+                                            <p style="font-size: 1.1rem; color: #666; margin: 0;">No history records found</p>
+                                        </td>
+                                    </tr>
+                                    {% endif %}
+                                </tbody>
+                            </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Single Request Confirmation Modal -->
+<div class="modal fade" id="singleRequestConfirmModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-check-circle"></i> Confirm Request Submission
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-3"><strong>Please review the request details before submitting:</strong></p>
+                <table class="table table-bordered">
+                    <tr>
+                        <th width="40%">Category:</th>
+                        <td id="confirm_category"></td>
+                    </tr>
+                    <tr>
+                        <th>Validator:</th>
+                        <td id="confirm_validator"></td>
+                    </tr>
+                    <tr>
+                        <th>Employee ID:</th>
+                        <td id="confirm_employee_id"></td>
+                    </tr>
+                    <tr>
+                        <th>Number of Units:</th>
+                        <td id="confirm_quantity"></td>
+                    </tr>
+                    <tr>
+                        <th>Total Points:</th>
+                        <td class="text-primary"><strong id="confirm_points"></strong></td>
+                    </tr>
+                    <tr>
+                        <th>Event Date:</th>
+                        <td id="confirm_event_date"></td>
+                    </tr>
+                </table>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+                <button type="button" class="btn btn-primary" onclick="submitSingleRequest()">
+                    <i class="fas fa-paper-plane"></i> Confirm & Submit
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bulk Upload Confirmation Modal -->
+<div class="modal fade" id="bulkUploadConfirmModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header text-white" style="background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);">
+                <h5 class="modal-title">
+                    <i class="fas fa-check-circle"></i> Confirm Bulk Upload
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Summary Cards -->
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <div class="card border-primary">
+                            <div class="card-body text-center">
+                                <h3 class="text-primary mb-0" id="bulk_total_count">0</h3>
+                                <small class="text-muted">Total Rows</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card border-success">
+                            <div class="card-body text-center">
+                                <h3 class="text-success mb-0" id="bulk_valid_count">0</h3>
+                                <small class="text-muted">Valid Rows</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card border-danger">
+                            <div class="card-body text-center">
+                                <h3 class="text-danger mb-0" id="bulk_invalid_count">0</h3>
+                                <small class="text-muted">Invalid Rows</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tabs for Valid/Invalid -->
+                <ul class="nav nav-tabs mb-0" id="bulkPreviewTabs" role="tablist" style="display: flex !important; visibility: visible !important;">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="valid-tab" data-bs-toggle="tab" 
+                                data-bs-target="#valid-rows" type="button" role="tab">
+                            <i class="fas fa-check-circle text-success"></i> Valid Rows (<span id="valid_tab_count">0</span>)
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="invalid-tab" data-bs-toggle="tab" 
+                                data-bs-target="#invalid-rows" type="button" role="tab">
+                            <i class="fas fa-exclamation-circle text-danger"></i> Invalid Rows (<span id="invalid_tab_count">0</span>)
+                        </button>
+                    </li>
+                </ul>
+                <div class="tab-content border border-top-0 p-3" id="bulkPreviewContent">
+                    <!-- Valid Rows Tab -->
+                    <div class="tab-pane fade show active" id="valid-rows">
+                        <div class="alert alert-info mb-3">
+                            <strong>Category:</strong> <span id="bulk_category_name"></span>
+                        </div>
+                        <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                            <table class="table table-sm table-hover">
+                                <thead class="table-success sticky-top">
+                                    <tr>
+                                        <th style="text-align: center;">ROW</th>
+                                        <th style="text-align: center;">Employee ID</th>
+                                        <th style="text-align: center;">Category</th>
+                                        <th style="text-align: center;">Validator</th>
+                                        <th style="text-align: center; white-space: nowrap;">Event Date</th>
+                                        <th style="text-align: center;">Number of Units</th>
+                                        <th style="text-align: center;">Points</th>
+                                        <th style="text-align: center;">Notes</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="valid_rows_body">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <!-- Invalid Rows Tab -->
+                    <div class="tab-pane fade" id="invalid-rows">
+                        <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                            <table class="table table-sm table-hover">
+                                <thead class="table-danger sticky-top">
+                                    <tr>
+                                        <th style="text-align: center;">Row #</th>
+                                        <th style="text-align: center;">Employee ID</th>
+                                        <th style="text-align: center;">Category</th>
+                                        <th style="text-align: center;">Validator</th>
+                                        <th style="text-align: center;">Error</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="invalid_rows_body">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="alert alert-warning mt-3" id="invalid_warning" style="display: none;">
+                    <i class="fas fa-exclamation-triangle"></i> <strong>Warning:</strong> 
+                    Only valid rows will be submitted. Invalid rows will be skipped.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+                <button type="button" class="btn btn-success" onclick="submitBulkUpload()" id="bulk_submit_btn">
+                    <i class="fas fa-paper-plane"></i> Submit <span id="bulk_submit_count">0</span> Valid Requests
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Notes Modal -->
+<div class="modal fade" id="notesModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header" style="background: linear-gradient(135deg, #17a2b8, #20c997); color: white;">
+                <h5 class="modal-title"><i class="fas fa-file-alt me-2"></i>Submission Notes</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" style="max-height: 70vh; overflow-y: auto; padding: 20px;">
+                <div id="modalNotesContent" style="white-space: pre-wrap; word-wrap: break-word; font-size: 1rem; line-height: 1.8; background: #f8f9fa; padding: 20px; border-radius: 8px; border-left: 4px solid #17a2b8;"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Tab content styling */
+    .tab-content-section {
+        display: none;
+    }
+    
+    .tab-content-section.active {
+        display: block;
+        animation: fadeIn 0.3s;
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+    
+    .border-left-primary {
+        border-left: 4px solid #4e73df !important;
+    }
+    
+    .border-left-success {
+        border-left: 4px solid #1cc88a !important;
+    }
+    
+    .quick-action-btn {
+        height: 120px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .sticky-top {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+    
+    /* Bulk upload validation tables - add spacing between columns */
+    #valid-rows table th,
+    #valid-rows table td,
+    #invalid-rows table th,
+    #invalid-rows table td {
+        padding: 12px 16px !important;
+        text-align: center;
+    }
+    
+    /* Error column - left align */
+    #invalid-rows table td:last-child {
+        text-align: left !important;
+    }
+    
+    #valid-rows table,
+    #invalid-rows table {
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+    
+    /* History Table Styling */
+    #historyTable {
+        border-collapse: separate !important;
+        border-spacing: 0;
+        width: 100% !important;
+    }
+    
+    #historyTable thead th {
+        background-color: #f8f9fa;
+        border-bottom: 2px solid #dee2e6;
+        border-right: none;
+        padding: 12px;
+        font-weight: 600;
+        font-size: 13px;
+        color: #495057;
+        white-space: nowrap;
+        vertical-align: middle;
+        text-align: center;
+        line-height: 1.2;
+    }
+    
+    #historyTable thead th:last-child {
+        border-right: none;
+    }
+    
+    #historyTable tbody td {
+        padding: 14px 12px;
+        vertical-align: middle;
+        border-bottom: 1px solid #e3e6f0;
+        border-right: none;
+        font-size: 14px;
+        text-align: center;
+    }
+    
+    #historyTable tbody td:last-child {
+        border-right: none;
+    }
+    
+    #historyTable tbody tr {
+        transition: background-color 0.2s ease;
+    }
+    
+    #historyTable tbody tr:hover {
+        background-color: #f8f9fc;
+    }
+    
+    /* History Table Column Alignment - All centered */
+    #historyTable tbody td {
+        text-align: center;
+    }
+    
+    /* Category column - wider */
+    #historyTable thead th:nth-child(6),
+    #historyTable tbody td:nth-child(6) {
+        min-width: 180px;
+        max-width: 250px;
+    }
+    
+    /* Points - bold */
+    #historyTable tbody td:nth-child(7) {
+        font-weight: 600;
+        color: #4e73df;
+    }
+    
+    /* DataTables Controls Styling */
+    #historyTable_wrapper {
+        padding: 20px;
+        background-color: #fff;
+    }
+    
+    #historyTable_wrapper .row {
+        margin-bottom: 20px;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+    
+    #historyTable_wrapper .dataTables_length {
+        flex: 0 0 auto;
+        margin-right: auto;
+        margin-bottom: 0;
+    }
+    
+    #historyTable_wrapper .dataTables_filter {
+        flex: 0 0 auto;
+        margin-left: auto;
+        text-align: right;
+        margin-bottom: 0;
+    }
+    
+    #historyTable_wrapper .dataTables_length label,
+    #historyTable_wrapper .dataTables_filter label {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 0;
+        font-weight: 500;
+        font-size: 14px;
+        white-space: nowrap;
+    }
+    
+    #historyTable_wrapper .dataTables_length select {
+        width: auto;
+        min-width: 70px;
+        display: inline-block;
+        padding: 6px 12px;
+    }
+    
+    #historyTable_wrapper .dataTables_filter input {
+        width: 250px;
+        display: inline-block;
+        padding: 6px 12px;
+    }
+    
+    /* Table wrapper */
+    #historyTable_wrapper .dataTables_scroll {
+        margin-top: 15px;
+    }
+    
+    /* Info and Pagination Row */
+    #historyTable_wrapper .dataTables_info {
+        flex: 0 0 auto;
+        margin-right: auto;
+        padding-top: 15px;
+        margin-bottom: 0;
+        font-size: 14px;
+    }
+    
+    #historyTable_wrapper .dataTables_paginate {
+        flex: 0 0 auto;
+        margin-left: auto;
+        text-align: right;
+        padding-top: 15px;
+        margin-bottom: 0;
+    }
+    
+    /* Pagination buttons */
+    #historyTable_wrapper .dataTables_paginate .pagination {
+        margin-bottom: 0;
+    }
+    
+    /* Clear floats */
+    #historyTable_wrapper .row:after {
+        content: "";
+        display: table;
+        clear: both;
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        #historyTable_wrapper {
+            padding: 15px;
+        }
+        
+        #historyTable_wrapper .row {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        
+        #historyTable_wrapper .dataTables_length,
+        #historyTable_wrapper .dataTables_filter {
+            margin: 0 0 15px 0;
+            text-align: left;
+        }
+        
+        #historyTable_wrapper .dataTables_filter input {
+            width: 100%;
+            max-width: 100%;
+        }
+        
+        #historyTable_wrapper .dataTables_info,
+        #historyTable_wrapper .dataTables_paginate {
+            margin: 10px 0 0 0;
+            text-align: center;
+        }
+    }
+    
+    /* Keep pagination row outside scroll */
+    .pagination-row {
+        background: white;
+        margin: 0 !important;
+        padding: 15px 20px !important;
+        border-top: 1px solid #e3e6f0;
+        display: flex !important;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .pagination-row .col-sm-6 {
+        flex: 0 0 auto;
+        width: auto;
+    }
+</style>
+{% endblock %}
+
+{% block scripts %}
+<!-- Duplicate Detection Module -->
+<script src="{{ url_for('static', filename='js/duplicate_detection.js') }}"></script>
+
+<script>
+// Store available quarters per year from data (e.g., {2024: ['Q4'], 2025: ['Q1', 'Q2', 'Q3', 'Q4']})
+var quartersByYear = {};
+var quarterLabels = {'Q1': 'Q1 (Apr-Jun)', 'Q2': 'Q2 (Jul-Sep)', 'Q3': 'Q3 (Oct-Dec)', 'Q4': 'Q4 (Jan-Mar)'};
+
+// ✅ HELPER: Update quarter options based on selected year - only show quarters with data for that year
+function updateHistoryQuarterOptions(selectedYear) {
+    const quarterSelect = document.getElementById('filterQuarter');
+    if (!quarterSelect) return;
+    
+    const currentValue = quarterSelect.value;
+    quarterSelect.innerHTML = '<option value="">All Quarters</option>';
+    
+    var quarterOrder = ['Q1', 'Q2', 'Q3', 'Q4'];
+    
+    if (selectedYear && selectedYear !== '') {
+        // Show only quarters that have data for the selected year
+        const year = parseInt(selectedYear);
+        const nextYear = year + 1;
+        const quartersForYear = quartersByYear[year] || [];
+        
+        quarterOrder.forEach(function(q) {
+            if (quartersForYear.includes(q)) {
+                var label = q === 'Q4' ? `${q} (Jan-Mar ${nextYear})` : `${q} (${quarterLabels[q].split('(')[1].split(')')[0]} ${year})`;
+                quarterSelect.innerHTML += `<option value="${q}">${label}</option>`;
+            }
+        });
+    } else {
+        // Show all quarters that have data across all years
+        var allQuarters = new Set();
+        Object.values(quartersByYear).forEach(function(quarters) {
+            quarters.forEach(function(q) { allQuarters.add(q); });
+        });
+        
+        quarterOrder.forEach(function(q) {
+            if (allQuarters.has(q)) {
+                quarterSelect.innerHTML += `<option value="${q}">${quarterLabels[q]}</option>`;
+            }
+        });
+    }
+    
+    if (currentValue && quarterSelect.querySelector(`option[value="${currentValue}"]`)) {
+        quarterSelect.value = currentValue;
+    }
+}
+
+// Initialize quarter options on page load and add year change listener
+document.addEventListener('DOMContentLoaded', function() {
+    // ✅ Reset history filters on page load (fixes browser form caching issue)
+    // This ensures filters are cleared on refresh across all browsers
+    const filterYear = document.getElementById('filterYear');
+    const filterQuarter = document.getElementById('filterQuarter');
+    const filterCategory = document.getElementById('filterCategory');
+    const filterGrade = document.getElementById('filterGrade');
+    const filterStatus = document.getElementById('filterStatus');
+    const historySearchInput = document.getElementById('historySearchInput');
+    
+    if (filterYear) filterYear.value = '';
+    if (filterQuarter) filterQuarter.value = '';
+    if (filterCategory) filterCategory.value = '';
+    if (filterGrade) filterGrade.value = '';
+    if (filterStatus) filterStatus.value = '';
+    if (historySearchInput) historySearchInput.value = '';
+    
+    // Collect available quarters per year from history table
+    document.querySelectorAll('#historyTable tbody tr').forEach(function(row) {
+        var quarter = row.getAttribute('data-quarter');
+        var year = row.getAttribute('data-year');
+        if (quarter && quarter.trim() !== '' && year && year.trim() !== '') {
+            var q = quarter.toUpperCase();
+            var y = parseInt(year);
+            if (!quartersByYear[y]) {
+                quartersByYear[y] = [];
+            }
+            if (!quartersByYear[y].includes(q)) {
+                quartersByYear[y].push(q);
+            }
+        }
+    });
+    
+    const yearFilter = document.getElementById('filterYear');
+    if (yearFilter) {
+        yearFilter.addEventListener('change', function() {
+            updateHistoryQuarterOptions(this.value);
+        });
+        updateHistoryQuarterOptions(yearFilter.value);
+    }
+});
+
+// Show flash message
+function showFlashMessage(message, type = 'info') {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+    alertDiv.style.cssText = 'position: fixed; top: 80px; right: 20px; z-index: 9999; min-width: 300px;';
+    alertDiv.innerHTML = `
+        <div class="d-flex align-items-center">
+            <div class="flex-grow-1"><strong>${message}</strong></div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `;
+    document.body.appendChild(alertDiv);
+    setTimeout(() => alertDiv.remove(), 5000);
+}
+
+// Helper function to decode HTML entities
+function decodeHtmlEntities(text) {
+    if (!text) return '';
+    var textarea = document.createElement('textarea');
+    textarea.innerHTML = text;
+    return textarea.value;
+}
+
+// Show notes in modal - Make it globally accessible - show full notes with HR Portal styling
+window.showNotesModal = function(submissionNotes, responseNotes, status, hrModified) {
+    var modalElement = document.getElementById('notesModal');
+    if (!modalElement) {
+        return;
+    }
+    
+    var notesContentEl = document.getElementById('modalNotesContent');
+    var modalTitle = modalElement.querySelector('.modal-title');
+    var modalHeader = modalElement.querySelector('.modal-header');
+    
+    if (notesContentEl) {
+        // Decode HTML entities
+        var decodedSubmission = decodeHtmlEntities(submissionNotes);
+        var decodedResponse = decodeHtmlEntities(responseNotes);
+        
+        // Show full notes - prefer response notes if available (for approved/rejected items)
+        var notesText = decodedSubmission || 'No notes provided';
+        
+        // If response notes exist, show them instead (for history records)
+        var responseNotesStr = '';
+        if (decodedResponse !== null && decodedResponse !== undefined && decodedResponse !== '') {
+            responseNotesStr = String(decodedResponse).trim();
+        }
+        
+        if (responseNotesStr.length > 0) {
+            notesText = responseNotesStr;
+        }
+        
+        // Add HR UPDATED prefix if modified by HR
+        if (hrModified && notesText && notesText !== 'No notes provided') {
+            notesContentEl.textContent = 'HR UPDATED: ' + String(notesText);
+        } else {
+            notesContentEl.textContent = String(notesText);
+        }
+        
+        // Update styling based on status
+        if (status === 'Approved') {
+            notesContentEl.style.backgroundColor = '#e8f5e9';
+            notesContentEl.style.borderLeftColor = '#4caf50';
+            if (modalTitle) modalTitle.innerHTML = '<i class="fas fa-file-alt me-2"></i>Approval Notes';
+        } else if (status === 'Rejected') {
+            notesContentEl.style.backgroundColor = '#ffebee';
+            notesContentEl.style.borderLeftColor = '#f44336';
+            if (modalTitle) modalTitle.innerHTML = '<i class="fas fa-file-alt me-2"></i>Rejection Notes';
+        } else {
+            notesContentEl.style.backgroundColor = '#f8f9fa';
+            notesContentEl.style.borderLeftColor = '#17a2b8';
+            if (modalTitle) modalTitle.innerHTML = '<i class="fas fa-file-alt me-2"></i>Submission Notes';
+        }
+        
+        // Update modal header to blue theme
+        if (modalHeader) modalHeader.style.background = '#0d6efd';
+    }
+    
+    try {
+        // Check if there's already a modal instance and dispose it
+        var existingModal = bootstrap.Modal.getInstance(modalElement);
+        if (existingModal) {
+            existingModal.dispose();
+        }
+        
+        // Create and show new modal
+        var modal = new bootstrap.Modal(modalElement, {
+            backdrop: true,
+            keyboard: true,
+            focus: true
+        });
+        modal.show();
+    } catch (error) {
+    }
+};
+
+// Event delegation for view notes buttons
+$(document).on('click', '.view-notes-btn', function() {
+    var submissionNotes = $(this).data('submission-notes') || '';
+    var responseNotes = $(this).data('response-notes') || '';
+    var status = $(this).attr('data-status') || $(this).data('status') || '';
+    var hrModified = $(this).attr('data-hr-modified') === 'true' || $(this).data('hr-modified') === true || $(this).data('hr-modified') === 'true';
+    
+    window.showNotesModal(submissionNotes, responseNotes, status, hrModified);
+});
+
+// ✅ TAB PERSISTENCE - Store and restore active tab (localStorage for persistence across reloads)
+function saveActiveTab(tabName) {
+    localStorage.setItem('ld_updater_active_tab', tabName);
+}
+
+function restoreActiveTab() {
+    const savedTab = localStorage.getItem('ld_updater_active_tab');
+    if (savedTab && savedTab !== 'overview') {
+        switchTab(savedTab);
+    }
+}
+
+// Initialize history table if exists
+function initHistoryTable() {
+    {% if history_data %}
+    // Check if table element exists
+    if ($('#historyTable').length === 0) {
+        return;
+    }
+    
+    // Destroy existing DataTable if it exists
+    if ($.fn.DataTable.isDataTable('#historyTable')) {
+        $('#historyTable').DataTable().destroy();
+    }
+    
+    // Always reinitialize
+    var table = $('#historyTable').DataTable({
+        order: [[0, 'desc']],
+        pageLength: 10,
+        lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
+        responsive: false,  // ✅ Disable responsive to show all columns with horizontal scroll
+        scrollX: true,      // ✅ Enable horizontal scrolling
+        scrollCollapse: true,
+        dom: 'rt<"row pagination-row"<"col-sm-6"i><"col-sm-6"p>>',  // Remove default length and search, add pagination-row
+        language: {
+            lengthMenu: "Show _MENU_ entries"
+        }
+    });
+    
+    // Move pagination outside scrollable area
+    $('#historyTableWrapper .table-responsive').after($('#historyTableWrapper .pagination-row'));
+    
+    // Remove any duplicate pagination elements
+    $('.pagination-row').slice(1).remove();
+    
+    // Create custom length menu with "All" first
+    var lengthSelect = $('<label style="font-size: 14px; color: #495057;">Show <select class="form-select form-select-sm d-inline-block" style="width: auto; margin: 0 5px;">' +
+        '<option value="-1">All</option>' +
+        '<option value="10" selected>10</option>' +
+        '<option value="25">25</option>' +
+        '<option value="50">50</option>' +
+        '<option value="100">100</option>' +
+        '</select> entries</label>');
+    
+    // Add to page
+    $('#historyTableLength').html(lengthSelect);
+    
+    // Handle length change
+    $('#historyTableLength select').on('change', function() {
+        table.page.len($(this).val()).draw();
+    });
+    
+    // Connect custom search input to DataTables
+    $('#historySearchInput').on('keyup', function() {
+        table.search(this.value).draw();
+    });
+    
+    // Populate filter dropdowns from table data
+    populateHistoryFilters(table);
+    
+    // Store table reference globally for filter functions
+    window.historyTableInstance = table;
+    {% endif %}
+}
+
+// Populate filter dropdowns dynamically
+function populateHistoryFilters(table) {
+        var quarters = new Set();
+        var categories = new Set();
+        var grades = new Set();
+        var years = new Set();
+        var statuses = new Set();
+        
+        // Reset quartersByYear for fresh population
+        quartersByYear = {};
+        
+        table.rows().every(function() {
+            var data = this.data();
+            
+            // Extract quarter from column 9 - extract only Q1, Q2, Q3, Q4
+            var quarterText = $(data[9]).text().trim();
+            var quarterOnly = null;
+            if (quarterText && quarterText !== 'N/A') {
+                // Extract only the quarter part (Q1, Q2, Q3, Q4) from "Q4 2025" format
+                var quarterMatch = quarterText.match(/Q[1-4]/);
+                if (quarterMatch) {
+                    quarterOnly = quarterMatch[0];
+                    quarters.add(quarterOnly);
+                }
+            }
+            
+            // Extract category from column 5 (plain text, not in badge)
+            var categoryText = data[5];
+            if (typeof categoryText === 'string') {
+                categoryText = categoryText.trim();
+            } else {
+                categoryText = $(categoryText).text().trim();
+            }
+            if (categoryText && categoryText !== 'N/A') {
+                categories.add(categoryText);
+            }
+            
+            // Extract grade from column 4 (inside badge)
+            var gradeText = $(data[4]).text().trim();
+            if (gradeText && gradeText !== 'N/A') {
+                grades.add(gradeText);
+            }
+            
+            // Extract fiscal year from Event Date column (column 1) - DD-MM-YYYY format
+            // For Q4 (Jan, Feb, Mar), fiscal year is previous year
+            var eventDateText = data[1];
+            if (typeof eventDateText === 'string') {
+                eventDateText = eventDateText.trim();
+            } else {
+                eventDateText = $(eventDateText).text().trim();
+            }
+            if (eventDateText && eventDateText.length >= 10) {
+                var parts = eventDateText.split('-');
+                if (parts.length === 3) {
+                    var month = parseInt(parts[1]); // DD-MM-YYYY -> MM
+                    var year = parseInt(parts[2]); // DD-MM-YYYY -> YYYY
+                    // For Q4 (Jan, Feb, Mar), fiscal year is previous year
+                    var fiscalYear = (month >= 1 && month <= 3) ? (year - 1) : year;
+                    if (fiscalYear) {
+                        years.add(fiscalYear.toString());
+                        
+                        // Build quartersByYear mapping for dynamic quarter filtering
+                        if (quarterOnly) {
+                            if (!quartersByYear[fiscalYear]) {
+                                quartersByYear[fiscalYear] = [];
+                            }
+                            if (!quartersByYear[fiscalYear].includes(quarterOnly)) {
+                                quartersByYear[fiscalYear].push(quarterOnly);
+                            }
+                        }
+                    }
+                }
+            }
+            
+            // Extract status from column 7 (inside badge)
+            var statusText = $(data[7]).text().trim();
+            if (statusText && statusText !== 'N/A') {
+                statuses.add(statusText);
+            }
+        });
+        
+        // Clear existing options (keep only the default "All" option)
+        $('#filterQuarter').find('option:not(:first)').remove();
+        $('#filterCategory').find('option:not(:first)').remove();
+        $('#filterGrade').find('option:not(:first)').remove();
+        $('#filterYear').find('option:not(:first)').remove();
+        $('#filterStatus').find('option:not(:first)').remove();
+        
+        // Populate Quarter dropdown with all quarters initially
+        var quarterOrder = ['Q1', 'Q2', 'Q3', 'Q4'];
+        quarterOrder.forEach(function(q) {
+            if (quarters.has(q)) {
+                $('#filterQuarter').append($('<option>', { value: q, text: quarterLabels[q] }));
+            }
+        });
+        
+        // Populate Category dropdown
+        Array.from(categories).sort().forEach(function(category) {
+            $('#filterCategory').append($('<option>', { value: category, text: category }));
+        });
+        
+        // Populate Grade dropdown
+        Array.from(grades).sort().forEach(function(grade) {
+            $('#filterGrade').append($('<option>', { value: grade, text: grade }));
+        });
+        
+        // Populate Year dropdown
+        Array.from(years).sort().reverse().forEach(function(year) {
+            var nextYear = (parseInt(year) + 1).toString().slice(-2);
+            $('#filterYear').append($('<option>', { value: year, text: year + '-' + nextYear }));
+        });
+        
+        // Populate Status dropdown
+        Array.from(statuses).sort().forEach(function(status) {
+            $('#filterStatus').append($('<option>', { value: status, text: status }));
+        });
+        
+        // Store all quarters for year-based filtering
+        window.allQuarters = Array.from(quarters);
+}
+
+// Filter quarters based on selected year - dynamically show only quarters with data for selected year
+function filterQuartersByYear() {
+    var quarterDropdown = $('#filterQuarter');
+    var selectedYear = $('#filterYear').val();
+    
+    // Clear current quarter options (keep the "All" option)
+    quarterDropdown.find('option:not(:first)').remove();
+    
+    var quarterOrder = ['Q1', 'Q2', 'Q3', 'Q4'];
+    
+    if (selectedYear && selectedYear !== '') {
+        // Show only quarters that have data for the selected year
+        var year = parseInt(selectedYear);
+        var nextYear = year + 1;
+        var quartersForYear = quartersByYear[year] || [];
+        
+        quarterOrder.forEach(function(q) {
+            if (quartersForYear.includes(q)) {
+                var label = q === 'Q4' ? q + ' (Jan-Mar ' + nextYear + ')' : q + ' (' + quarterLabels[q].split('(')[1].split(')')[0] + ' ' + year + ')';
+                quarterDropdown.append($('<option>', { value: q, text: label }));
+            }
+        });
+    } else {
+        // Show all quarters that have data across all years
+        var allQuartersSet = new Set();
+        Object.values(quartersByYear).forEach(function(quarters) {
+            quarters.forEach(function(q) { allQuartersSet.add(q); });
+        });
+        
+        quarterOrder.forEach(function(q) {
+            if (allQuartersSet.has(q)) {
+                quarterDropdown.append($('<option>', { value: q, text: quarterLabels[q] }));
+            }
+        });
+    }
+    
+    // Clear quarter selection if it doesn't exist in the new options
+    var currentQuarter = quarterDropdown.val();
+    if (currentQuarter && !quarterDropdown.find('option[value="' + currentQuarter + '"]').length) {
+        quarterDropdown.val('');
+    }
+}
+
+// Apply filters to table
+function applyHistoryFilters() {
+    var table = window.historyTableInstance;
+    if (!table) return;
+    var quarterFilter = $('#filterQuarter').val();
+    var categoryFilter = $('#filterCategory').val();
+    var gradeFilter = $('#filterGrade').val();
+    var yearFilter = $('#filterYear').val();
+    var statusFilter = $('#filterStatus').val();
+    
+    // Clear any existing custom search functions
+    $.fn.dataTable.ext.search = [];
+    
+    // Add new search function
+    $.fn.dataTable.ext.search.push(
+        function(settings, data, dataIndex) {
+            // Extract text content from HTML or string
+            var quarterText = (typeof data[9] === 'string') ? data[9].trim() : $(data[9]).text().trim();
+            var categoryText = (typeof data[5] === 'string') ? data[5].trim() : $(data[5]).text().trim();
+            var gradeText = (typeof data[4] === 'string') ? data[4].trim() : $(data[4]).text().trim();
+            var eventDateText = (typeof data[1] === 'string') ? data[1].trim() : $(data[1]).text().trim();
+            var statusText = (typeof data[7] === 'string') ? data[7].trim() : $(data[7]).text().trim();
+            
+            // Filter by quarter - extract Q1-Q4 from "Q4 2025" format and match with year
+            if (quarterFilter) {
+                var quarterMatch = quarterText.match(/Q[1-4]/);
+                var quarterOnly = quarterMatch ? quarterMatch[0] : '';
+                if (quarterOnly !== quarterFilter) {
+                    return false;
+                }
+            }
+            
+            // Filter by category
+            if (categoryFilter && categoryText !== categoryFilter) {
+                return false;
+            }
+            
+            // Filter by grade
+            if (gradeFilter && gradeText !== gradeFilter) {
+                return false;
+            }
+            
+            // Filter by year (using fiscal year based on Event Date)
+            if (yearFilter && eventDateText) {
+                var parts = eventDateText.split('-');
+                if (parts.length === 3) {
+                    var month = parseInt(parts[1]); // DD-MM-YYYY format
+                    var year = parseInt(parts[2]);
+                    // For Q4 (Jan, Feb, Mar), fiscal year is previous year
+                    var fiscalYear = (month >= 1 && month <= 3) ? (year - 1) : year;
+                    if (fiscalYear.toString() !== yearFilter) {
+                        return false;
+                    }
+                } else {
+                    return false;
+                }
+            }
+            
+            // Filter by status
+            if (statusFilter && statusText !== statusFilter) {
+                return false;
+            }
+            
+            return true;
+        }
+    );
+    
+    table.draw();
+}
+
+// Reset all filters
+window.resetHistoryFilters = function() {
+    // Clear filter dropdowns
+    $('#filterQuarter, #filterCategory, #filterGrade, #filterYear, #filterStatus').val('');
+    
+    // Repopulate quarter dropdown with all quarters
+    filterQuartersByYear();
+    
+    // Clear DataTables custom search
+    $.fn.dataTable.ext.search = [];
+    
+    // Get table instance
+    var table = $('#historyTable').DataTable();
+    
+    // Clear DataTables search box and visible input field
+    table.search('').draw();
+    
+    // Clear the custom search input field
+    $('#historySearchInput').val('');
+}
+
+$(document).ready(function() {
+    // Clear forms on page load (fixes Firefox form persistence issue)
+    if ($('#singleRequestForm').length) {
+        $('#singleRequestForm')[0].reset();
+    }
+    if ($('#bulkUploadForm').length) {
+        $('#bulkUploadForm')[0].reset();
+    }
+    
+    // ✅ UNIFIED TAB PERSISTENCE - Dashboard switch detection
+    const lastDashboard = sessionStorage.getItem('ld_last_dashboard');
+    const currentDashboard = 'ld_updater';
+    
+    // Detect if switching from a different dashboard
+    let isDashboardSwitch = false;
+    if (lastDashboard && lastDashboard !== currentDashboard) {
+        isDashboardSwitch = true;
+    }
+    
+    // Update current dashboard tracker
+    sessionStorage.setItem('ld_last_dashboard', currentDashboard);
+    
+    if (isDashboardSwitch) {
+        // Coming from a different dashboard → force overview tab
+        localStorage.removeItem('ld_u_updater_active_tab');
+        switchTab('overview');
+    } else {
+        // Restore last active tab on page load
+        restoreActiveTab();
+    }
+
+    // TAB SWITCHING FUNCTIONALITY
+    $('.tab-link').on('click', function(e) {
+        e.preventDefault();
+        const targetTab = $(this).data('tab');
+        switchTab(targetTab);
+        saveActiveTab(targetTab);
+    });
+    
+    // LOAD EMPLOYEES DYNAMICALLY
+    loadEmployees();
+    
+    // Initialize history table on page load if history tab exists
+    {% if history_data %}
+    if ($('#history-tab').length > 0) {
+        setTimeout(function() {
+            initHistoryTable();
+        }, 500);
+    }
+    {% endif %}
+    
+    // Add event listener for year filter to update quarters only (don't apply filters yet)
+    $(document).on('change', '#filterYear', function() {
+        filterQuartersByYear();
+    });
+    
+    // Calculate points preview - Make it globally accessible
+    window.updatePointsPreview = function() {
+        const categorySelect = $('#category_id');
+        const quantity = parseInt($('#quantity').val()) || 1;
+        const selectedOption = categorySelect.find('option:selected');
+        const pointsJson = selectedOption.data('points-json');
+        const categoryName = selectedOption.data('name');
+        const employeeSelect = $('#employee_select');
+        const selectedEmployee = employeeSelect.find('option:selected');
+        const employeeGrade = selectedEmployee.data('grade');
+        const employeeName = selectedEmployee.data('name');
+        
+        // Check eligibility and show/hide alert
+        if (pointsJson && categoryName && employeeGrade) {
+            let pointsForGrade = 0;
+            
+            // Check if points_per_unit is an object with grade-specific points
+            if (typeof pointsJson === 'object' && pointsJson !== null) {
+                if (pointsJson.base !== undefined) {
+                    pointsForGrade = pointsJson.base;
+                }
+                // Check for grade-specific points
+                if (employeeGrade && pointsJson[employeeGrade] !== undefined) {
+                    pointsForGrade = pointsJson[employeeGrade];
+                }
+            } else {
+                // Simple number
+                pointsForGrade = pointsJson;
+            }
+            
+            // Check if points are 0 for this grade
+            if (pointsForGrade === 0) {
+                // Show alert banner
+                $('#eligibility_message').text(' The category "' + categoryName + '" is not eligible for grade ' + employeeGrade + (employeeName ? ' (' + employeeName + ')' : '') + '. Please select a different category or employee.');
+                $('#category_eligibility_alert').show();
+                $('#points_preview').html('<span style="color: #dc3545; font-weight: 600;">⚠️ This category is not eligible for grade ' + employeeGrade + '</span>');
+            } else {
+                // Hide alert banner
+                $('#category_eligibility_alert').hide();
+                let totalPoints = pointsForGrade * quantity;
+                $('#points_preview').text('Total points: ' + totalPoints);
+            }
+        } else {
+            // Hide alert if no category/employee selected
+            $('#category_eligibility_alert').hide();
+            if (quantity > 0 && pointsJson && categoryName) {
+                // Show base points if employee not selected yet
+                let basePoints = 0;
+                if (typeof pointsJson === 'object' && pointsJson !== null && pointsJson.base !== undefined) {
+                    basePoints = pointsJson.base;
+                } else if (typeof pointsJson === 'number') {
+                    basePoints = pointsJson;
+                }
+                $('#points_preview').text('Total points: ' + (basePoints * quantity));
+            } else if (!categoryName) {
+                $('#points_preview').text('Please select a category first');
+            } else {
+                $('#points_preview').text('Total points: 0');
+            }
+        }
+    };
+    
+    $('#category_id, #quantity, #employee_select').on('change keyup', window.updatePointsPreview);
+    
+    // Check eligibility when category or grade changes
+    $('#category_id').on('change', function() {
+        const gradeFilter = $('#grade_filter').val();
+        checkCategoryEligibilityForGrade(gradeFilter);
+        // Re-filter employees based on new category
+        filterAndDisplayEmployees();
+    });
+    
+    $('#grade_filter').on('change', function() {
+        const gradeFilter = $(this).val();
+        checkCategoryEligibilityForGrade(gradeFilter);
+    });
+    
+    // Disable event_date when award_month_year is selected
+    $('#award_month_year').on('change', function() {
+        if ($(this).val()) {
+            $('#event_date').prop('disabled', true).val('');
+        } else {
+            $('#event_date').prop('disabled', false);
+        }
+    });
+    
+    // Disable award_month_year when event_date is selected
+    $('#event_date').on('change', function() {
+        if ($(this).val()) {
+            $('#award_month_year').prop('disabled', true).val('');
+        } else {
+            $('#award_month_year').prop('disabled', false);
+        }
+    });
+});
+
+$(document).ready(function() {
+    // ✅ TAB SWITCHING FUNCTIONALITY
+    $('.tab-link').on('click', function(e) {
+        e.preventDefault();
+        
+        const targetTab = $(this).data('tab');
+        
+        // Remove active class from all tabs
+        $('.tab-link').removeClass('active');
+        $('.tab-content-section').removeClass('active');
+        
+        // Add active class to clicked tab
+        $(this).addClass('active');
+        $('#' + targetTab + '-tab').addClass('active');
+        
+        // Initialize history table if switching to history tab
+        if (targetTab === 'history' && !$.fn.DataTable.isDataTable('#historyTable')) {
+            initHistoryTable();
+        }
+        
+        // Close sidebar on mobile
+        if (window.innerWidth < 992) {
+            $('#sidebar').removeClass('active');
+            $('#sidebarOverlay').removeClass('active');
+        }
+        
+        // Save active tab
+        saveActiveTab(targetTab);
+    });
+    
+    // Restore last active tab
+    restoreActiveTab();
+});
+
+// Global function to switch tabs
+function switchTab(targetTab) {
+    // Remove active class from all tabs
+    $('.tab-link').removeClass('active');
+    $('.tab-content-section').removeClass('active');
+    
+    // Add active class to clicked tab
+    $('.tab-link[data-tab="' + targetTab + '"]').addClass('active');
+    $('#' + targetTab + '-tab').addClass('active');
+    
+    // Initialize history table if switching to history tab
+    if (targetTab === 'history' && !$.fn.DataTable.isDataTable('#historyTable')) {
+        initHistoryTable();
+    }
+    
+    // Close sidebar on mobile
+    if (window.innerWidth < 992) {
+        $('#sidebar').removeClass('active');
+        $('#sidebarOverlay').removeClass('active');
+    }
+    
+    // Save active tab
+    saveActiveTab(targetTab);
+}
+
+// SINGLE REQUEST CONFIRMATION
+function confirmSingleRequest() {
+    // Validate form first
+    const form = document.getElementById('singleRequestForm');
+    if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+    }
+
+    // Get form values
+    const categorySelect = $('#category_id option:selected');
+    const validatorSelect = $('#validator_id option:selected');
+    const employeeSelect = $('#employee_select option:selected');
+    const employeeId = $('#employee_id').val();
+    const employeeGrade = employeeSelect.data('grade');
+    const quantity = $('#quantity').val();
+    const eventDateRaw = $('#event_date').val();
+    const awardMonth = $('#award_month_year option:selected').text();
+    const notes = $('#notes').val().trim();
+    
+    // Validate notes - reject if empty or only whitespace
+    if (!notes) {
+        alert('Please provide notes/reason for this learning activity.');
+        return;
+    }
+    
+    // Check if category is eligible for employee's grade
+    const pointsJson = categorySelect.data('points-json');
+    let pointsForGrade = 0;
+    
+    if (typeof pointsJson === 'object' && pointsJson !== null) {
+        if (pointsJson.base !== undefined) {
+            pointsForGrade = pointsJson.base;
+        }
+        if (employeeGrade && pointsJson[employeeGrade] !== undefined) {
+            pointsForGrade = pointsJson[employeeGrade];
+        }
+    } else {
+        pointsForGrade = pointsJson;
+    }
+    
+    // Prevent submission if points are 0 for this grade
+    if (pointsForGrade === 0 && employeeGrade) {
+        alert('⚠️ This category is not eligible for grade ' + employeeGrade + '. Please select a different category or employee.');
+        return;
+    }
+    
+    // Convert event date from YYYY-MM-DD to DD-MM-YYYY
+    let eventDate = 'Current Date';
+    if (eventDateRaw) {
+        const [year, month, day] = eventDateRaw.split('-');
+        eventDate = `${day}-${month}-${year}`;
+    }
+    
+    const totalPoints = pointsForGrade * parseInt(quantity);
+
+    // Check for duplicates before showing confirmation modal
+    if (window.DuplicateDetection) {
+        window.DuplicateDetection.checkSingleRequest(
+            employeeId,
+            categorySelect.val(),
+            eventDateRaw || new Date().toISOString().split('T')[0],
+            function(isDuplicate, duplicateInfo) {
+                if (isDuplicate) {
+                    // Show duplicate warning
+                    window.DuplicateDetection.showDuplicateWarning(
+                        duplicateInfo,
+                        function() {
+                            // User confirmed - proceed with showing confirmation modal
+                            showSingleRequestConfirmModal(categorySelect, validatorSelect, employeeId, quantity, totalPoints, awardMonth, eventDate);
+                        },
+                        function() {
+                            // User cancelled - do nothing
+                        }
+                    );
+                } else {
+                    // No duplicate - proceed with showing confirmation modal
+                    showSingleRequestConfirmModal(categorySelect, validatorSelect, employeeId, quantity, totalPoints, awardMonth, eventDate);
+                }
+            }
+        );
+    } else {
+        // If DuplicateDetection not available, proceed directly
+        showSingleRequestConfirmModal(categorySelect, validatorSelect, employeeId, quantity, totalPoints, awardMonth, eventDate);
+    }
+}
+
+function showSingleRequestConfirmModal(categorySelect, validatorSelect, employeeId, quantity, totalPoints, awardMonth, eventDate) {
+    // Populate confirmation modal
+    $('#confirm_category').text(categorySelect.data('name'));
+    $('#confirm_validator').text(validatorSelect.data('name') + ' (' + validatorSelect.data('emp-id') + ')');
+    $('#confirm_employee_id').text(employeeId);
+    $('#confirm_quantity').text(quantity);
+    $('#confirm_points').text(totalPoints);
+    $('#confirm_event_date').text(awardMonth !== '-- Use Event Date --' ? awardMonth : eventDate);
+
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById('singleRequestConfirmModal'));
+    modal.show();
+}
+
+
+function submitSingleRequest() {
+    // Close modal
+    const modal = bootstrap.Modal.getInstance(document.getElementById('singleRequestConfirmModal'));
+    modal.hide();
+    
+    // Submit form
+    document.getElementById('singleRequestForm').submit();
+}
+
+// BULK UPLOAD VALIDATION & CONFIRMATION
+let validatedData = null;
+
+// Function for "Validate CSV" button - just shows preview modal
+function validateBulkUploadOnly() {
+    const form = document.getElementById('bulkUploadForm');
+    if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+    }
+
+    const formData = new FormData(form);
+    
+    // Show loading
+    const btn = event.target;
+    const originalHtml = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Validating...';
+
+    // Send to validation endpoint
+    fetch("{{ url_for('ld.validate_bulk_upload') }}", {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        btn.disabled = false;
+        btn.innerHTML = originalHtml;
+
+        if (!data.success) {
+            showFlashMessage('Error: ' + (data.error || 'Validation failed'), 'danger');
+            return;
+        }
+
+        // Store validated data
+        validatedData = data;
+
+        // Just show confirmation modal (no duplicate check for preview)
+        displayBulkConfirmation(data);
+    })
+    .catch(error => {
+        btn.disabled = false;
+        btn.innerHTML = originalHtml;
+        showFlashMessage('Error validating CSV: ' + error, 'danger');
+    });
+}
+
+// Function for "Upload Records" button - validates, checks duplicates, then submits
+function validateAndUploadBulk() {
+    const form = document.getElementById('bulkUploadForm');
+    if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+    }
+
+    const formData = new FormData(form);
+    
+    // Show loading
+    const btn = event.target;
+    const originalHtml = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Validating...';
+
+    // Send to validation endpoint
+    fetch("{{ url_for('ld.validate_bulk_upload') }}", {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        btn.disabled = false;
+        btn.innerHTML = originalHtml;
+
+        if (!data.success) {
+            showFlashMessage('Error: ' + (data.error || 'Validation failed'), 'danger');
+            return;
+        }
+
+        // Store validated data
+        validatedData = data;
+
+        // Check for duplicates BEFORE submitting
+        console.log('LD Bulk Upload - Starting duplicate check');
+        console.log('LD Bulk Upload - window.DuplicateDetection exists?', !!window.DuplicateDetection);
+        console.log('LD Bulk Upload - valid_rows count:', data.valid_rows ? data.valid_rows.length : 0);
+        // ✅ Debug: Log all row numbers from backend
+        if (data.valid_rows) {
+            console.log('LD Bulk Upload - Row numbers from backend:', data.valid_rows.map(r => r.row_number));
+        }
+        
+        // ✅ Helper function to format date as DD-MM-YYYY
+        function formatDateDDMMYYYY(dateStr) {
+            if (!dateStr) return '';
+            // Handle ISO format (2025-12-17T00:00:00) or YYYY-MM-DD
+            const cleanDate = dateStr.split('T')[0];
+            const parts = cleanDate.split('-');
+            if (parts.length === 3) {
+                return `${parts[2]}-${parts[1]}-${parts[0]}`; // DD-MM-YYYY
+            }
+            return dateStr;
+        }
+        
+        if (window.DuplicateDetection && data.valid_rows && data.valid_rows.length > 0) {
+            // ✅ STEP 1: Check for internal duplicates (within the batch) - same as TA
+            // FIXED: Now includes the FIRST occurrence as well when duplicates are found
+            const internalDuplicates = [];
+            const seen = {};  // Tracks first occurrence: key -> {rowNumber, employeeName, categoryName, eventDate}
+            const uniqueRows = [];
+            
+            data.valid_rows.forEach((row, index) => {
+                const key = `${row.employee_id}_${row.category_id}_${row.event_date_obj}`;
+                // ✅ Use actual row number from backend (row.row_number) instead of calculating from index
+                const excelRowNumber = row.row_number || (index + 2);
+                if (seen[key]) {
+                    // ✅ FIXED: If this is the SECOND occurrence, also add the FIRST occurrence to duplicates
+                    if (seen[key].addedToDb && !seen[key].addedToDuplicates) {
+                        internalDuplicates.push({
+                            rowNumber: seen[key].rowNumber,
+                            employeeName: seen[key].employeeName,
+                            categoryName: seen[key].categoryName,
+                            eventDate: seen[key].eventDate,
+                            status: 'Duplicate in Upload',
+                            message: 'This row is a duplicate of another row in your upload'
+                        });
+                        seen[key].addedToDuplicates = true;
+                    }
+                    // Add current (subsequent) occurrence
+                    internalDuplicates.push({
+                        rowNumber: excelRowNumber,
+                        employeeName: row.employee_name,
+                        categoryName: row.category_name,
+                        eventDate: formatDateDDMMYYYY(row.event_date_obj),
+                        status: 'Duplicate in Upload',
+                        message: 'This row is a duplicate of another row in your upload'
+                    });
+                } else {
+                    // First occurrence - track it and add to uniqueRows for database check
+                    seen[key] = {
+                        rowNumber: excelRowNumber,
+                        employeeName: row.employee_name,
+                        categoryName: row.category_name,
+                        eventDate: formatDateDDMMYYYY(row.event_date_obj),
+                        addedToDb: true,
+                        addedToDuplicates: false
+                    };
+                    uniqueRows.push({
+                        employee_id: row.employee_id,
+                        category_id: row.category_id,
+                        event_date: row.event_date_obj,
+                        eventDateFormatted: formatDateDDMMYYYY(row.event_date_obj),
+                        rowNumber: excelRowNumber
+                    });
+                }
+            });
+            
+            console.log('LD Bulk Upload - Internal duplicates found:', internalDuplicates.length);
+            console.log('LD Bulk Upload - Checking for duplicates, sample row:', uniqueRows[0]);
+            console.log('LD Bulk Upload - Total unique rows to check:', uniqueRows.length);
+            
+            // ✅ STEP 2: Check ONLY unique rows against database (avoid duplicate API calls)
+            window.DuplicateDetection.checkBulkUpload(uniqueRows, function(duplicates) {
+                console.log('LD Bulk Upload - Duplicate check completed');
+                console.log('LD Bulk Upload - Database duplicates found:', duplicates.length);
+                
+                // ✅ Combine internal duplicates with database duplicates
+                const allDuplicates = [...internalDuplicates, ...duplicates];
+                console.log('LD Bulk Upload - Total duplicates:', allDuplicates.length);
+                console.log('LD Bulk Upload - Duplicate details:', allDuplicates);
+                
+                if (allDuplicates.length > 0) {
+                    console.log('LD Bulk Upload - Showing duplicate warning modal');
+                    // Show duplicate warning
+                    window.DuplicateDetection.showBulkDuplicatesWarning(
+                        allDuplicates,
+                        function() {
+                            console.log('LD Bulk Upload - User confirmed duplicates, proceeding with upload');
+                            // User confirmed - proceed with upload
+                            proceedWithBulkUpload();
+                        },
+                        function() {
+                            console.log('LD Bulk Upload - User cancelled due to duplicates');
+                            // User cancelled - do nothing
+                        }
+                    );
+                } else {
+                    console.log('LD Bulk Upload - No duplicates found, proceeding with upload');
+                    // No duplicates - proceed with upload directly
+                    proceedWithBulkUpload();
+                }
+            });
+        } else {
+            console.warn('LD Bulk Upload - Skipping duplicate check');
+            console.warn('LD Bulk Upload - Reason: DuplicateDetection=' + !!window.DuplicateDetection + ', valid_rows=' + (data.valid_rows ? data.valid_rows.length : 0));
+            // If DuplicateDetection not available or no valid rows, proceed directly
+            proceedWithBulkUpload();
+        }
+    })
+    .catch(error => {
+        btn.disabled = false;
+        btn.innerHTML = originalHtml;
+        showFlashMessage('Error validating CSV: ' + error, 'danger');
+    });
+}
+
+function displayBulkConfirmation(data) {
+    const { valid_rows, invalid_rows, category_name } = data;
+    const totalCount = valid_rows.length + invalid_rows.length;
+
+    // Update summary
+    $('#bulk_total_count').text(totalCount);
+    $('#bulk_valid_count').text(valid_rows.length);
+    $('#bulk_invalid_count').text(invalid_rows.length);
+    $('#valid_tab_count').text(valid_rows.length);
+    $('#invalid_tab_count').text(invalid_rows.length);
+    $('#bulk_category_name').text(category_name);
+    $('#bulk_submit_count').text(valid_rows.length);
+
+    // Show/hide warning
+    if (invalid_rows.length > 0) {
+        $('#invalid_warning').show();
+    } else {
+        $('#invalid_warning').hide();
+    }
+
+    // Disable submit if no valid rows
+    if (valid_rows.length === 0) {
+        $('#bulk_submit_btn').prop('disabled', true);
+    } else {
+        $('#bulk_submit_btn').prop('disabled', false);
+    }
+
+    // Populate valid rows table
+    let validHtml = '';
+    valid_rows.forEach((row, index) => {
+        validHtml += `
+            <tr>
+                <td style="text-align: center;">${row.row_number || (index + 2)}</td>
+                <td style="text-align: center;"><strong>${row.employee_id}</strong></td>
+                <td style="text-align: center;">${row.category_name}</td>
+                <td style="text-align: center;">${row.validator_name} (${row.validator_employee_id})</td>
+                <td style="text-align: center;">${row.event_date}</td>
+                <td style="text-align: center;">${row.quantity}</td>
+                <td style="text-align: center;" class="text-primary"><strong>${row.points}</strong></td>
+                <td style="max-width: 200px; white-space: normal; word-wrap: break-word; font-size: 13px; text-align: center;">
+                    ${row.notes}
+                </td>
+            </tr>
+        `;
+    });
+    $('#valid_rows_body').html(validHtml || '<tr><td colspan="8" class="text-center text-muted">No valid rows</td></tr>');
+
+    // Populate invalid rows table
+    let invalidHtml = '';
+    invalid_rows.forEach(row => {
+        invalidHtml += `
+            <tr>
+                <td style="text-align: center;"><span class="badge bg-danger">${row.row_number}</span></td>
+                <td style="text-align: center;">${row.employee_id || '<em class="text-muted">N/A</em>'}</td>
+                <td style="text-align: center;">${row.category_name || '<em class="text-muted">N/A</em>'}</td>
+                <td style="text-align: center;">${row.validator_employee_id || '<em class="text-muted">N/A</em>'}</td>
+                <td style="text-align: center;" class="text-danger"><small>${row.error}</small></td>
+            </tr>
+        `;
+    });
+    $('#invalid_rows_body').html(invalidHtml || '<tr><td colspan="5" class="text-center text-muted">No invalid rows</td></tr>');
+
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById('bulkUploadConfirmModal'));
+    modal.show();
+}
+
+function submitBulkUpload() {
+    if (!validatedData || !validatedData.valid_rows || validatedData.valid_rows.length === 0) {
+        showFlashMessage('No valid rows to submit', 'warning');
+        return;
+    }
+
+    // Check for duplicates when submitting from modal
+    console.log('LD Bulk Upload - submitBulkUpload called from modal');
+    console.log('LD Bulk Upload - window.DuplicateDetection exists?', !!window.DuplicateDetection);
+    
+    // ✅ STEP 1: Check for internal duplicates (within the batch)
+    // FIXED: Now includes the FIRST occurrence as well when duplicates are found
+    const internalDuplicates = [];
+    const seen = {};  // Tracks first occurrence: key -> {rowNumber, employeeName, categoryName, eventDate}
+    const uniqueRows = [];  // ✅ Only unique rows to check against database
+    
+    // ✅ Helper function to format date as DD-MM-YYYY
+    function formatDateDDMMYYYY(dateStr) {
+        if (!dateStr) return '';
+        // Handle ISO format (2025-12-17T00:00:00) or YYYY-MM-DD
+        const cleanDate = dateStr.split('T')[0];
+        const parts = cleanDate.split('-');
+        if (parts.length === 3) {
+            return `${parts[2]}-${parts[1]}-${parts[0]}`; // DD-MM-YYYY
+        }
+        return dateStr;
+    }
+    
+    validatedData.valid_rows.forEach((row, index) => {
+        const key = `${row.employee_id}_${row.category_id}_${row.event_date_obj}`;
+        // ✅ Use actual row number from backend (row.row_number) instead of calculating from index
+        const excelRowNumber = row.row_number || (index + 2);
+        if (seen[key]) {
+            // ✅ FIXED: If this is the SECOND occurrence, also add the FIRST occurrence to duplicates
+            if (seen[key].addedToDb && !seen[key].addedToDuplicates) {
+                internalDuplicates.push({
+                    rowNumber: seen[key].rowNumber,
+                    employeeName: seen[key].employeeName,
+                    categoryName: seen[key].categoryName,
+                    eventDate: seen[key].eventDate,
+                    status: 'Duplicate in Upload',
+                    message: 'This row is a duplicate of another row in your upload'
+                });
+                seen[key].addedToDuplicates = true;
+            }
+            // Add current (subsequent) occurrence
+            internalDuplicates.push({
+                rowNumber: excelRowNumber,
+                employeeName: row.employee_name,
+                categoryName: row.category_name,
+                eventDate: formatDateDDMMYYYY(row.event_date_obj),  // ✅ Formatted date
+                status: 'Duplicate in Upload',
+                message: 'This row is a duplicate of another row in your upload'
+            });
+        } else {
+            // First occurrence - track it and add to uniqueRows for database check
+            seen[key] = {
+                rowNumber: excelRowNumber,
+                employeeName: row.employee_name,
+                categoryName: row.category_name,
+                eventDate: formatDateDDMMYYYY(row.event_date_obj),
+                addedToDb: true,
+                addedToDuplicates: false
+            };
+            // ✅ Only add unique rows for database check
+            uniqueRows.push({
+                employee_id: row.employee_id,
+                category_id: row.category_id,
+                event_date: row.event_date_obj,
+                eventDateFormatted: formatDateDDMMYYYY(row.event_date_obj),  // ✅ Formatted date for display
+                rowNumber: excelRowNumber
+            });
+        }
+    });
+    
+    if (window.DuplicateDetection && validatedData.valid_rows && validatedData.valid_rows.length > 0) {
+        // ✅ STEP 2: Check ONLY unique rows against database (avoid duplicate API calls)
+        console.log('LD Bulk Upload - Checking for duplicates from modal, sample row:', uniqueRows[0]);
+        console.log('LD Bulk Upload - Total unique rows to check:', uniqueRows.length);
+        
+        window.DuplicateDetection.checkBulkUpload(uniqueRows, function(duplicates) {
+            console.log('LD Bulk Upload - Duplicate check completed from modal');
+            console.log('LD Bulk Upload - Duplicates found:', duplicates.length);
+            
+            // ✅ Combine internal duplicates with database duplicates
+            const allDuplicates = [...internalDuplicates, ...duplicates];
+            
+            if (allDuplicates.length > 0) {
+                console.log('LD Bulk Upload - Showing duplicate warning modal');
+                // Close confirmation modal first
+                const confirmModal = bootstrap.Modal.getInstance(document.getElementById('bulkUploadConfirmModal'));
+                if (confirmModal) confirmModal.hide();
+                
+                // Show duplicate warning
+                window.DuplicateDetection.showBulkDuplicatesWarning(
+                    allDuplicates,
+                    function() {
+                        console.log('LD Bulk Upload - User confirmed duplicates, proceeding with upload');
+                        // User confirmed - proceed with upload
+                        proceedWithBulkUpload();
+                    },
+                    function() {
+                        console.log('LD Bulk Upload - User cancelled due to duplicates');
+                        // User cancelled - do nothing
+                    }
+                );
+            } else {
+                console.log('LD Bulk Upload - No duplicates found, proceeding with upload');
+                // No duplicates - proceed with upload directly
+                proceedWithBulkUpload();
+            }
+        });
+    } else {
+        console.warn('LD Bulk Upload - DuplicateDetection not available, proceeding directly');
+        // If DuplicateDetection not available, proceed directly
+        proceedWithBulkUpload();
+    }
+}
+
+function proceedWithBulkUpload() {
+    // Close modal
+    const modal = bootstrap.Modal.getInstance(document.getElementById('bulkUploadConfirmModal'));
+    modal.hide();
+
+    // Prepare form data with validated rows
+    const form = document.getElementById('bulkUploadForm');
+    const formData = new FormData(form);
+    formData.append('validated_data', JSON.stringify(validatedData.valid_rows));
+    formData.append('action_type', 'bulk_upload_confirmed');
+
+    // Show loading message
+    const loadingAlert = document.createElement('div');
+    loadingAlert.className = 'alert alert-info alert-dismissible fade show';
+    loadingAlert.style.cssText = 'position: fixed; top: 80px; right: 20px; z-index: 9999; min-width: 350px;';
+    loadingAlert.innerHTML = `
+        <div class="d-flex align-items-center">
+            <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+            <div class="flex-grow-1"><strong>Submitting ${validatedData.valid_rows.length} requests...</strong></div>
+        </div>
+    `;
+    document.body.appendChild(loadingAlert);
+
+    // Submit
+    fetch("{{ url_for('ld.updater_dashboard') }}", {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => {
+        loadingAlert.remove();
+        
+        if (response.ok) {
+            // Show success message
+            const successAlert = document.createElement('div');
+            successAlert.className = 'alert alert-success alert-dismissible fade show';
+            successAlert.style.cssText = 'position: fixed; top: 80px; right: 20px; z-index: 9999; min-width: 350px;';
+            successAlert.innerHTML = `
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-check-circle me-2"></i>
+                    <div class="flex-grow-1"><strong>Successfully submitted ${validatedData.valid_rows.length} requests for validation!</strong></div>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+            document.body.appendChild(successAlert);
+            
+            // Auto-dismiss after 5 seconds
+            setTimeout(() => successAlert.remove(), 5000);
+            
+            // Reset form and reload page
+            setTimeout(() => {
+                if (response.redirected) {
+                    window.location.href = response.url;
+                } else {
+                    window.location.reload();
+                }
+            }, 1500);
+        } else {
+            throw new Error('Upload failed');
+        }
+    })
+    .catch(error => {
+        loadingAlert.remove();
+        
+        // Show error message
+        const errorAlert = document.createElement('div');
+        errorAlert.className = 'alert alert-danger alert-dismissible fade show';
+        errorAlert.style.cssText = 'position: fixed; top: 80px; right: 20px; z-index: 9999; min-width: 350px;';
+        errorAlert.innerHTML = `
+            <div class="d-flex align-items-center">
+                <i class="fas fa-exclamation-circle me-2"></i>
+                <div class="flex-grow-1"><strong>Error submitting bulk upload. Please try again.</strong></div>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        `;
+        document.body.appendChild(errorAlert);
+        setTimeout(() => errorAlert.remove(), 5000);
+    });
+}
+
+// Store all employees globally for filtering
+let allEmployees = [];
+let allGrades = [];
+let allDepartments = [];
+
+// LOAD EMPLOYEES DYNAMICALLY
+function loadEmployees() {
+    fetch('/learning-development/updater/get-employees')
+        .then(response => response.json())
+        .then(result => {
+            if (result.success && result.employees) {
+                allEmployees = result.employees;
+                allGrades = result.all_grades || [];
+                allDepartments = result.all_departments || [];
+                
+                // Populate department filter
+                populateDepartmentFilter();
+                
+                // Populate grade filter
+                populateGradeFilter();
+                
+                // Initially show all employees
+                filterAndDisplayEmployees();
+            }
+        })
+        .catch(error => {
+            // Error loading employees
+        });
+}
+
+// Populate department filter dropdown
+function populateDepartmentFilter() {
+    // Use all departments from database, not just from filtered employees
+    const departments = allDepartments.length > 0 ? allDepartments : [...new Set(allEmployees.map(emp => emp.department).filter(d => d))];
+    const select = document.getElementById('department_filter');
+    select.innerHTML = '<option value="">All Departments</option>';
+    
+    departments.sort().forEach(dept => {
+        const option = document.createElement('option');
+        option.value = dept;
+        option.textContent = dept;
+        select.appendChild(option);
+    });
+}
+
+// Populate grade filter dropdown
+function populateGradeFilter() {
+    // Use all grades from database, not just from filtered employees
+    const grades = allGrades.length > 0 ? allGrades : [...new Set(allEmployees.map(emp => emp.grade).filter(g => g))];
+    const select = document.getElementById('grade_filter');
+    select.innerHTML = '<option value="">All Grades</option>';
+    
+    grades.sort().forEach(grade => {
+        const option = document.createElement('option');
+        option.value = grade;
+        option.textContent = grade;
+        select.appendChild(option);
+    });
+}
+
+// Filter and display employees based on department and grade
+function filterAndDisplayEmployees() {
+    const departmentFilter = document.getElementById('department_filter').value;
+    const gradeFilter = document.getElementById('grade_filter').value;
+    const employeeSelect = document.getElementById('employee_select');
+    const categorySelect = $('#category_id');
+    const selectedOption = categorySelect.find('option:selected');
+    const pointsJson = selectedOption.data('points-json');
+    
+    // Check category eligibility for selected grade
+    checkCategoryEligibilityForGrade(gradeFilter);
+    
+    // Filter employees
+    let filteredEmployees = allEmployees;
+    
+    if (departmentFilter) {
+        filteredEmployees = filteredEmployees.filter(emp => emp.department === departmentFilter);
+    }
+    
+    if (gradeFilter) {
+        filteredEmployees = filteredEmployees.filter(emp => emp.grade === gradeFilter);
+    }
+    
+    // Filter out employees whose grade has 0 points for the selected category
+    if (pointsJson) {
+        filteredEmployees = filteredEmployees.filter(emp => {
+            const empGrade = emp.grade;
+            let pointsForGrade = 0;
+            
+            if (typeof pointsJson === 'object' && pointsJson !== null) {
+                if (pointsJson.base !== undefined) {
+                    pointsForGrade = pointsJson.base;
+                }
+                if (empGrade && pointsJson[empGrade] !== undefined) {
+                    pointsForGrade = pointsJson[empGrade];
+                }
+            } else {
+                pointsForGrade = pointsJson;
+            }
+            
+            // Only include employees whose grade has points > 0 for this category
+            return pointsForGrade > 0;
+        });
+    }
+    
+    // Update employee dropdown
+    employeeSelect.innerHTML = '<option value="" disabled selected hidden>Select employee</option>';
+    
+    filteredEmployees.forEach(emp => {
+        const option = document.createElement('option');
+        option.value = emp.employee_id;
+        option.textContent = emp.display;
+        option.dataset.empId = emp.id;
+        option.dataset.grade = emp.grade;
+        option.dataset.name = emp.name;
+        option.dataset.department = emp.department;
+        employeeSelect.appendChild(option);
+    });
+}
+
+// Check if selected category is eligible for the selected grade
+function checkCategoryEligibilityForGrade(grade) {
+    const categorySelect = $('#category_id');
+    const selectedOption = categorySelect.find('option:selected');
+    const pointsJson = selectedOption.data('points-json');
+    const categoryName = selectedOption.data('name');
+    const employeeSelect = $('#employee_select');
+    
+    // Only check if both category and grade are selected
+    if (!categoryName || !grade || !pointsJson) {
+        $('#category_eligibility_alert').hide();
+        employeeSelect.prop('disabled', false);
+        return;
+    }
+    
+    let pointsForGrade = 0;
+    
+    // Check if points_per_unit is an object with grade-specific points
+    if (typeof pointsJson === 'object' && pointsJson !== null) {
+        if (pointsJson.base !== undefined) {
+            pointsForGrade = pointsJson.base;
+        }
+        // Check for grade-specific points
+        if (grade && pointsJson[grade] !== undefined) {
+            pointsForGrade = pointsJson[grade];
+        }
+    } else {
+        // Simple number
+        pointsForGrade = pointsJson;
+    }
+    
+    // If points are 0, show alert and disable employee dropdown
+    if (pointsForGrade === 0) {
+        $('#eligibility_message').text(' The category "' + categoryName + '" is not eligible for grade ' + grade + '. This category awards 0 points for this grade. Please select a different category or grade.');
+        $('#category_eligibility_alert').show();
+        employeeSelect.prop('disabled', true);
+        employeeSelect.val('');
+        $('#employee_id').val('');
+    } else {
+        $('#category_eligibility_alert').hide();
+        employeeSelect.prop('disabled', false);
+    }
+}
+
+// HANDLE EMPLOYEE SELECTION
+document.addEventListener('DOMContentLoaded', function() {
+    const employeeSelect = document.getElementById('employee_select');
+    const employeeIdInput = document.getElementById('employee_id');
+    const departmentFilter = document.getElementById('department_filter');
+    const gradeFilter = document.getElementById('grade_filter');
+    
+    // Handle filter changes
+    if (departmentFilter) {
+        departmentFilter.addEventListener('change', filterAndDisplayEmployees);
+    }
+    
+    if (gradeFilter) {
+        gradeFilter.addEventListener('change', filterAndDisplayEmployees);
+    }
+    
+    // Handle employee selection
+    if (employeeSelect && employeeIdInput) {
+        employeeSelect.addEventListener('change', function() {
+            const selectedOption = this.options[this.selectedIndex];
+            if (selectedOption.value) {
+                employeeIdInput.value = selectedOption.value;
+                
+                // Update points calculation if category is selected
+                const categorySelect = document.getElementById('category_id');
+                const quantityInput = document.getElementById('quantity');
+                if (categorySelect && categorySelect.value && quantityInput) {
+                    updatePointsPreview();
+                }
+            } else {
+                employeeIdInput.value = '';
+            }
+        });
+    }
+});
+
+// Download Learning & Development CSV Template (Dynamic)
+function downloadTemplate() {
+    // Get available categories dynamically
+    const categories = [
+        {% if ld_categories %}
+        {% for category in ld_categories %}
+        {
+            name: "{{ category.name }}",
+            points: {{ category.points_per_unit.base if category.points_per_unit is mapping else category.points_per_unit }}
+        }{% if not loop.last %},{% endif %}
+        {% endfor %}
+        {% endif %}
+    ];
+    
+    // Use static validator ID
+    const validatorId = "LdVAid";
+    
+    // Create CSV header
+    let csvContent = "employee_id,validator_employee_id,category_name,event_date,quantity,notes\n";
+    
+    // Add sample rows - ONE ROW FOR EACH CATEGORY (fully dynamic)
+    if (categories.length > 0) {
+        const today = new Date();
+        
+        // Generate one sample row for EACH category
+        categories.forEach((category, index) => {
+            const empNum = String(index + 1).padStart(3, '0');
+            const date = new Date(today);
+            date.setDate(today.getDate() - index); // Different dates for each row
+            const dateStr = date.toISOString().split('T')[0]; // YYYY-MM-DD format
+            
+            csvContent += `EMP${empNum},${validatorId},${category.name},${dateStr},1,Completed ${category.name}\n`;
+        });
+    } else {
+        // Fallback if no categories
+        csvContent += "EMP001,LdVAid,Category Name,2025-11-01,1,Enter notes here\n";
+    }
+    
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.setAttribute('hidden', '');
+    a.setAttribute('href', url);
+    a.setAttribute('download', 'ld_bulk_upload_template.csv');
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+}
+
+</script>
+{% endblock %}

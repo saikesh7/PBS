@@ -1,0 +1,270 @@
+{% extends "base_dp.html" %}
+
+{% block title %}Pending Requests - DP Dashboard{% endblock %}
+
+{% block content %}
+<style>
+    /* Cross-browser compatibility styles */
+    .pending-table {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: auto;
+    }
+    .pending-table th,
+    .pending-table td {
+        text-align: center;
+        vertical-align: middle;
+        white-space: nowrap;
+        padding: 10px 8px;
+    }
+    .pending-table th {
+        background-color: #f8f9fa;
+        font-weight: 600;
+    }
+    .pending-table tbody tr:hover {
+        background-color: #f5f5f5;
+    }
+    /* Ensure badges display inline */
+    .pending-table .badge {
+        display: inline-block;
+        white-space: nowrap;
+    }
+    /* Description column - allow wrapping but limit width */
+    .pending-table td.desc-col {
+        white-space: normal;
+        max-width: 180px;
+        word-wrap: break-word;
+        -ms-word-wrap: break-word;
+    }
+    /* View button styling */
+    .btn-view-notes, .view-note-btn {
+        padding: 4px 12px;
+        font-size: 0.85rem;
+        white-space: nowrap;
+    }
+    /* Cross-browser flexbox support */
+    .d-flex {
+        display: -webkit-box;
+        display: -ms-flexbox;
+        display: flex;
+    }
+    .justify-content-between {
+        -webkit-box-pack: justify;
+        -ms-flex-pack: justify;
+        justify-content: space-between;
+    }
+    .align-items-center {
+        -webkit-box-align: center;
+        -ms-flex-align: center;
+        align-items: center;
+    }
+</style>
+
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="mb-0">
+            <i class="fas fa-clock text-warning me-2"></i>Pending Requests
+        </h3>
+        <span class="badge bg-warning text-dark" style="font-size: 1rem;">
+            {{ total_pending }} Pending
+        </span>
+    </div>
+
+    <!-- Pending Requests Table -->
+    <div class="card">
+        <div class="card-header" style="background-color: #1a2942; color: white;">
+            <h5 class="mb-0">
+                <i class="fas fa-list me-2"></i>Point Requests from My Team
+            </h5>
+        </div>
+        <div class="card-body">
+            {% if pending_requests %}
+            <div class="table-responsive">
+                <table class="table table-hover pending-table">
+                    <thead class="table-light">
+                        <tr>
+                            <th>#</th>
+                            <th>Employee</th>
+                            <th>Emp ID</th>
+                            <th>Grade</th>
+                            <th>Category</th>
+                            <th>Points</th>
+                            <th>Status</th>
+                            <th>Pending At</th>
+                            <th>Source</th>
+                            <th>Requested By</th>
+                            <th>Request Date</th>
+                            <th>Event Date</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for req in pending_requests %}
+                        <tr>
+                            <td>{{ loop.index + ((page - 1) * per_page) }}</td>
+                            <td><strong>{{ req.employee_name }}</strong></td>
+                            <td>{{ req.employee_id_display }}</td>
+                            <td><span class="badge bg-info">{{ req.grade }}</span></td>
+                            <td>{{ req.category_name }}</td>
+                            <td><strong class="text-primary">{{ req.points }}</strong></td>
+                            <td><span class="badge bg-warning text-dark">{{ req.status }}</span></td>
+                            <td><span class="badge bg-danger" style="font-size: 0.75rem;">{{ req.pending_at }}</span></td>
+                            <td>{{ req.source }}</td>
+                            <td>{{ req.requested_by }}</td>
+                            <td>{{ req.request_date.strftime('%d-%m-%Y') if req.request_date else 'N/A' }}</td>
+                            <td>{{ req.event_date.strftime('%d-%m-%Y') if req.event_date else 'N/A' }}</td>
+                            <td>
+                                {% if req.description and req.description != 'N/A' %}
+                                <button class="btn btn-sm btn-outline-primary view-note-btn"
+                                        data-notes="{{ req.description | e }}"
+                                        data-status="{{ req.status }}"
+                                        data-category="{{ req.category_name }}"
+                                        data-employee="{{ req.employee_name }}"
+                                        data-date="{{ req.request_date.strftime('%d-%m-%Y') if req.request_date else 'N/A' }}">
+                                    <i class="fas fa-eye me-1"></i> View
+                                </button>
+                                {% else %}
+                                <span class="text-muted">No description</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="alert alert-info mb-0">
+                <i class="fas fa-info-circle me-2"></i>No pending requests from your team members.
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- Pagination -->
+        {% if total_pages > 1 %}
+        <div class="card-footer">
+            <div class="d-flex justify-content-end align-items-center">
+                <nav aria-label="Page navigation">
+                    <ul class="pagination mb-0 me-3">
+                        <!-- Previous Button -->
+                        <li class="page-item {% if page == 1 %}disabled{% endif %}">
+                            <a class="page-link" href="{{ url_for('dp.pending_requests', page=page-1) if page > 1 else '#' }}">
+                                <i class="fas fa-chevron-left"></i> Previous
+                            </a>
+                        </li>
+                        
+                        <!-- Page Numbers -->
+                        {% for p in range(1, total_pages + 1) %}
+                            {% if p == 1 or p == total_pages or (p >= page - 2 and p <= page + 2) %}
+                                <li class="page-item {% if p == page %}active{% endif %}">
+                                    <a class="page-link" href="{{ url_for('dp.pending_requests', page=p) }}">{{ p }}</a>
+                                </li>
+                            {% elif p == page - 3 or p == page + 3 %}
+                                <li class="page-item disabled">
+                                    <span class="page-link">...</span>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        <!-- Next Button -->
+                        <li class="page-item {% if page == total_pages %}disabled{% endif %}">
+                            <a class="page-link" href="{{ url_for('dp.pending_requests', page=page+1) if page < total_pages else '#' }}">
+                                Next <i class="fas fa-chevron-right"></i>
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+                
+                <!-- Page Info -->
+                <small class="text-muted">
+                    Showing {{ ((page - 1) * per_page) + 1 }} to {{ [page * per_page, total_pending]|min }} of {{ total_pending }} requests
+                </small>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Info Box -->
+    <div class="alert alert-info mt-4">
+        <i class="fas fa-info-circle me-2"></i>
+        <strong>Note:</strong> These are pending point requests from your assigned employees. 
+        Requests need to be approved by HR or Admin before points are awarded.
+    </div>
+</div>
+
+<!-- Notes Modal -->
+<div class="modal fade" id="notesModal" tabindex="-1" aria-labelledby="notesModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header" style="background-color: #1a2942; color: white;">
+                <h5 class="modal-title" id="notesModalLabel">
+                    <i class="fas fa-sticky-note me-2"></i>Request Details
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
+                <div class="mb-3">
+                    <strong>Employee:</strong> <span id="modalEmployee"></span>
+                </div>
+                <div class="mb-3">
+                    <strong>Category:</strong> <span id="modalCategory"></span>
+                </div>
+                <div class="mb-3">
+                    <strong>Request Date:</strong> <span id="modalDate"></span>
+                </div>
+                <div class="mb-3">
+                    <strong>Status:</strong> <span id="modalStatus" class="badge"></span>
+                </div>
+                <div class="mb-3">
+                    <strong>Description:</strong>
+                    <div class="p-3 bg-light rounded mt-2" id="modalNotesContent" style="white-space: pre-wrap; word-wrap: break-word; overflow-wrap: break-word; max-width: 100%;"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>Close
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Notes modal handler
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.view-note-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            const notes = this.getAttribute('data-notes');
+            const status = this.getAttribute('data-status');
+            const category = this.getAttribute('data-category');
+            const employee = this.getAttribute('data-employee');
+            const date = this.getAttribute('data-date');
+            
+            document.getElementById('modalEmployee').textContent = employee;
+            document.getElementById('modalCategory').textContent = category;
+            document.getElementById('modalDate').textContent = date;
+            
+            // Set status badge
+            const statusBadge = document.getElementById('modalStatus');
+            statusBadge.textContent = status;
+            statusBadge.className = 'badge';
+            if (status === 'Approved') {
+                statusBadge.classList.add('bg-success');
+            } else if (status === 'Rejected') {
+                statusBadge.classList.add('bg-danger');
+            } else {
+                statusBadge.classList.add('bg-warning', 'text-dark');
+            }
+            
+            // Set description
+            const notesContent = document.getElementById('modalNotesContent');
+            notesContent.textContent = notes || 'No description provided';
+            
+            // Show modal
+            const modal = new bootstrap.Modal(document.getElementById('notesModal'));
+            modal.show();
+        });
+    });
+});
+</script>
+{% endblock %}
