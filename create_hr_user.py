@@ -6,7 +6,7 @@
   "employee_id": "V2PM3",
   "password_hash": "$2b$12$lUFy8KxfZ102KqUVZITsqOAJBPgrgfJ/.jiNBWosIE7Pn6HGyw9tO",
   "role": "Employee",
-  "is_first_login": false,
+  "is_first_login": "False",
   "grade": "C2",
   "department": "Management",
   "location": "India",
@@ -31,4 +31,5 @@
   "updated_at": {
     "$date": "2025-11-05T11:58:25.635Z"
   }
+
 }
