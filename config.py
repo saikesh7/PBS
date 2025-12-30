@@ -14,8 +14,5 @@ class Config:
     MAIL_PASSWORD = 'thffnrhmbjnjlsjd'
     
     # Session configuration - 1 year session timeout for "Remember me"
-<<<<<<< HEAD
     PERMANENT_SESSION_LIFETIME = timedelta(days=365)
-=======
     PERMANENT_SESSION_LIFETIME = timedelta(days=365)
->>>>>>> 593a206e08ee6f04b60a07688729800e38d9e1df
