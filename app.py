@@ -183,14 +183,14 @@ if __name__ == '__main__':
     print("=" * 60)
     print("PBS APPLICATION WITH REAL-TIME UPDATES")
     print("=" * 60)
-    print("Server: http://0.0.0.0:5000")
+    print("Server: http://0.0.0.0:3500")
     print("=" * 60)
     
     # ✅ DISABLE RELOADER TO PREVENT DOUBLE STARTUP
     socketio.run(
         app,
         host='0.0.0.0',
-        port=5000,
+        port=3500,
         debug=False,  # Set to False to reduce verbose logging
         use_reloader=False
     )
