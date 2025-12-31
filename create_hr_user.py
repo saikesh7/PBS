@@ -6,14 +6,14 @@
   "employee_id": "V2PM3",
   "password_hash": "$2b$12$lUFy8KxfZ102KqUVZITsqOAJBPgrgfJ/.jiNBWosIE7Pn6HGyw9tO",
   "role": "Employee",
-  "is_first_login": false,
+  "is_first_login": False,
   "grade": "C2",
   "department": "Management",
   "location": "India",
   "employee_level": "Mid-Level",
-  "manager_id": null,
-  "dp_id": null,
-  "is_active": true,
+  "manager_id": none,
+  "dp_id": none,
+  "is_active": True,
   "dashboard_access": [
     "pm",
     "hr",
@@ -24,7 +24,7 @@
   "joining_date": {
     "$date": "2020-05-29T00:00:00.000Z"
   },
-  "exit_date": null,
+  "exit_date": none,
   "created_at": {
     "$date": "2025-11-05T11:58:25.635Z"
   },
