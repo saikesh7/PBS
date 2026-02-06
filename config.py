@@ -11,7 +11,7 @@ class Config:
     MAIL_PORT = 587
     MAIL_USE_TLS = True
     MAIL_USERNAME = 'pbs@prowesssoft.com'
-    MAIL_PASSWORD = ''
+    MAIL_PASSWORD = 'thffnrhmbjnjlsjd'
     
     # Session configuration - 1 year session timeout for "Remember me"
     PERMANENT_SESSION_LIFETIME = timedelta(days=365)
