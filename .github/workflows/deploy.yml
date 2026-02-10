@@ -1,55 +1,32 @@
-name: Python Application Deployment via SSH (Versioned)
+name: Python Application Deployment to Contabo
 
 on:
   push:
     branches:
-      - main
+      - main  # 1. This triggers the process whenever you push code
 
 env:
   SSH_PORT: 22
   SSH_USER: prod
-  PM2_APP_NAME: app
-  # --- ENVIRONMENT VARIABLES ---
-  DEPLOY_ROOT: /var/www/prod/PBS         # Base directory for all releases and the current symlink
-  APP_DIRECTORY: /var/www/prod/PBS/current # This will now be a symlink to the latest working release
+  PM2_APP_NAME: app                  
+  DEPLOY_ROOT: /var/www/prod/PBS
+  APP_DIRECTORY: /var/www/prod/PBS/current
   TEMP_ARTIFACT_NAME: deploy-artifact.zip
-  # The HEALT_CHECK variables are removed as they are not used
-  # -----------------------------
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Set up Python (runner)
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-          
-      - name: Install Python dependencies (CI-only)
-        run: |
-          python -m pip install --upgrade pip
-          cd project_root || exit 0
-          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-          cd ..
-
+      # 2. Package the code from GitHub to send to the server
       - name: Create deployment artifact (ZIP)
         run: |
-          echo "Creating deployment ZIP: ${{ env.TEMP_ARTIFACT_NAME }}"
           zip -r "${{ env.TEMP_ARTIFACT_NAME }}" . \
-            -x "*.git*" \
-            -x "venv/*" \
-            -x "*/__pycache__/*" \
-            -x "*.DS_Store" \
-            -x "*.zip" \
-            -x "node_modules/*"
+            -x "*.git*" -x "venv/*" -x "*/__pycache__/*" -x "*.zip" -x ".env"
 
-      # ---- Upload artifact to remote server using SCP action ----
+      # 3. PUSH the code to the Contabo server
       - name: Upload artifact to server (SCP)
         uses: appleboy/scp-action@master
         with:
@@ -58,63 +35,66 @@ jobs:
           port: ${{ env.SSH_PORT }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           source: ${{ env.TEMP_ARTIFACT_NAME }}
-          target: ~/
+          target: /home/prod/
 
-      # ---- Run remote commands via SSH (VERSIONED DEPLOYMENT) ----
+      # 4. EXECUTE update and RESTART the server application
       - name: Deploy code and Restart Application
-        uses: appleboy/ssh-action@v0.1.10
+        uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ env.SSH_USER }}
           port: ${{ env.SSH_PORT }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            # Exit immediately if a command exits with a non-zero status.
             set -e
-            echo "--- Starting Versioned Remote Deployment ---"
             
-            # Define version paths
+            # Save the PREVIOUS release path for rollback
+            PREVIOUS_RELEASE=$(readlink -f ${{ env.APP_DIRECTORY }} || echo "")
             TIMESTAMP=$(date +%Y%m%d%H%M%S)
             RELEASE_PATH="${{ env.DEPLOY_ROOT }}/releases/$TIMESTAMP"
-            CURRENT_SYMLINK="${{ env.DEPLOY_ROOT }}/current"
+            CURRENT_SYMLINK="${{ env.APP_DIRECTORY }}"
             
-            # 1. Prepare new release directory
+            echo "--- Deploying to: $RELEASE_PATH ---"
+
             mkdir -p "$RELEASE_PATH"
-            TEMP_PATH=~/${{ env.TEMP_ARTIFACT_NAME }}
-            echo "Unzipping $TEMP_PATH into $RELEASE_PATH"
-            unzip -o "$TEMP_PATH" -d "$RELEASE_PATH"
-            rm -f "$TEMP_PATH"
+            unzip -o /home/prod/${{ env.TEMP_ARTIFACT_NAME }} -d "$RELEASE_PATH"
+            rm -f /home/prod/${{ env.TEMP_ARTIFACT_NAME }}
 
-            # 2. Setup VENV and Install Dependencies in the new release folder
             cd "$RELEASE_PATH"
-            python3 -m venv venv || echo "venv exists"
+            python3 -m venv venv
             source venv/bin/activate
-            if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+            pip install --upgrade pip
+            if [ -f requirements.txt ]; then pip install -r requirements.txt --no-cache-dir; fi
             
-            # optional: run migrations here, before symlink switch
-            # python manage.py migrate
-
-            # 3. SWAP SYMLINK (Atomic switch to the new code base)
-            echo "Switching symlink to $RELEASE_PATH"
-            # ln -sfn ensures an atomic switch
+            # Atomic Switch (Updates the code folder)
             ln -sfn "$RELEASE_PATH" "$CURRENT_SYMLINK"
             
-            # 4. RESTART APP via PM2 (Points to the new symlink)
-            echo "Restarting application via pm2..."
-            
-            # --- PM2 Logic to restart/start using the 'current' symlink ---
-            if pm2 describe ${{ env.PM2_APP_NAME }} > /dev/null 2>&1; then
-              pm2 reload ${{ env.PM2_APP_NAME }}
-              echo "PM2 process reloaded."
-            else
-              # IMPORTANT: Ensure your PM2 'start' command uses the APP_DIRECTORY symlink
-              pm2 start "$CURRENT_SYMLINK"/app.py --name "${{ env.PM2_APP_NAME }}" --interpreter python3
-              echo "PM2 process started for the first time."
-            fi
-            # -----------------------------------------------------------
+            # RESTART COMMANDS
+            PM2_BIN=$(which pm2 || echo "/usr/local/bin/pm2")
+            NEW_VENV_PYTHON="$RELEASE_PATH/venv/bin/python3"
 
-            echo "--- Deployment Complete (No Health Check/Rollback after Restart) ---"
+            # Restart the app fresh
+            $PM2_BIN delete ${{ env.PM2_APP_NAME }} || true
+            $PM2_BIN start "$CURRENT_SYMLINK/app.py" \
+              --name "${{ env.PM2_APP_NAME }}" \
+              --interpreter "$NEW_VENV_PYTHON" \
+              --cwd "$CURRENT_SYMLINK"
+            $PM2_BIN save
+
+            # 5. HEALTH CHECK & AUTO-ROLLBACK
+            echo "Waiting 10s for health check..."
+            sleep 10
             
-            # 5. Cleanup old releases (Recommended to save disk space)
-            echo "Cleaning up old releases, keeping the last 5..."
-            ls -td "${{ env.DEPLOY_ROOT }}/releases/"*/ | tail -n +6 | xargs rm -rf
+            if ! $PM2_BIN status ${{ env.PM2_APP_NAME }} | grep -q "online"; then
+              echo "❌ DEPLOY FAILED! Rolling back to: $PREVIOUS_RELEASE"
+              ln -sfn "$PREVIOUS_RELEASE" "$CURRENT_SYMLINK"
+              $PM2_BIN delete ${{ env.PM2_APP_NAME }} || true
+              $PM2_BIN start "$CURRENT_SYMLINK/app.py" \
+                --name "${{ env.PM2_APP_NAME }}" \
+                --interpreter "$PREVIOUS_RELEASE/venv/bin/python3" \
+                --cwd "$CURRENT_SYMLINK"
+              exit 1
+            fi
+
+            echo "✅ Deployment Successful!"
+            ls -td "${{ env.DEPLOY_ROOT }}/releases/"*/ | tail -n +6 | xargs rm -rf --
